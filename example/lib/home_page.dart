@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:auth_management/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_andomie/core.dart';
-import 'package:flutter_andomie/utils.dart';
 
 import 'user_model.dart';
 
@@ -72,15 +71,20 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _showSnackBar(BuildContext context, String msg) {
+  void _showSnackBar(BuildContext context, String msg, Object? args) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg)),
     );
   }
 
-  void _showLoading(BuildContext context, bool loading) {}
+  void _showLoading(BuildContext context, bool loading, Object? args) {}
 
-  void _status(BuildContext context, AuthState state, UserModel? user) {
+  void _status(
+    BuildContext context,
+    AuthState state,
+    UserModel? user,
+    Object? args,
+  ) {
     if (state.isUnauthenticated) {
       Navigator.pushNamedAndRemoveUntil(context, "startup", (route) => false);
     }
@@ -132,7 +136,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     Text(
                       "Account created at ".join(
-                        DateProvider.toRealtime(value?.timeMills ?? 0),
+                        DateConverter.toRealtime(value?.timeMills ?? 0),
                       ),
                       style: Theme.of(context)
                           .textTheme

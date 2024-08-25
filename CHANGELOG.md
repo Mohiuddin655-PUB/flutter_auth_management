@@ -1,3 +1,7 @@
+## 1.0.1
+
+* Notifier custom handler and pass arguments any functions
+
 ## 1.0.0+1
 
 ## 1.0.0

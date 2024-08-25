@@ -120,9 +120,9 @@ class _ObserverState<T extends Auth> extends State<_Observer<T>> {
 
   void _changeError() {
     if (widget.onError != null) {
-      final value = widget.controller.error;
+      final value = widget.controller.errorText;
       if (value.isNotEmpty) {
-        widget.onError?.call(context, value);
+        widget.onError?.call(context, value, widget.controller.args);
       }
     }
   }
@@ -130,7 +130,7 @@ class _ObserverState<T extends Auth> extends State<_Observer<T>> {
   void _changeLoading() {
     if (widget.onLoading != null) {
       final value = widget.controller.loading;
-      widget.onLoading?.call(context, value);
+      widget.onLoading?.call(context, value, widget.controller.args);
     }
   }
 
@@ -138,7 +138,7 @@ class _ObserverState<T extends Auth> extends State<_Observer<T>> {
     if (widget.onMessage != null) {
       final value = widget.controller.message;
       if (value.isNotEmpty) {
-        widget.onMessage?.call(context, value);
+        widget.onMessage?.call(context, value, widget.controller.args);
       }
     }
   }
@@ -146,7 +146,12 @@ class _ObserverState<T extends Auth> extends State<_Observer<T>> {
   void _changeState() {
     if (widget.onState != null) {
       final value = widget.controller.state;
-      widget.onState?.call(context, value, widget.controller.user);
+      widget.onState?.call(
+        context,
+        value,
+        widget.controller.user,
+        widget.controller.args,
+      );
     }
   }
 }

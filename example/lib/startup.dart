@@ -13,25 +13,38 @@ class StartupPage extends StatefulWidget {
 }
 
 class _StartupPageState extends State<StartupPage> {
-  void _showError(BuildContext context, String error) {
+  void _showError(
+    BuildContext context,
+    String error,
+    Object? args,
+  ) {
     log("AUTH ERROR : $error");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(error)),
     );
   }
 
-  void _showLoading(BuildContext context, bool loading) {
+  void _showLoading(BuildContext context, bool loading, Object? args) {
     log("AUTH LOADING : $loading");
   }
 
-  void _showMessage(BuildContext context, String message) {
+  void _showMessage(
+    BuildContext context,
+    String message,
+    Object? args,
+  ) {
     log("AUTH MESSAGE : $message");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  void _status(BuildContext context, AuthState state, UserModel? user) {
+  void _status(
+    BuildContext context,
+    AuthState state,
+    UserModel? user,
+    Object? args,
+  ) {
     log("AUTH STATUS : $state");
     if (state.isAuthenticated) {
       Navigator.pushNamedAndRemoveUntil(context, "home", (route) => false);
@@ -74,9 +87,11 @@ class _StartupPageState extends State<StartupPage> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  context.signInAnonymously<UserModel>(GuestAuthenticator(
-                    name: "Omie talukdar",
-                  ));
+                  context.signInAnonymously<UserModel>(
+                    authenticator: GuestAuthenticator(
+                      name: "Omie talukdar",
+                    ),
+                  );
                 },
                 child: const Text("Guest"),
               ),
