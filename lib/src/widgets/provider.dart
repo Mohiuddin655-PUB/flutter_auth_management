@@ -1,9 +1,9 @@
-import 'package:auth_management/src/utils/errors.dart';
 import 'package:flutter/material.dart';
 
 import '../models/auth.dart';
 import '../services/controllers/controller.dart';
 import '../utils/auth_response.dart';
+import '../utils/errors.dart';
 
 class AuthProvider<T extends Auth> extends InheritedWidget {
   final bool initialCheck;

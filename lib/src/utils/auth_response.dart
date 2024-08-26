@@ -1,6 +1,6 @@
 import '../models/auth.dart';
 import '../models/auth_providers.dart';
-import '../models/auth_state.dart';
+import '../models/auth_status.dart';
 import '../models/auth_type.dart';
 
 class AuthResponse<T extends Auth> {
@@ -10,7 +10,7 @@ class AuthResponse<T extends Auth> {
   final String? _message;
   final T? data;
   final AuthProviders? _provider;
-  final AuthState? _state;
+  final AuthStatus? _state;
   final AuthType? _type;
 
   bool get isInitial => _initial ?? false;
@@ -29,7 +29,7 @@ class AuthResponse<T extends Auth> {
 
   AuthProviders get provider => _provider ?? AuthProviders.email;
 
-  AuthState get state => _state ?? AuthState.unauthenticated;
+  AuthStatus get state => _state ?? AuthStatus.unauthenticated;
 
   AuthType get type => _type ?? AuthType.none;
 
@@ -50,7 +50,7 @@ class AuthResponse<T extends Auth> {
     AuthProviders? provider,
     AuthType? type,
   }) : this._(
-          state: AuthState.guest,
+          state: AuthStatus.guest,
           data: data,
           msg: msg,
           provider: provider,
@@ -63,7 +63,7 @@ class AuthResponse<T extends Auth> {
     AuthProviders? provider,
     AuthType? type,
   }) : this._(
-          state: AuthState.authenticated,
+          state: AuthStatus.authenticated,
           data: data,
           msg: msg,
           provider: provider,
@@ -75,7 +75,7 @@ class AuthResponse<T extends Auth> {
     AuthProviders? provider,
     AuthType? type,
   }) : this._(
-          state: AuthState.unauthenticated,
+          state: AuthStatus.unauthenticated,
           msg: msg,
           provider: provider,
           type: type,
@@ -86,7 +86,7 @@ class AuthResponse<T extends Auth> {
     AuthProviders? provider,
     AuthType? type,
   }) : this._(
-          state: AuthState.unauthorized,
+          state: AuthStatus.unauthorized,
           error: msg,
           provider: provider,
           type: type,
@@ -118,7 +118,7 @@ class AuthResponse<T extends Auth> {
     dynamic error,
     dynamic msg,
     AuthProviders? provider,
-    AuthState? state,
+    AuthStatus? state,
     AuthType? type,
   })  : _initial = initial,
         _loading = loading,

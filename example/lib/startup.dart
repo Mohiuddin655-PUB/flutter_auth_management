@@ -13,40 +13,30 @@ class StartupPage extends StatefulWidget {
 }
 
 class _StartupPageState extends State<StartupPage> {
-  void _showError(
-    BuildContext context,
-    String error,
-    Object? args,
-  ) {
+  void _showError(BuildContext context, String error) {
     log("AUTH ERROR : $error");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(error)),
     );
   }
 
-  void _showLoading(BuildContext context, bool loading, Object? args) {
+  void _showLoading(BuildContext context, bool loading) {
     log("AUTH LOADING : $loading");
   }
 
-  void _showMessage(
-    BuildContext context,
-    String message,
-    Object? args,
-  ) {
+  void _showMessage(BuildContext context, String message) {
     log("AUTH MESSAGE : $message");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  void _status(
+  void _changes(
     BuildContext context,
-    AuthState state,
-    UserModel? user,
-    Object? args,
+    AuthChanges<UserModel> changes,
   ) {
-    log("AUTH STATUS : $state");
-    if (state.isAuthenticated) {
+    log("AUTH STATUS : $changes");
+    if (changes.status.isAuthenticated) {
       Navigator.pushNamedAndRemoveUntil(context, "home", (route) => false);
     }
   }
@@ -57,7 +47,7 @@ class _StartupPageState extends State<StartupPage> {
       onError: _showError,
       onMessage: _showMessage,
       onLoading: _showLoading,
-      onStatus: _status,
+      onChanges: _changes,
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(

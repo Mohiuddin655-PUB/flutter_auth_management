@@ -71,21 +71,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _showSnackBar(BuildContext context, String msg, Object? args) {
+  void _showSnackBar(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg)),
     );
   }
 
-  void _showLoading(BuildContext context, bool loading, Object? args) {}
+  void _showLoading(BuildContext context, bool loading) {}
 
-  void _status(
-    BuildContext context,
-    AuthState state,
-    UserModel? user,
-    Object? args,
-  ) {
-    if (state.isUnauthenticated) {
+  void _status(BuildContext context, AuthStatus status) {
+    if (status.isUnauthenticated) {
       Navigator.pushNamedAndRemoveUntil(context, "startup", (route) => false);
     }
   }

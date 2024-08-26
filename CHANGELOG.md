@@ -1,3 +1,7 @@
+## 1.0.2
+
+* Add Updater tags system
+
 ## 1.0.1
 
 * Notifier custom handler and pass arguments any functions

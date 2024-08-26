@@ -6,7 +6,7 @@ import 'package:flutter_entity/flutter_entity.dart';
 
 import '../models/auth.dart';
 import '../models/auth_providers.dart';
-import '../models/auth_state.dart';
+import '../models/auth_status.dart';
 import '../models/biometric_config.dart';
 import '../services/controllers/controller.dart';
 import '../utils/auth_notifier.dart';
@@ -83,19 +83,19 @@ extension AuthContextExtension on BuildContext {
     return _i<T>("liveMessage").liveMessage;
   }
 
-  AuthNotifier<AuthState> liveState<T extends Auth>() {
-    return _i<T>("liveState").liveState;
+  AuthNotifier<AuthStatus> liveStatus<T extends Auth>() {
+    return _i<T>("liveStatus").liveStatus;
   }
 
   AuthNotifier<T?> liveUser<T extends Auth>() {
     return _i<T>("liveUser").liveUser;
   }
 
-  bool loadingForAuth<T extends Auth>() => _i<T>("loadingForAuth").loading;
+  bool authLoading<T extends Auth>() => _i<T>("authLoading").loading;
 
-  String messageForAuth<T extends Auth>() => _i<T>("messageForAuth").message;
+  String authMessage<T extends Auth>() => _i<T>("authMessage").message;
 
-  AuthState stateForAuth<T extends Auth>() => _i<T>("stateForAuth").state;
+  AuthStatus authStatus<T extends Auth>() => _i<T>("authStatus").status;
 
   T? user<T extends Auth>() => _i<T>("user").user;
 
@@ -113,7 +113,7 @@ extension AuthContextExtension on BuildContext {
     return _i<T>("firebaseUserChanges").firebaseUserChanges;
   }
 
-  Future<Response<bool>> addBiometric<T extends Auth>({
+  Future<Response<void>> addBiometric<T extends Auth>({
     SignByBiometricCallback? callback,
     BiometricConfig? config,
   }) {
@@ -123,15 +123,20 @@ extension AuthContextExtension on BuildContext {
     );
   }
 
-  Future<Response<bool>> biometricEnable<T extends Auth>(bool enabled) {
+  Future<Response<void>> biometricEnable<T extends Auth>(bool enabled) {
     return _i<T>("biometricEnable").biometricEnable(enabled);
   }
 
   Future<AuthResponse<T>> deleteAccount<T extends Auth>({
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("deleteAccount").delete(args: args, notifiable: notifiable);
+    return _i<T>("deleteAccount").delete(
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
   }
 
   void disposeAuthController<T extends Auth>() {
@@ -141,11 +146,13 @@ extension AuthContextExtension on BuildContext {
   Future<AuthResponse<T>> emitAuthResponse<T extends Auth>(
     AuthResponse<T> data, {
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("emitAuthResponse").emit(
       data,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -163,11 +170,13 @@ extension AuthContextExtension on BuildContext {
   Future<AuthResponse<T>> signInAnonymously<T extends Auth>({
     GuestAuthenticator? authenticator,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInAnonymously").signInAnonymously(
       authenticator: authenticator,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -175,11 +184,13 @@ extension AuthContextExtension on BuildContext {
   Future<AuthResponse<T>> signInByBiometric<T extends Auth>({
     BiometricConfig? config,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByBiometric").signInByBiometric(
       config: config,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -188,12 +199,14 @@ extension AuthContextExtension on BuildContext {
     EmailAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByEmail").signInByEmail(
       authenticator,
       onBiometric: onBiometric,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -208,6 +221,7 @@ extension AuthContextExtension on BuildContext {
     void Function(String verId, int? forceResendingToken)? onCodeSent,
     void Function(String verId)? onCodeAutoRetrievalTimeout,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByPhone").signInByPhone(
@@ -220,6 +234,7 @@ extension AuthContextExtension on BuildContext {
       onCodeSent: onCodeSent,
       onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -228,12 +243,14 @@ extension AuthContextExtension on BuildContext {
     OtpAuthenticator authenticator, {
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByOtp").signInByOtp(
       authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -242,12 +259,14 @@ extension AuthContextExtension on BuildContext {
     UsernameAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByUsername").signInByUsername(
       authenticator,
       onBiometric: onBiometric,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -256,12 +275,14 @@ extension AuthContextExtension on BuildContext {
     EmailAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signUpByEmail").signUpByEmail(
       authenticator,
       onBiometric: onBiometric,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -270,12 +291,14 @@ extension AuthContextExtension on BuildContext {
     UsernameAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signUpByUsername").signUpByUsername(
       authenticator,
       onBiometric: onBiometric,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -283,20 +306,27 @@ extension AuthContextExtension on BuildContext {
   Future<AuthResponse<T>> signOut<T extends Auth>({
     AuthProviders? provider,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signOut").signOut(
       provider: provider,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
 
   Future<T?> updateAccount<T extends Auth>(
     Map<String, dynamic> data, {
+    String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("updateAccount").update(data, notifiable: notifiable);
+    return _i<T>("updateAccount").update(
+      data,
+      id: id,
+      notifiable: notifiable,
+    );
   }
 
   Future<AuthResponse> verifyPhoneByOtp<T extends Auth>(
@@ -305,17 +335,18 @@ extension AuthContextExtension on BuildContext {
     return _i<T>("verifyPhoneByOtp").verifyPhoneByOtp(authenticator);
   }
 
-  // OAUTH
   Future<AuthResponse<T>> signInWithApple<T extends Auth>({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithApple").signInWithApple(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -324,12 +355,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithFacebook").signInWithFacebook(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -338,12 +371,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithGameCenter").signInWithGameCenter(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -352,12 +387,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithGithub").signInWithGithub(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -366,12 +403,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithGoogle").signInWithGoogle(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -380,12 +419,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithMicrosoft").signInWithMicrosoft(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -394,12 +435,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithPlayGames").signInWithPlayGames(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -408,12 +451,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithSAML").signInWithSAML(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -422,12 +467,14 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithTwitter").signInWithTwitter(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
@@ -436,19 +483,21 @@ extension AuthContextExtension on BuildContext {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithYahoo").signInWithYahoo(
       authenticator: authenticator,
       storeToken: storeToken,
       args: args,
+      id: id,
       notifiable: notifiable,
     );
   }
 }
 
-extension AuthFutureExtension<T extends Auth> on Future<AuthResponse<T>> {
-  Future<AuthResponse<T>> onAuthStatus(
+extension AuthLoadingExtension<T extends Auth> on Future<AuthResponse<T>> {
+  Future<AuthResponse<T>> onAuthLoading(
     void Function(bool loading) callback,
   ) async {
     callback(true);

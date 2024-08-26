@@ -21,7 +21,7 @@ abstract class AuthHandler {
 
   Future<Response<auth.UserCredential>> signInAnonymously();
 
-  Future<Response<bool>> signInWithBiometric({
+  Future<Response<void>> signInWithBiometric({
     BiometricConfig? config,
   });
 

@@ -10,7 +10,7 @@ import '../../delegates/backup.dart';
 import '../../delegates/oauth.dart';
 import '../../models/auth.dart';
 import '../../models/auth_providers.dart';
-import '../../models/auth_state.dart';
+import '../../models/auth_status.dart';
 import '../../models/biometric_config.dart';
 import '../../utils/auth_notifier.dart';
 import '../../utils/auth_response.dart';
@@ -43,6 +43,8 @@ abstract class AuthController<T extends Auth> {
 
   Object? get args;
 
+  String? get id;
+
   Future<T?> get auth;
 
   String get errorText;
@@ -57,7 +59,7 @@ abstract class AuthController<T extends Auth> {
 
   AuthNotifier<String> get liveMessage;
 
-  AuthNotifier<AuthState> get liveState;
+  AuthNotifier<AuthStatus> get liveStatus;
 
   AuthNotifier<T?> get liveUser;
 
@@ -65,7 +67,7 @@ abstract class AuthController<T extends Auth> {
 
   String get message;
 
-  AuthState get state;
+  AuthStatus get status;
 
   T? get user;
 
@@ -77,15 +79,16 @@ abstract class AuthController<T extends Auth> {
 
   Stream<User?> get firebaseUserChanges;
 
-  Future<Response<bool>> addBiometric({
+  Future<Response<T>> addBiometric({
     SignByBiometricCallback? callback,
     BiometricConfig? config,
   });
 
-  Future<Response<bool>> biometricEnable(bool enabled);
+  Future<Response<T>> biometricEnable(bool enabled);
 
   Future<AuthResponse<T>> delete({
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -94,6 +97,7 @@ abstract class AuthController<T extends Auth> {
   Future<AuthResponse<T>> emit(
     AuthResponse<T> data, {
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -108,12 +112,14 @@ abstract class AuthController<T extends Auth> {
   Future<AuthResponse<T>> signInAnonymously({
     GuestAuthenticator? authenticator,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
   Future<AuthResponse<T>> signInByBiometric({
     BiometricConfig? config,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -121,6 +127,7 @@ abstract class AuthController<T extends Auth> {
     EmailAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -134,6 +141,7 @@ abstract class AuthController<T extends Auth> {
     void Function(String verId, int? forceResendingToken)? onCodeSent,
     void Function(String verId)? onCodeAutoRetrievalTimeout,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -141,6 +149,7 @@ abstract class AuthController<T extends Auth> {
     OtpAuthenticator authenticator, {
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -148,6 +157,7 @@ abstract class AuthController<T extends Auth> {
     UsernameAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -155,6 +165,7 @@ abstract class AuthController<T extends Auth> {
     EmailAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -162,27 +173,30 @@ abstract class AuthController<T extends Auth> {
     UsernameAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
   Future<AuthResponse<T>> signOut({
     AuthProviders? provider,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
   Future<T?> update(
     Map<String, dynamic> data, {
+    String? id,
     bool notifiable = true,
   });
 
   Future<AuthResponse> verifyPhoneByOtp(OtpAuthenticator authenticator);
 
-  // OAUTH
   Future<AuthResponse<T>> signInWithApple({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -190,6 +204,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -197,6 +212,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -204,6 +220,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -211,6 +228,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -218,6 +236,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -225,6 +244,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -232,6 +252,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -239,6 +260,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 
@@ -246,6 +268,7 @@ abstract class AuthController<T extends Auth> {
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
     Object? args,
+    String? id,
     bool notifiable = true,
   });
 }

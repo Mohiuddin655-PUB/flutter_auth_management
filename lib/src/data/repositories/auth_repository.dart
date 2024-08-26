@@ -1,168 +1,161 @@
-import 'package:auth_management/src/delegates/auth.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter_entity/flutter_entity.dart';
 
-import '../../delegates/user.dart';
 import '../../models/auth.dart';
 import '../../models/auth_providers.dart';
 import '../../models/biometric_config.dart';
 import '../../models/credential.dart';
 import '../../services/repositories/auth_repository.dart';
+import '../../services/sources/auth_data_source.dart';
 
 class AuthRepositoryImpl extends AuthRepository {
-  const AuthRepositoryImpl(super.source);
+  final AuthDataSource source;
+
+  const AuthRepositoryImpl({
+    required this.source,
+  });
 
   @override
-  auth.User? get user => userDelegate.user;
-
-  IAuthDelegate get authDelegate => source.authDelegate;
+  User? get user => source.user;
 
   @override
-  IUserDelegate get userDelegate => source.userDelegate;
+  Future<Response> get delete => source.delete;
 
   @override
-  Future<bool> isSignIn([AuthProviders? provider]) {
-    return authDelegate.isSignIn(provider);
+  Future<bool> isSignIn([AuthProviders? provider]) => source.isSignIn();
+
+  @override
+  Future<Response<UserCredential>> signInAnonymously() {
+    return source.signInAnonymously();
   }
 
   @override
-  Future<Response<auth.UserCredential>> signInAnonymously() {
-    return authDelegate.signInAnonymously();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithApple() {
-    return authDelegate.signInWithApple();
-  }
-
-  @override
-  Future<Response<bool>> signInWithBiometric({BiometricConfig? config}) {
-    return authDelegate.signInWithBiometric(config: config);
-  }
-
-  @override
-  Future<Response<auth.UserCredential>> signInWithCredential({
-    required auth.AuthCredential credential,
+  Future<Response<void>> signInWithBiometric({
+    BiometricConfig? config,
   }) {
-    return authDelegate.signInWithCredential(credential: credential);
+    return source.signInWithBiometric(config: config);
   }
 
   @override
-  Future<Response<auth.UserCredential>> signInWithEmailNPassword({
+  Future<Response<UserCredential>> signInWithCredential({
+    required AuthCredential credential,
+  }) {
+    return source.signInWithCredential(credential: credential);
+  }
+
+  @override
+  Future<Response<UserCredential>> signInWithEmailNPassword({
     required String email,
     required String password,
   }) {
-    return authDelegate.signInWithEmailNPassword(
-      email: email,
-      password: password,
-    );
+    return source.signInWithEmailNPassword(email: email, password: password);
   }
 
   @override
-  Future<Response<Credential>> signInWithFacebook() {
-    return authDelegate.signInWithFacebook();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithGameCenter() {
-    return authDelegate.signInWithGameCenter();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithGithub() {
-    return authDelegate.signInWithGithub();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithGoogle() {
-    return authDelegate.signInWithGoogle();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithMicrosoft() {
-    return authDelegate.signInWithMicrosoft();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithPlayGames() {
-    return authDelegate.signInWithPlayGames();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithSAML() {
-    return authDelegate.signInWithSAML();
-  }
-
-  @override
-  Future<Response<Credential>> signInWithTwitter() {
-    return authDelegate.signInWithTwitter();
-  }
-
-  @override
-  Future<Response<auth.UserCredential>> signInWithUsernameNPassword({
+  Future<Response<UserCredential>> signInWithUsernameNPassword({
     required String username,
     required String password,
   }) {
-    return authDelegate.signInWithUsernameNPassword(
+    return source.signInWithUsernameNPassword(
       username: username,
       password: password,
     );
   }
 
   @override
-  Future<Response<Credential>> signInWithYahoo() {
-    return authDelegate.signInWithYahoo();
-  }
-
-  @override
-  Future<Response<Auth<AuthKeys>>> signOut([AuthProviders? provider]) {
-    return authDelegate.signOut(provider);
-  }
-
-  @override
-  Future<Response<auth.UserCredential>> signUpWithEmailNPassword({
+  Future<Response<UserCredential>> signUpWithEmailNPassword({
     required String email,
     required String password,
   }) {
-    return authDelegate.signInWithEmailNPassword(
-      email: email,
+    return source.signUpWithEmailNPassword(email: email, password: password);
+  }
+
+  @override
+  Future<Response<UserCredential>> signUpWithUsernameNPassword({
+    required String username,
+    required String password,
+  }) {
+    return source.signUpWithUsernameNPassword(
+      username: username,
       password: password,
     );
   }
 
   @override
-  Future<Response<auth.UserCredential>> signUpWithUsernameNPassword({
-    required String username,
-    required String password,
-  }) {
-    return authDelegate.signUpWithUsernameNPassword(
-      username: username,
-      password: password,
-    );
+  Future<Response<Auth>> signOut([AuthProviders? provider]) {
+    return source.signOut(provider);
   }
 
   @override
   Future<Response<void>> verifyPhoneNumber({
     String? phoneNumber,
     int? forceResendingToken,
-    auth.PhoneMultiFactorInfo? multiFactorInfo,
-    auth.MultiFactorSession? multiFactorSession,
+    PhoneMultiFactorInfo? multiFactorInfo,
+    MultiFactorSession? multiFactorSession,
     Duration timeout = const Duration(seconds: 30),
-    required void Function(auth.PhoneAuthCredential credential) onComplete,
-    required void Function(auth.FirebaseAuthException exception) onFailed,
+    required void Function(PhoneAuthCredential credential) onComplete,
+    required void Function(FirebaseAuthException exception) onFailed,
     required void Function(String verId, int? forceResendingToken) onCodeSent,
     required void Function(String verId) onCodeAutoRetrievalTimeout,
   }) {
-    return authDelegate.verifyPhoneNumber(
-      onComplete: onComplete,
-      onFailed: onFailed,
-      onCodeSent: onCodeSent,
-      onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+    return source.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       forceResendingToken: forceResendingToken,
       multiFactorInfo: multiFactorInfo,
       multiFactorSession: multiFactorSession,
       timeout: timeout,
+      onComplete: onComplete,
+      onFailed: onFailed,
+      onCodeSent: onCodeSent,
+      onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
     );
+  }
+
+  @override
+  Future<Response<Credential>> signInWithApple() => source.signInWithApple();
+
+  @override
+  Future<Response<Credential>> signInWithFacebook() {
+    return source.signInWithFacebook();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithGameCenter() {
+    return source.signInWithGameCenter();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithGithub() {
+    return source.signInWithGithub();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithGoogle() {
+    return source.signInWithGoogle();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithMicrosoft() {
+    return source.signInWithMicrosoft();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithPlayGames() {
+    return source.signInWithPlayGames();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithSAML() {
+    return source.signInWithSAML();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithTwitter() {
+    return source.signInWithTwitter();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithYahoo() {
+    return source.signInWithYahoo();
   }
 }

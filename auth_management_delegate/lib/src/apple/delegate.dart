@@ -55,7 +55,7 @@ abstract class IAppleAuthDelegate {
     /// Can be `null`, in which case no nonce will be passed to the request.
     String? nonce,
 
-    /// Data that’s returned to you unmodified in the corresponding [AuthorizationCredentialAppleID.state] after a successful authentication.
+    /// Data that’s returned to you unmodified in the corresponding [AuthorizationCredentialAppleID.status] after a successful authentication.
     ///
     /// Can be `null`, in which case no state will be passed to the request.
     String? state,

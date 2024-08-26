@@ -1,18 +1,28 @@
-import 'package:auth_management/core.dart';
-import 'package:auth_management/src/utils/errors.dart';
 import 'package:flutter/material.dart';
 
+import '../core/extensions.dart';
+import '../core/typedefs.dart';
+import '../models/auth.dart';
+import '../models/auth_changes.dart';
+import '../services/controllers/controller.dart';
+import '../utils/errors.dart';
+import '../widgets/provider.dart';
+
 class AuthObserver<T extends Auth> extends StatelessWidget {
+  final List<String> ids;
   final bool liveAsBackground;
-  final OnAuthErrorListener? onError;
-  final OnAuthLoadingListener? onLoading;
-  final OnAuthMessageListener? onMessage;
-  final OnAuthStateChangeListener<T>? onStatus;
+  final OnAuthChanges<T>? onChanges;
+  final OnAuthError? onError;
+  final OnAuthLoading? onLoading;
+  final OnAuthMessage? onMessage;
+  final OnAuthStatus? onStatus;
   final Widget child;
 
   const AuthObserver({
     super.key,
+    this.ids = const [],
     this.liveAsBackground = false,
+    this.onChanges,
     this.onError,
     this.onLoading,
     this.onMessage,
@@ -25,11 +35,13 @@ class AuthObserver<T extends Auth> extends StatelessWidget {
     try {
       return _Observer<T>(
         controller: context.findAuthController<T>(),
+        ids: ids,
         liveAsBackground: liveAsBackground,
+        onChanges: onChanges,
         onError: onError,
         onLoading: onLoading,
         onMessage: onMessage,
-        onState: onStatus,
+        onStatus: onStatus,
         child: child,
       );
     } catch (_) {
@@ -41,21 +53,25 @@ class AuthObserver<T extends Auth> extends StatelessWidget {
 }
 
 class _Observer<T extends Auth> extends StatefulWidget {
+  final List<String> ids;
   final bool liveAsBackground;
   final AuthController<T> controller;
-  final OnAuthErrorListener? onError;
-  final OnAuthLoadingListener? onLoading;
-  final OnAuthMessageListener? onMessage;
-  final OnAuthStateChangeListener<T>? onState;
+  final OnAuthChanges<T>? onChanges;
+  final OnAuthError? onError;
+  final OnAuthLoading? onLoading;
+  final OnAuthMessage? onMessage;
+  final OnAuthStatus? onStatus;
   final Widget child;
 
   const _Observer({
+    required this.ids,
     required this.controller,
     required this.liveAsBackground,
-    this.onError,
-    this.onLoading,
-    this.onMessage,
-    this.onState,
+    required this.onChanges,
+    required this.onError,
+    required this.onLoading,
+    required this.onMessage,
+    required this.onStatus,
     required this.child,
   });
 
@@ -64,6 +80,16 @@ class _Observer<T extends Auth> extends StatefulWidget {
 }
 
 class _ObserverState<T extends Auth> extends State<_Observer<T>> {
+  bool get isNotifiable {
+    final id = widget.controller.id;
+    if (widget.ids.isEmpty || id == null || id.isEmpty) {
+      return true;
+    }
+    return widget.ids.contains(id);
+  }
+
+  bool get isStatusMode => widget.onStatus != null || widget.onChanges != null;
+
   @override
   void initState() {
     _addListeners(widget.controller);
@@ -98,8 +124,8 @@ class _ObserverState<T extends Auth> extends State<_Observer<T>> {
     if (widget.onMessage != null) {
       controller.liveMessage.addListener(_changeMessage);
     }
-    if (widget.onState != null) {
-      controller.liveState.addListener(_changeState);
+    if (isStatusMode) {
+      controller.liveStatus.addListener(_changeStatus);
     }
   }
 
@@ -113,45 +139,55 @@ class _ObserverState<T extends Auth> extends State<_Observer<T>> {
     if (widget.onMessage != null) {
       controller.liveMessage.removeListener(_changeMessage);
     }
-    if (widget.onState != null) {
-      controller.liveState.removeListener(_changeState);
+    if (isStatusMode) {
+      controller.liveStatus.removeListener(_changeStatus);
     }
   }
 
   void _changeError() {
+    if (!isNotifiable) return;
     if (widget.onError != null) {
       final value = widget.controller.errorText;
       if (value.isNotEmpty) {
-        widget.onError?.call(context, value, widget.controller.args);
+        widget.onError?.call(context, value);
       }
     }
   }
 
   void _changeLoading() {
+    if (!isNotifiable) return;
     if (widget.onLoading != null) {
       final value = widget.controller.loading;
-      widget.onLoading?.call(context, value, widget.controller.args);
+      widget.onLoading?.call(context, value);
     }
   }
 
   void _changeMessage() {
+    if (!isNotifiable) return;
     if (widget.onMessage != null) {
       final value = widget.controller.message;
       if (value.isNotEmpty) {
-        widget.onMessage?.call(context, value, widget.controller.args);
+        widget.onMessage?.call(context, value);
       }
     }
   }
 
-  void _changeState() {
-    if (widget.onState != null) {
-      final value = widget.controller.state;
-      widget.onState?.call(
+  void _changeStatus() {
+    if (!isNotifiable) return;
+    final value = widget.controller.status;
+    if (widget.onChanges != null) {
+      widget.onChanges!(
         context,
-        value,
-        widget.controller.user,
-        widget.controller.args,
+        AuthChanges(
+          args: widget.controller.args,
+          status: value,
+          user: widget.controller.user,
+        ),
       );
+      return;
+    }
+    if (widget.onStatus != null) {
+      widget.onStatus!(context, value);
     }
   }
 }

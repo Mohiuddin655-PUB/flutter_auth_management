@@ -1,6 +1,12 @@
-import 'package:auth_management/core.dart';
-import 'package:auth_management/src/utils/errors.dart';
 import 'package:flutter/material.dart';
+
+import '../core/extensions.dart';
+import '../core/typedefs.dart';
+import '../models/auth.dart';
+import '../models/auth_changes.dart';
+import '../services/controllers/controller.dart';
+import '../utils/errors.dart';
+import '../widgets/provider.dart';
 
 typedef OnAuthBuilder<T extends Auth> = Widget Function(
   BuildContext context,
@@ -9,15 +15,19 @@ typedef OnAuthBuilder<T extends Auth> = Widget Function(
 
 class AuthBuilder<T extends Auth> extends StatelessWidget {
   final T? initial;
-  final OnAuthErrorListener? onError;
-  final OnAuthLoadingListener? onLoading;
-  final OnAuthMessageListener? onMessage;
-  final OnAuthStateChangeListener<T>? onStatus;
+  final List<String> ids;
+  final OnAuthChanges<T>? onChanges;
+  final OnAuthError? onError;
+  final OnAuthLoading? onLoading;
+  final OnAuthMessage? onMessage;
+  final OnAuthStatus? onStatus;
   final OnAuthBuilder<T> builder;
 
   const AuthBuilder({
     super.key,
     this.initial,
+    this.ids = const [],
+    this.onChanges,
     this.onError,
     this.onLoading,
     this.onMessage,
@@ -31,10 +41,12 @@ class AuthBuilder<T extends Auth> extends StatelessWidget {
       return _Child<T>(
         controller: context.findAuthController<T>(),
         initial: initial,
+        ids: ids,
+        onChanges: onChanges,
         onError: onError,
         onLoading: onLoading,
         onMessage: onMessage,
-        onState: onStatus,
+        onStatus: onStatus,
         builder: builder,
       );
     } catch (_) {
@@ -47,20 +59,24 @@ class AuthBuilder<T extends Auth> extends StatelessWidget {
 
 class _Child<T extends Auth> extends StatefulWidget {
   final T? initial;
+  final List<String> ids;
   final AuthController<T> controller;
-  final OnAuthErrorListener? onError;
-  final OnAuthLoadingListener? onLoading;
-  final OnAuthMessageListener? onMessage;
-  final OnAuthStateChangeListener<T>? onState;
+  final OnAuthChanges<T>? onChanges;
+  final OnAuthError? onError;
+  final OnAuthLoading? onLoading;
+  final OnAuthMessage? onMessage;
+  final OnAuthStatus? onStatus;
   final OnAuthBuilder<T> builder;
 
   const _Child({
     required this.controller,
-    this.initial,
-    this.onError,
-    this.onLoading,
-    this.onMessage,
-    this.onState,
+    required this.initial,
+    required this.ids,
+    required this.onChanges,
+    required this.onError,
+    required this.onLoading,
+    required this.onMessage,
+    required this.onStatus,
     required this.builder,
   });
 
@@ -70,6 +86,16 @@ class _Child<T extends Auth> extends StatefulWidget {
 
 class _ChildState<T extends Auth> extends State<_Child<T>> {
   T? _data;
+
+  bool get isNotifiable {
+    final id = widget.controller.id;
+    if (widget.ids.isEmpty || id == null || id.isEmpty) {
+      return true;
+    }
+    return widget.ids.contains(id);
+  }
+
+  bool get isStatusMode => widget.onStatus != null || widget.onChanges != null;
 
   @override
   void initState() {
@@ -112,8 +138,8 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
     if (widget.onMessage != null) {
       controller.liveMessage.addListener(_changeMessage);
     }
-    if (widget.onState != null) {
-      controller.liveState.addListener(_changeState);
+    if (isStatusMode) {
+      controller.liveStatus.addListener(_changeStatus);
     }
   }
 
@@ -128,8 +154,8 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
     if (widget.onMessage != null) {
       controller.liveMessage.removeListener(_changeMessage);
     }
-    if (widget.onState != null) {
-      controller.liveState.removeListener(_changeState);
+    if (isStatusMode) {
+      controller.liveStatus.removeListener(_changeStatus);
     }
   }
 
@@ -138,39 +164,49 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
   }
 
   void _changeError() {
+    if (!isNotifiable) return;
     if (widget.onError != null) {
       final value = widget.controller.errorText;
       if (value.isNotEmpty) {
-        widget.onError?.call(context, value, widget.controller.args);
+        widget.onError?.call(context, value);
       }
     }
   }
 
   void _changeLoading() {
+    if (!isNotifiable) return;
     if (widget.onLoading != null) {
       final value = widget.controller.loading;
-      widget.onLoading?.call(context, value, widget.controller.args);
+      widget.onLoading?.call(context, value);
     }
   }
 
   void _changeMessage() {
+    if (!isNotifiable) return;
     if (widget.onMessage != null) {
       final value = widget.controller.message;
       if (value.isNotEmpty) {
-        widget.onMessage?.call(context, value, widget.controller.args);
+        widget.onMessage?.call(context, value);
       }
     }
   }
 
-  void _changeState() {
-    if (widget.onState != null) {
-      final value = widget.controller.state;
-      widget.onState?.call(
+  void _changeStatus() {
+    if (!isNotifiable) return;
+    final value = widget.controller.status;
+    if (widget.onChanges != null) {
+      widget.onChanges!(
         context,
-        value,
-        _data ?? widget.controller.user,
-        widget.controller.args,
+        AuthChanges(
+          args: widget.controller.args,
+          status: value,
+          user: widget.controller.user,
+        ),
       );
+      return;
+    }
+    if (widget.onStatus != null) {
+      widget.onStatus!(context, value);
     }
   }
 }

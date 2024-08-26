@@ -65,9 +65,7 @@ class AuthButton<T extends Auth> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(builder: (context) {
-      return builder(context, _callback);
-    });
+    return builder(context, _callback);
   }
 }
 
