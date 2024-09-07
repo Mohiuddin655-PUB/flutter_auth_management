@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'backup_delegate.dart';
-import 'firebase_options.dart';
 import 'home_page.dart';
 import 'login_page.dart';
 import 'oauth_page.dart';
@@ -16,9 +15,7 @@ import 'user_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
   runApp(const Application());
 }
 

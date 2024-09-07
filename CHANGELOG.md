@@ -1,3 +1,7 @@
+## 1.0.3-alpha1
+
+* Firebase auth version update
+
 ## 1.0.2
 
 * Add Updater tags system
