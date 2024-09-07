@@ -10,11 +10,10 @@ import '../../models/auth_providers.dart';
 import '../../models/biometric_config.dart';
 import '../../models/credential.dart';
 import '../../services/sources/auth_data_source.dart';
-import '../../utils/connectivity.dart';
 
 class AuthDataSourceImpl extends AuthDataSource {
   final OAuthDelegates? _delegates;
-  ConnectionService? _connectivity;
+
   FirebaseAuth? _firebaseAuth;
 
   FirebaseAuth get firebaseAuth => _firebaseAuth ??= FirebaseAuth.instance;
@@ -52,12 +51,6 @@ class AuthDataSourceImpl extends AuthDataSource {
       throw const AuthDelegateException("IGoogleAuthDelegate");
     }
   }
-
-  ConnectionService get connectivity => _connectivity ??= ConnectionService.I;
-
-  Future<bool> get isConnected async => await connectivity.isConnected;
-
-  Future<bool> get isDisconnected async => !(await isConnected);
 
   AuthDataSourceImpl([this._delegates]);
 
@@ -273,54 +266,50 @@ class AuthDataSourceImpl extends AuthDataSource {
     final response = Response<Auth>();
     var data = Auth.fromUser(user);
     try {
-      if (await isConnected) {
-        if (provider != null) {
-          switch (provider) {
-            // OAUTH
-            case AuthProviders.apple:
-              break;
-            case AuthProviders.facebook:
-              await facebookAuth.logOut();
-              break;
-            case AuthProviders.gameCenter:
-              break;
-            case AuthProviders.github:
-              break;
-            case AuthProviders.google:
-              if (await googleAuth.isSignedIn()) {
-                googleAuth.disconnect();
-                googleAuth.signOut();
-              }
-              break;
-            case AuthProviders.microsoft:
-              break;
-            case AuthProviders.playGames:
-              break;
-            case AuthProviders.saml:
-              break;
-            case AuthProviders.twitter:
-              break;
-            case AuthProviders.yahoo:
-              break;
-            // CUSTOM
-            case AuthProviders.biometric:
-            case AuthProviders.guest:
-            case AuthProviders.email:
-            case AuthProviders.phone:
-            case AuthProviders.username:
-            case AuthProviders.none:
-              break;
-          }
-        } else {
-          if (await googleAuth.isSignedIn()) {
-            googleAuth.disconnect();
-            googleAuth.signOut();
-          }
+      if (provider != null) {
+        switch (provider) {
+          // OAUTH
+          case AuthProviders.apple:
+            break;
+          case AuthProviders.facebook:
+            await facebookAuth.logOut();
+            break;
+          case AuthProviders.gameCenter:
+            break;
+          case AuthProviders.github:
+            break;
+          case AuthProviders.google:
+            if (await googleAuth.isSignedIn()) {
+              googleAuth.disconnect();
+              googleAuth.signOut();
+            }
+            break;
+          case AuthProviders.microsoft:
+            break;
+          case AuthProviders.playGames:
+            break;
+          case AuthProviders.saml:
+            break;
+          case AuthProviders.twitter:
+            break;
+          case AuthProviders.yahoo:
+            break;
+          // CUSTOM
+          case AuthProviders.biometric:
+          case AuthProviders.guest:
+          case AuthProviders.email:
+          case AuthProviders.phone:
+          case AuthProviders.username:
+          case AuthProviders.none:
+            break;
         }
-        await firebaseAuth.signOut();
       } else {
-        return response.withStatus(Status.networkError);
+        if (await googleAuth.isSignedIn()) {
+          googleAuth.disconnect();
+          googleAuth.signOut();
+        }
       }
+      await firebaseAuth.signOut();
     } catch (_) {
       return response.withException(_, status: Status.failure);
     }
