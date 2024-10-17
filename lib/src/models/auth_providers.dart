@@ -82,7 +82,6 @@ enum AuthProviders {
 
   bool get isYahoo => this == AuthProviders.yahoo;
 
-  // CUSTOM
   bool get isBiometric => this == AuthProviders.biometric;
 
   bool get isEmail => this == AuthProviders.email;

@@ -3,39 +3,24 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_entity/flutter_entity.dart';
 
-import '../../core/messages.dart';
-import '../../core/typedefs.dart';
-import '../../delegates/backup.dart';
-import '../../delegates/oauth.dart';
-import '../../models/auth.dart';
-import '../../models/auth_providers.dart';
-import '../../models/auth_status.dart';
-import '../../models/auth_type.dart';
-import '../../models/biometric_config.dart';
-import '../../models/biometric_status.dart';
-import '../../services/controllers/controller.dart';
-import '../../services/handlers/auth_handler.dart';
-import '../../services/handlers/backup_handler.dart';
-import '../../services/sources/auth_data_source.dart';
-import '../../services/sources/authorized_data_source.dart';
-import '../../utils/auth_notifier.dart';
-import '../../utils/auth_response.dart';
-import '../../utils/authenticator.dart';
-import '../../utils/authenticator_email.dart';
-import '../../utils/authenticator_guest.dart';
-import '../../utils/authenticator_oauth.dart';
-import '../../utils/authenticator_otp.dart';
-import '../../utils/authenticator_phone.dart';
-import '../../utils/authenticator_username.dart';
-import '../handlers/auth_handler.dart';
-import '../handlers/backup_handler.dart';
-import '../sources/auth_data_source.dart';
-import '../sources/authorized_data_source.dart';
+import '../models/auth.dart';
+import '../models/auth_providers.dart';
+import '../models/auth_status.dart';
+import '../models/auth_type.dart';
+import '../models/biometric_config.dart';
+import '../models/biometric_status.dart';
+import '../utils/auth_notifier.dart';
+import '../utils/auth_response.dart';
+import '../utils/authenticator.dart';
+import 'messages.dart';
+import 'repository_auth.dart';
+import 'repository_backup.dart';
+import 'typedefs.dart';
 
-class AuthControllerImpl<T extends Auth> extends AuthController<T> {
+class Authorizer<T extends Auth> {
   final AuthMessages msg;
-  final AuthHandler authHandler;
-  final BackupHandler<T> backupHandler;
+  final AuthRepository authRepository;
+  final BackupRepository<T> backupRepository;
   final _errorNotifier = AuthNotifier("");
   final _loadingNotifier = AuthNotifier(false);
   final _messageNotifier = AuthNotifier("");
@@ -46,44 +31,18 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
 
   String? _id;
 
-  @override
   Object? get args => _args;
 
-  @override
   String? get id => _id;
 
-  Future<T?> get _auth => backupHandler.cache;
+  Future<T?> get _auth => backupRepository.cache;
 
-  AuthControllerImpl({
-    OAuthDelegates? auth,
-    BackupDelegate<T>? backup,
-    AuthMessages? messages,
-  }) : this.fromSource(
-          auth: AuthDataSourceImpl(auth),
-          backup: AuthorizedDataSourceImpl(backup),
-        );
+  Authorizer({
+    required this.authRepository,
+    required this.backupRepository,
+    this.msg = const AuthMessages(),
+  });
 
-  AuthControllerImpl.fromSource({
-    required AuthDataSource auth,
-    AuthorizedDataSource<T>? backup,
-    AuthMessages? messages,
-  }) : this.fromHandler(
-          messages: messages,
-          authHandler: AuthHandlerImpl(auth),
-          backupHandler: backup != null ? BackupHandlerImpl<T>(backup) : null,
-        );
-
-  AuthControllerImpl.fromHandler({
-    required this.authHandler,
-    BackupHandler<T>? backupHandler,
-    AuthMessages? messages,
-  })  : msg = messages ?? const AuthMessages(),
-        backupHandler = backupHandler ??
-            BackupHandlerImpl<T>(
-              AuthorizedDataSourceImpl(),
-            );
-
-  @override
   Future<T?> get auth async {
     try {
       final value = await _auth;
@@ -94,10 +53,8 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   String get errorText => _errorNotifier.value;
 
-  @override
   Future<bool> get isBiometricEnabled async {
     try {
       final value = await _auth;
@@ -108,58 +65,43 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<bool> get isLoggedIn async {
     final value = await auth;
     return value != null && value.isLoggedIn;
   }
 
-  @override
   AuthNotifier<String> get liveError => _errorNotifier;
 
-  @override
   AuthNotifier<bool> get liveLoading => _loadingNotifier;
 
-  @override
   AuthNotifier<String> get liveMessage => _messageNotifier;
 
-  @override
   AuthNotifier<AuthStatus> get liveStatus => _statusNotifier;
 
-  @override
   AuthNotifier<T?> get liveUser => _userNotifier;
 
-  @override
   bool get loading => _loadingNotifier.value;
 
-  @override
   String get message => _messageNotifier.value;
 
-  @override
   AuthStatus get status => _statusNotifier.value;
 
-  @override
   T? get user => _userNotifier.value;
 
-  @override
   User? get firebaseUser => FirebaseAuth.instance.currentUser;
 
-  @override
   Stream<User?> get firebaseAuthChanges {
     return FirebaseAuth.instance.authStateChanges();
   }
 
-  @override
   Stream<User?> get firebaseIdTokenChanges {
     return FirebaseAuth.instance.idTokenChanges();
   }
 
-  @override
   Stream<User?> get firebaseUserChanges {
     return FirebaseAuth.instance.userChanges();
   }
 
-  @override
   Future<Response<T>> addBiometric({
     SignByBiometricCallback? callback,
     BiometricConfig? config,
@@ -174,7 +116,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final response = await authHandler.signInWithBiometric(config: config);
+      final response = await authRepository.signInWithBiometric(config: config);
       if (!response.isSuccessful) {
         return Response(
           status: response.status,
@@ -202,7 +144,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<Response<T>> biometricEnable(bool enabled) async {
     final auth = await _auth;
     final provider = AuthProviders.from(auth?.provider);
@@ -237,7 +178,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> delete({
     Object? args,
     String? id,
@@ -265,7 +205,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
 
     try {
-      final response = await authHandler.delete;
+      final response = await authRepository.delete;
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.rollback(
@@ -281,7 +221,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
       }
 
       await _delete();
-      await backupHandler.onDeleteUser(data.id);
+      await backupRepository.onDeleteUser(data.id);
 
       return emit(
         AuthResponse.unauthenticated(
@@ -310,7 +250,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
 
   Future<bool> _delete() async {
     try {
-      final cleared = await backupHandler.clear();
+      final cleared = await backupRepository.clear();
       if (cleared) _emitUser(null);
       return cleared;
     } catch (error) {
@@ -319,7 +259,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   void dispose() {
     _errorNotifier.dispose();
     _loadingNotifier.dispose();
@@ -328,7 +267,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     _userNotifier.dispose();
   }
 
-  @override
   Future<AuthResponse<T>> emit(
     AuthResponse<T> data, {
     Object? args,
@@ -383,7 +321,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     return _userNotifier.value;
   }
 
-  @override
   Future<T?> initialize([bool initialCheck = true]) async {
     final value = await auth;
     if (value == null) return null;
@@ -392,21 +329,20 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         _statusNotifier.value = AuthStatus.authenticated;
       }
     }
-    final remote = await backupHandler.onFetchUser(value.id);
+    final remote = await backupRepository.onFetchUser(value.id);
     _userNotifier.value = remote;
-    await backupHandler.setAsLocal(remote ?? value);
+    await backupRepository.setAsLocal(remote ?? value);
     return remote ?? value;
   }
 
-  @override
   Future<AuthResponse<T>> isSignIn({
     AuthProviders? provider,
   }) async {
     try {
-      final signedIn = await authHandler.isSignIn(provider);
+      final signedIn = await authRepository.isSignIn(provider);
       final data = signedIn ? await auth : null;
       if (data == null) {
-        if (signedIn) await authHandler.signOut(provider);
+        if (signedIn) await authRepository.signOut(provider);
         return AuthResponse.unauthenticated(
           provider: provider,
           type: AuthType.signedIn,
@@ -427,7 +363,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInAnonymously({
     GuestAuthenticator? authenticator,
     Object? args,
@@ -442,7 +377,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         notifiable: notifiable,
       );
 
-      final response = await authHandler.signInAnonymously();
+      final response = await authRepository.signInAnonymously();
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
@@ -513,7 +448,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInByBiometric({
     BiometricConfig? config,
     Object? args,
@@ -545,7 +479,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final response = await authHandler.signInWithBiometric(config: config);
+      final response = await authRepository.signInWithBiometric(config: config);
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
@@ -565,30 +499,30 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
       if ((user.email ?? user.username ?? "").isNotEmpty &&
           (user.password ?? '').isNotEmpty) {
         if (provider.isEmail) {
-          current = await authHandler.signInWithEmailNPassword(
+          current = await authRepository.signInWithEmailNPassword(
             email: user.email ?? "",
             password: user.password ?? "",
           );
         } else if (provider.isUsername) {
-          current = await authHandler.signInWithUsernameNPassword(
+          current = await authRepository.signInWithUsernameNPassword(
             username: user.username ?? "",
             password: user.password ?? "",
           );
         }
       } else if ((token ?? user.idToken ?? "").isNotEmpty) {
         if (provider.isApple) {
-          current = await authHandler.signInWithCredential(
+          current = await authRepository.signInWithCredential(
             credential: OAuthProvider("apple.com").credential(
               idToken: user.idToken,
               accessToken: token,
             ),
           );
         } else if (provider.isFacebook) {
-          current = await authHandler.signInWithCredential(
+          current = await authRepository.signInWithCredential(
             credential: FacebookAuthProvider.credential(token ?? ""),
           );
         } else if (provider.isGoogle) {
-          current = await authHandler.signInWithCredential(
+          current = await authRepository.signInWithCredential(
             credential: GoogleAuthProvider.credential(
               idToken: user.idToken,
               accessToken: token,
@@ -639,7 +573,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInByEmail(
     EmailAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
@@ -655,7 +588,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithEmailNPassword(
+      final response = await authRepository.signInWithEmailNPassword(
         email: authenticator.email,
         password: authenticator.password,
       );
@@ -737,7 +670,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInByPhone(
     PhoneAuthenticator authenticator, {
     PhoneMultiFactorInfo? multiFactorInfo,
@@ -752,7 +684,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     bool notifiable = true,
   }) async {
     try {
-      authHandler.verifyPhoneNumber(
+      authRepository.verifyPhoneNumber(
         phoneNumber: authenticator.phone,
         forceResendingToken: int.tryParse(authenticator.accessToken ?? ""),
         multiFactorInfo: multiFactorInfo,
@@ -860,7 +792,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInByOtp(
     OtpAuthenticator authenticator, {
     bool storeToken = false,
@@ -877,7 +808,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
 
     try {
       final credential = authenticator.credential;
-      final response = await authHandler.signInWithCredential(
+      final response = await authRepository.signInWithCredential(
         credential: credential,
       );
 
@@ -959,7 +890,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInByUsername(
     UsernameAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
@@ -975,7 +905,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithUsernameNPassword(
+      final response = await authRepository.signInWithUsernameNPassword(
         username: authenticator.username,
         password: authenticator.password,
       );
@@ -1056,7 +986,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signUpByEmail(
     EmailAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
@@ -1071,7 +1000,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
       const AuthResponse.loading(AuthProviders.email, AuthType.register),
     );
     try {
-      final response = await authHandler.signUpWithEmailNPassword(
+      final response = await authRepository.signUpWithEmailNPassword(
         email: authenticator.email,
         password: authenticator.password,
       );
@@ -1149,7 +1078,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signUpByUsername(
     UsernameAuthenticator authenticator, {
     SignByBiometricCallback? onBiometric,
@@ -1165,7 +1093,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signUpWithUsernameNPassword(
+      final response = await authRepository.signUpWithUsernameNPassword(
         username: authenticator.username,
         password: authenticator.password,
       );
@@ -1243,7 +1171,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signOut({
     AuthProviders? provider,
     Object? args,
@@ -1258,7 +1185,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         notifiable: notifiable,
         AuthResponse.loading(provider, AuthType.logout),
       );
-      final response = await authHandler.signOut(provider);
+      final response = await authRepository.signOut(provider);
       if (!response.isSuccessful) {
         return emit(
           args: args,
@@ -1328,14 +1255,13 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<T?> update(
     Map<String, dynamic> data, {
     String? id,
     bool notifiable = true,
   }) async {
     try {
-      await backupHandler.update(data);
+      await backupRepository.update(data);
       final updated = await auth;
       if (notifiable) _emitUser(updated);
       return updated;
@@ -1352,7 +1278,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     bool updateMode = false,
   }) async {
     try {
-      await backupHandler.save(
+      await backupRepository.save(
         id: id,
         initials: initials,
         cacheUpdateMode: updateMode,
@@ -1367,11 +1293,10 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse> verifyPhoneByOtp(OtpAuthenticator authenticator) async {
     try {
       final credential = authenticator.credential;
-      final response = await authHandler.signInWithCredential(
+      final response = await authRepository.signInWithCredential(
         credential: credential,
       );
       if (!response.isSuccessful) {
@@ -1420,7 +1345,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithApple({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -1436,7 +1360,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithApple();
+      final response = await authRepository.signInWithApple();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1451,7 +1375,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
 
@@ -1530,7 +1454,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithFacebook({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -1546,7 +1469,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithFacebook();
+      final response = await authRepository.signInWithFacebook();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1561,7 +1484,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
 
@@ -1640,7 +1563,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithGameCenter({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -1659,7 +1581,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithGameCenter();
+      final response = await authRepository.signInWithGameCenter();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1674,7 +1596,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
 
@@ -1753,7 +1675,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithGithub({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -1769,7 +1690,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithGithub();
+      final response = await authRepository.signInWithGithub();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1784,7 +1705,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {
@@ -1862,7 +1783,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithGoogle({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -1878,7 +1798,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithGoogle();
+      final response = await authRepository.signInWithGoogle();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1893,7 +1813,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {
@@ -1971,7 +1891,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithMicrosoft({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -1987,7 +1906,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithMicrosoft();
+      final response = await authRepository.signInWithMicrosoft();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2002,7 +1921,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {
@@ -2080,7 +1999,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithPlayGames({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -2096,7 +2014,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithPlayGames();
+      final response = await authRepository.signInWithPlayGames();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2111,7 +2029,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {
@@ -2190,7 +2108,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithSAML({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -2206,7 +2123,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithSAML();
+      final response = await authRepository.signInWithSAML();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2221,7 +2138,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {
@@ -2300,7 +2217,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithTwitter({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -2316,7 +2232,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithTwitter();
+      final response = await authRepository.signInWithTwitter();
       final raw = response.data;
 
       if (raw == null || raw.credential == null) {
@@ -2332,7 +2248,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {
@@ -2411,7 +2327,6 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     }
   }
 
-  @override
   Future<AuthResponse<T>> signInWithYahoo({
     OAuthAuthenticator? authenticator,
     bool storeToken = false,
@@ -2427,7 +2342,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     );
 
     try {
-      final response = await authHandler.signInWithYahoo();
+      final response = await authRepository.signInWithYahoo();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2442,7 +2357,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         );
       }
 
-      final current = await authHandler.signInWithCredential(
+      final current = await authRepository.signInWithCredential(
         credential: raw.credential!,
       );
       if (!current.isSuccessful) {

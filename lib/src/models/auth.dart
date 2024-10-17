@@ -209,7 +209,6 @@ class AuthKeys extends EntityKey {
 ///   }
 /// }
 /// ```
-
 class Auth<Key extends AuthKeys> extends Entity<Key> {
   final String? accessToken;
   final BiometricStatus? _biometric;

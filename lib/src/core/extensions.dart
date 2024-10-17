@@ -8,26 +8,21 @@ import '../models/auth.dart';
 import '../models/auth_providers.dart';
 import '../models/auth_status.dart';
 import '../models/biometric_config.dart';
-import '../services/controllers/controller.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/auth_response.dart';
-import '../utils/authenticator_email.dart';
-import '../utils/authenticator_guest.dart';
-import '../utils/authenticator_oauth.dart';
-import '../utils/authenticator_otp.dart';
-import '../utils/authenticator_phone.dart';
-import '../utils/authenticator_username.dart';
+import '../utils/authenticator.dart';
 import '../utils/errors.dart';
 import '../widgets/provider.dart';
+import 'authorizer.dart';
 import 'typedefs.dart';
 
 extension AuthContextExtension on BuildContext {
-  AuthController<T> _i<T extends Auth>(
+  Authorizer<T> _i<T extends Auth>(
     String name, [
     List<String> updaters = const [],
   ]) {
     try {
-      return findAuthController<T>(updaters);
+      return findAuthorizer<T>(updaters);
     } catch (_) {
       throw AuthProviderException(
         "You should call like $name<${AuthProvider.type}>()",
@@ -47,14 +42,14 @@ extension AuthContextExtension on BuildContext {
     }
   }
 
-  AuthController<T> findAuthController<T extends Auth>([
+  Authorizer<T> findAuthorizer<T extends Auth>([
     List<String> updaters = const [],
   ]) {
     try {
-      return AuthProvider.controllerOf<T>(this);
+      return AuthProvider.authorizerOf<T>(this);
     } catch (_) {
       throw AuthProviderException(
-        "You should call like findAuthController<${AuthProvider.type}>()",
+        "You should call like findAuthorizer<${AuthProvider.type}>()",
       );
     }
   }

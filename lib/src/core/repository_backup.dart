@@ -1,26 +1,31 @@
-import '../../models/auth.dart';
-import '../../services/handlers/backup_handler.dart';
-import '../../services/repositories/backup_repository.dart';
-import '../../services/sources/authorized_data_source.dart';
-import '../repositories/backup_repository.dart';
+import 'package:auth_management/core.dart';
 
-class BackupHandlerImpl<T extends Auth> extends BackupHandler<T> {
-  final BackupRepository<T> repository;
+class BackupRepository<T extends Auth> {
+  final BackupDataSource<T> source;
 
-  BackupHandlerImpl(AuthorizedDataSource<T> source)
-      : repository = BackupRepositoryImpl<T>(source);
+  const BackupRepository(this.source);
 
-  BackupHandlerImpl.fromRepository(this.repository);
+  factory BackupRepository.create({
+    String key = AuthKeys.key,
+    required BackupReader reader,
+    required BackupWriter writer,
+    BackupDelegate<T>? delegate,
+  }) {
+    return BackupRepository(BackupDataSource(
+      key: key,
+      reader: reader,
+      writer: writer,
+      delegate: delegate,
+    ));
+  }
 
-  @override
-  Future<T?> get cache => repository.cache.onError((_, __) => null);
+  Future<T?> get cache => source.cache.onError((_, __) => null);
 
-  @override
   Future<T?> get([bool remotely = false]) {
     return cache.then((value) {
       if (value != null && value.isLoggedIn) {
         if (remotely) {
-          return repository.onFetchUser(value.id);
+          return source.onFetchUser(value.id);
         } else {
           return value;
         }
@@ -30,20 +35,17 @@ class BackupHandlerImpl<T extends Auth> extends BackupHandler<T> {
     });
   }
 
-  @override
   Future<bool> set(T? data) async {
     if (data == null) return false;
     return update(data.source);
   }
 
-  @override
   Future<bool> setAsLocal(T? data) {
     return cache.then((value) {
-      return repository.set(data ?? value).onError((_, __) => false);
+      return source.set(data ?? value).onError((_, __) => false);
     });
   }
 
-  @override
   Future<bool> update(Map<String, dynamic> data) async {
     if (data.isEmpty) return false;
     try {
@@ -52,9 +54,9 @@ class BackupHandlerImpl<T extends Auth> extends BackupHandler<T> {
           await onUpdateUser(local.id, data);
           return onFetchUser(local.id).then((value) {
             if (value != null) {
-              return repository.set(value);
+              return source.set(value);
             } else {
-              return repository.update(data);
+              return source.update(data);
             }
           });
         } else {
@@ -66,7 +68,6 @@ class BackupHandlerImpl<T extends Auth> extends BackupHandler<T> {
     }
   }
 
-  @override
   Future<bool> save({
     required String id,
     Map<String, dynamic> initials = const {},
@@ -76,22 +77,22 @@ class BackupHandlerImpl<T extends Auth> extends BackupHandler<T> {
     if (id.isEmpty) return false;
     try {
       if (cacheUpdateMode) {
-        return repository.update(updates);
+        return source.update(updates);
       } else {
         final remote = await onFetchUser(id);
         if (remote != null) {
           await onUpdateUser(id, updates);
           Map<String, dynamic> current = Map.from(remote.source);
           current.addAll(updates);
-          return repository.set(build(current));
+          return source.set(build(current));
         } else {
           final cachedUser = await cache;
           if (cachedUser == null) {
             final user = build(initials);
             await onCreateUser(user);
-            return repository.set(user);
+            return source.set(user);
           } else {
-            return repository.update(updates);
+            return source.update(updates);
           }
         }
       }
@@ -100,29 +101,23 @@ class BackupHandlerImpl<T extends Auth> extends BackupHandler<T> {
     }
   }
 
-  @override
   Future<bool> clear() {
-    return repository.clear();
+    return source.clear();
   }
 
-  @override
-  Future<T?> onFetchUser(String id) => repository.onFetchUser(id);
+  Future<T?> onFetchUser(String id) => source.onFetchUser(id);
 
-  @override
   Future<void> onCreateUser(T data) {
-    return repository.onCreateUser(data);
+    return source.onCreateUser(data);
   }
 
-  @override
   Future<void> onUpdateUser(String id, Map<String, dynamic> data) {
-    return repository.onUpdateUser(id, data);
+    return source.onUpdateUser(id, data);
   }
 
-  @override
   Future<void> onDeleteUser(String id) {
-    return repository.onDeleteUser(id);
+    return source.onDeleteUser(id);
   }
 
-  @override
-  T build(Map<String, dynamic> source) => repository.build(source);
+  T build(Map<String, dynamic> source) => this.source.build(source);
 }

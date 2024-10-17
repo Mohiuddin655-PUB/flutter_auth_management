@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../core/authorizer.dart';
 import '../core/extensions.dart';
 import '../core/typedefs.dart';
 import '../models/auth.dart';
 import '../models/auth_changes.dart';
-import '../services/controllers/controller.dart';
 import '../utils/errors.dart';
 import '../widgets/provider.dart';
 
@@ -39,7 +39,7 @@ class AuthBuilder<T extends Auth> extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       return _Child<T>(
-        controller: context.findAuthController<T>(),
+        authorizer: context.findAuthorizer<T>(),
         initial: initial,
         ids: ids,
         onChanges: onChanges,
@@ -60,7 +60,7 @@ class AuthBuilder<T extends Auth> extends StatelessWidget {
 class _Child<T extends Auth> extends StatefulWidget {
   final T? initial;
   final List<String> ids;
-  final AuthController<T> controller;
+  final Authorizer<T> authorizer;
   final OnAuthChanges<T>? onChanges;
   final OnAuthError? onError;
   final OnAuthLoading? onLoading;
@@ -69,7 +69,7 @@ class _Child<T extends Auth> extends StatefulWidget {
   final OnAuthBuilder<T> builder;
 
   const _Child({
-    required this.controller,
+    required this.authorizer,
     required this.initial,
     required this.ids,
     required this.onChanges,
@@ -88,7 +88,7 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
   T? _data;
 
   bool get isNotifiable {
-    final id = widget.controller.id;
+    final id = widget.authorizer.id;
     if (widget.ids.isEmpty || id == null || id.isEmpty) {
       return true;
     }
@@ -99,23 +99,23 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
 
   @override
   void initState() {
-    _addListeners(widget.controller);
-    widget.controller.auth.then(_change);
+    _addListeners(widget.authorizer);
+    widget.authorizer.auth.then(_change);
     super.initState();
   }
 
   @override
   void didUpdateWidget(_Child<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      _removeListeners(oldWidget.controller);
-      _addListeners(widget.controller);
+    if (oldWidget.authorizer != widget.authorizer) {
+      _removeListeners(oldWidget.authorizer);
+      _addListeners(widget.authorizer);
     }
   }
 
   @override
   void dispose() {
-    _removeListeners(widget.controller);
+    _removeListeners(widget.authorizer);
     super.dispose();
   }
 
@@ -127,46 +127,46 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
     );
   }
 
-  void _addListeners(AuthController<T> controller) {
-    controller.liveUser.addListener(_change);
+  void _addListeners(Authorizer<T> authorizer) {
+    authorizer.liveUser.addListener(_change);
     if (widget.onError != null) {
-      controller.liveError.addListener(_changeError);
+      authorizer.liveError.addListener(_changeError);
     }
     if (widget.onLoading != null) {
-      controller.liveLoading.addListener(_changeLoading);
+      authorizer.liveLoading.addListener(_changeLoading);
     }
     if (widget.onMessage != null) {
-      controller.liveMessage.addListener(_changeMessage);
+      authorizer.liveMessage.addListener(_changeMessage);
     }
     if (isStatusMode) {
-      controller.liveStatus.addListener(_changeStatus);
+      authorizer.liveStatus.addListener(_changeStatus);
     }
   }
 
-  void _removeListeners(AuthController<T> controller) {
-    controller.liveUser.removeListener(_change);
+  void _removeListeners(Authorizer<T> authorizer) {
+    authorizer.liveUser.removeListener(_change);
     if (widget.onError != null) {
-      controller.liveError.removeListener(_changeError);
+      authorizer.liveError.removeListener(_changeError);
     }
     if (widget.onLoading != null) {
-      controller.liveLoading.removeListener(_changeLoading);
+      authorizer.liveLoading.removeListener(_changeLoading);
     }
     if (widget.onMessage != null) {
-      controller.liveMessage.removeListener(_changeMessage);
+      authorizer.liveMessage.removeListener(_changeMessage);
     }
     if (isStatusMode) {
-      controller.liveStatus.removeListener(_changeStatus);
+      authorizer.liveStatus.removeListener(_changeStatus);
     }
   }
 
   void _change([T? data]) {
-    setState(() => _data = data ?? widget.controller.liveUser.value);
+    setState(() => _data = data ?? widget.authorizer.liveUser.value);
   }
 
   void _changeError() {
     if (!isNotifiable) return;
     if (widget.onError != null) {
-      final value = widget.controller.errorText;
+      final value = widget.authorizer.errorText;
       if (value.isNotEmpty) {
         widget.onError?.call(context, value);
       }
@@ -176,7 +176,7 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
   void _changeLoading() {
     if (!isNotifiable) return;
     if (widget.onLoading != null) {
-      final value = widget.controller.loading;
+      final value = widget.authorizer.loading;
       widget.onLoading?.call(context, value);
     }
   }
@@ -184,7 +184,7 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
   void _changeMessage() {
     if (!isNotifiable) return;
     if (widget.onMessage != null) {
-      final value = widget.controller.message;
+      final value = widget.authorizer.message;
       if (value.isNotEmpty) {
         widget.onMessage?.call(context, value);
       }
@@ -193,14 +193,14 @@ class _ChildState<T extends Auth> extends State<_Child<T>> {
 
   void _changeStatus() {
     if (!isNotifiable) return;
-    final value = widget.controller.status;
+    final value = widget.authorizer.status;
     if (widget.onChanges != null) {
       widget.onChanges!(
         context,
         AuthChanges(
-          args: widget.controller.args,
+          args: widget.authorizer.args,
           status: value,
-          user: widget.controller.user,
+          user: widget.authorizer.user,
         ),
       );
       return;

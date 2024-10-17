@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../core/authorizer.dart';
 import '../models/auth.dart';
-import '../services/controllers/controller.dart';
 import '../utils/auth_response.dart';
 import '../utils/errors.dart';
 
 class AuthProvider<T extends Auth> extends InheritedWidget {
   final bool initialCheck;
-  final AuthController<T> controller;
+  final Authorizer<T> authorizer;
 
   AuthProvider({
     super.key,
     this.initialCheck = false,
-    required this.controller,
+    required this.authorizer,
     required Widget child,
   }) : super(
           child: _Support<T>(
-            controller: controller,
+            authorizer: authorizer,
             initialCheck: initialCheck,
             child: child,
           ),
@@ -37,33 +37,33 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
     }
   }
 
-  static AuthController<T> controllerOf<T extends Auth>(BuildContext context) {
+  static Authorizer<T> authorizerOf<T extends Auth>(BuildContext context) {
     try {
-      return of<T>(context).controller;
+      return of<T>(context).authorizer;
     } catch (_) {
       throw AuthProviderException(
-        "You should call like controllerOf<${AuthProvider.type}>();",
+        "You should call like authorizerOf<${AuthProvider.type}>();",
       );
     }
   }
 
   @override
   bool updateShouldNotify(covariant AuthProvider<T> oldWidget) {
-    return controller != oldWidget.controller;
+    return authorizer != oldWidget.authorizer;
   }
 
-  void notify(AuthResponse<T> value) => controller.emit(value);
+  void notify(AuthResponse<T> value) => authorizer.emit(value);
 }
 
 class _Support<T extends Auth> extends StatefulWidget {
   final bool initialCheck;
-  final AuthController<T> controller;
+  final Authorizer<T> authorizer;
   final Widget child;
 
   const _Support({
     this.initialCheck = false,
     required this.child,
-    required this.controller,
+    required this.authorizer,
   });
 
   @override
@@ -73,13 +73,13 @@ class _Support<T extends Auth> extends StatefulWidget {
 class _SupportState<T extends Auth> extends State<_Support<T>> {
   @override
   void initState() {
-    widget.controller.initialize(widget.initialCheck);
+    widget.authorizer.initialize(widget.initialCheck);
     super.initState();
   }
 
   @override
   void dispose() {
-    widget.controller.dispose();
+    widget.authorizer.dispose();
     super.dispose();
   }
 

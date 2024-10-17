@@ -4,9 +4,6 @@ import '../core/extensions.dart';
 import '../core/typedefs.dart';
 import '../models/auth.dart';
 import '../utils/authenticator.dart';
-import '../utils/authenticator_email.dart';
-import '../utils/authenticator_otp.dart';
-import '../utils/authenticator_username.dart';
 
 typedef AuthButtonCallback = void Function(BuildContext context);
 

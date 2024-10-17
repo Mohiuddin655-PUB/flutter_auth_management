@@ -1,3 +1,9 @@
+## 2.0.0
+
+* Easier version to use
+* Compressed code
+* Simpled all code to use
+
 ## 1.0.4
 
 * Update auth model

@@ -231,6 +231,10 @@ Future<void> main() async {
 
 ```dart
 import 'package:auth_management/core.dart';
+import 'package:auth_management_biometric_delegate/auth_management_biometric_delegate.dart';
+import 'package:auth_management_google_delegate/auth_management_google_delegate.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Application extends StatelessWidget {
   const Application({super.key});
@@ -239,14 +243,37 @@ class Application extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthProvider<UserModel>(
       initialCheck: true,
-      controller: AuthController.getInstance<UserModel>(
-        backup: UserBackupDelegate(),
-        oauth: oauthDelegates,
+      authorizer: Authorizer(
+        authRepository: AuthRepository.create(
+          // appleAuthDelegate: AppleAuthDelegate(),
+          biometricAuthDelegate: BiometricAuthDelegate(),
+          // facebookAuthDelegate: FacebookAuthDelegate(),
+          googleAuthDelegate: GoogleAuthDelegate(
+            googleSignIn: GoogleSignIn(scopes: [
+              'email',
+            ]),
+          ),
+        ),
+        backupRepository: BackupRepository.create(
+          key: "_local_user_key_",
+          delegate: UserBackupDelegate(),
+          reader: (key) async {
+            final db = await SharedPreferences.getInstance();
+            // get from any local db [Hive, SharedPreferences, etc]
+            return db.getString(key);
+          },
+          writer: (key, value) async {
+            final db = await SharedPreferences.getInstance();
+            if (value == null) {
+              // remove from any local db [Hive, SharedPreferences, etc]
+              return db.remove(key);
+            }
+            // save to any local db [Hive, SharedPreferences, etc]
+            return db.setString(key, value);
+          },
+        ),
       ),
-      child: const MaterialApp(
-        title: 'Auth Management',
-        onGenerateRoute: routes,
-      ),
+      child: MaterialApp(),
     );
   }
 }

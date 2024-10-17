@@ -2,62 +2,67 @@ import 'package:auth_management_delegates/auth_management_delegates.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter_entity/flutter_entity.dart';
 
-import '../../core/converter.dart';
-import '../../delegates/oauth.dart';
-import '../../exceptions/oauth.dart';
-import '../../models/auth.dart';
-import '../../models/auth_providers.dart';
-import '../../models/biometric_config.dart';
-import '../../models/credential.dart';
-import '../../services/sources/auth_data_source.dart';
+import '../models/auth.dart';
+import '../models/auth_providers.dart';
+import '../models/biometric_config.dart';
+import '../models/credential.dart';
+import 'exceptions.dart';
 
-class AuthDataSourceImpl extends AuthDataSource {
-  final OAuthDelegates? _delegates;
+String? _toMail(String prefix, String suffix, [String type = "com"]) {
+  return "$prefix@$suffix.$type";
+}
 
-  FirebaseAuth? _firebaseAuth;
+class AuthDataSource {
+  final IAppleAuthDelegate? appleAuthDelegate;
+  final IBiometricAuthDelegate? biometricAuthDelegate;
+  final IFacebookAuthDelegate? facebookAuthDelegate;
+  final IGoogleAuthDelegate? googleAuthDelegate;
+  final FirebaseAuth? _firebaseAuth;
 
-  FirebaseAuth get firebaseAuth => _firebaseAuth ??= FirebaseAuth.instance;
+  const AuthDataSource({
+    this.appleAuthDelegate,
+    this.biometricAuthDelegate,
+    this.facebookAuthDelegate,
+    this.googleAuthDelegate,
+    FirebaseAuth? firebaseAuth,
+  }) : _firebaseAuth = firebaseAuth;
 
-  OAuthDelegates get delegates => _delegates ?? const OAuthDelegates();
+  FirebaseAuth get firebaseAuth => _firebaseAuth ?? FirebaseAuth.instance;
 
   IAppleAuthDelegate get appleAuth {
-    if (delegates.appleAuthDelegate != null) {
-      return delegates.appleAuthDelegate!;
+    if (appleAuthDelegate != null) {
+      return appleAuthDelegate!;
     } else {
       throw const AuthDelegateException("IAppleAuthDelegate");
     }
   }
 
   IFacebookAuthDelegate get facebookAuth {
-    if (delegates.facebookAuthDelegate != null) {
-      return delegates.facebookAuthDelegate!;
+    if (facebookAuthDelegate != null) {
+      return facebookAuthDelegate!;
     } else {
       throw const AuthDelegateException("IFacebookAuthDelegate");
     }
   }
 
   IBiometricAuthDelegate get localAuth {
-    if (delegates.biometricAuthDelegate != null) {
-      return delegates.biometricAuthDelegate!;
+    if (biometricAuthDelegate != null) {
+      return biometricAuthDelegate!;
     } else {
       throw const AuthDelegateException("IBiometricAuthDelegate");
     }
   }
 
   IGoogleAuthDelegate get googleAuth {
-    if (delegates.googleAuthDelegate != null) {
-      return delegates.googleAuthDelegate!;
+    if (googleAuthDelegate != null) {
+      return googleAuthDelegate!;
     } else {
       throw const AuthDelegateException("IGoogleAuthDelegate");
     }
   }
 
-  AuthDataSourceImpl([this._delegates]);
-
-  @override
   User? get user => FirebaseAuth.instance.currentUser;
 
-  @override
   Future<Response> get delete async {
     final response = Response();
     if (user != null) {
@@ -68,8 +73,8 @@ class AuthDataSourceImpl extends AuthDataSource {
             message: "Account delete successful!",
           );
         });
-      } on FirebaseAuthException catch (_) {
-        return response.withException(_.message, status: Status.failure);
+      } on FirebaseAuthException catch (error) {
+        return response.withException(error.message, status: Status.failure);
       }
     } else {
       return response.withException(
@@ -79,11 +84,9 @@ class AuthDataSourceImpl extends AuthDataSource {
     }
   }
 
-  @override
   Future<bool> isSignIn([AuthProviders? provider]) async {
     if (provider != null) {
       switch (provider) {
-        // OAUTH
         case AuthProviders.apple:
           return false;
         case AuthProviders.facebook:
@@ -104,7 +107,6 @@ class AuthDataSourceImpl extends AuthDataSource {
           return false;
         case AuthProviders.yahoo:
           return false;
-        // CUSTOM
         case AuthProviders.email:
         case AuthProviders.guest:
         case AuthProviders.username:
@@ -118,7 +120,6 @@ class AuthDataSourceImpl extends AuthDataSource {
     return firebaseAuth.currentUser != null;
   }
 
-  @override
   Future<Response<UserCredential>> signInAnonymously() async {
     final response = Response<UserCredential>();
     try {
@@ -135,7 +136,6 @@ class AuthDataSourceImpl extends AuthDataSource {
     }
   }
 
-  @override
   Future<Response<void>> signInWithBiometric({
     BiometricConfig? config,
   }) async {
@@ -175,7 +175,6 @@ class AuthDataSourceImpl extends AuthDataSource {
     }
   }
 
-  @override
   Future<Response<UserCredential>> signInWithCredential({
     required AuthCredential credential,
   }) async {
@@ -183,12 +182,11 @@ class AuthDataSourceImpl extends AuthDataSource {
     try {
       final result = await firebaseAuth.signInWithCredential(credential);
       return response.withData(result, message: "Sign in successful!");
-    } on FirebaseAuthException catch (_) {
-      return response.withException(_.message, status: Status.failure);
+    } on FirebaseAuthException catch (error) {
+      return response.withException(error.message, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<UserCredential>> signInWithEmailNPassword({
     required String email,
     required String password,
@@ -200,17 +198,16 @@ class AuthDataSourceImpl extends AuthDataSource {
         password: password,
       );
       return response.withData(result, message: "Sign in successful!");
-    } on FirebaseAuthException catch (_) {
-      return response.withException(_.message, status: Status.failure);
+    } on FirebaseAuthException catch (error) {
+      return response.withException(error.message, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<UserCredential>> signInWithUsernameNPassword({
     required String username,
     required String password,
   }) async {
-    var mail = AuthConverter.toMail(username, "user", "org");
+    var mail = _toMail(username, "user", "org");
     try {
       final result = await firebaseAuth.signInWithEmailAndPassword(
         email: mail ?? "example@user.org",
@@ -226,7 +223,6 @@ class AuthDataSourceImpl extends AuthDataSource {
     }
   }
 
-  @override
   Future<Response<UserCredential>> signUpWithEmailNPassword({
     required String email,
     required String password,
@@ -238,30 +234,28 @@ class AuthDataSourceImpl extends AuthDataSource {
         password: password,
       );
       return response.withData(result, message: "Sign up successful!");
-    } on FirebaseAuthException catch (_) {
-      return response.withException(_.message, status: Status.failure);
+    } on FirebaseAuthException catch (error) {
+      return response.withException(error.message, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<UserCredential>> signUpWithUsernameNPassword({
     required String username,
     required String password,
   }) async {
     final response = Response<UserCredential>();
-    var mail = AuthConverter.toMail(username, "user", "org");
+    var mail = _toMail(username, "user", "org");
     try {
       final result = await firebaseAuth.createUserWithEmailAndPassword(
         email: mail ?? "example@user.org",
         password: password,
       );
       return response.withData(result, message: "Sign up successful!");
-    } on FirebaseAuthException catch (_) {
-      return response.withException(_.message, status: Status.failure);
+    } on FirebaseAuthException catch (error) {
+      return response.withException(error.message, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Auth>> signOut([AuthProviders? provider]) async {
     final response = Response<Auth>();
     var data = Auth.fromUser(user);
@@ -310,13 +304,12 @@ class AuthDataSourceImpl extends AuthDataSource {
         }
       }
       await firebaseAuth.signOut();
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
     return response.withData(data);
   }
 
-  @override
   Future<Response<void>> verifyPhoneNumber({
     String? phoneNumber,
     int? forceResendingToken,
@@ -342,14 +335,13 @@ class AuthDataSourceImpl extends AuthDataSource {
         codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
       );
       return response;
-    } on FirebaseAuthException catch (_) {
-      return response.withException(_.message, status: Status.failure);
+    } on FirebaseAuthException catch (error) {
+      return response.withException(error.message, status: Status.failure);
     }
   }
 
   // OAUTH
 
-  @override
   Future<Response<Credential>> signInWithApple() async {
     final response = Response<Credential>();
     try {
@@ -377,12 +369,11 @@ class AuthDataSourceImpl extends AuthDataSource {
       } else {
         return response.withException('Token not valid!', status: Status.error);
       }
-    } catch (_) {
-      return response.withException(_.toString(), status: Status.failure);
+    } catch (error) {
+      return response.withException(error.toString(), status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithFacebook() async {
     final response = Response<Credential>();
     try {
@@ -390,7 +381,8 @@ class AuthDataSourceImpl extends AuthDataSource {
       IFacebookLoginResult? result;
 
       result = token == null
-          ? await facebookAuth.login(permissions: ['public_profile', 'email'])
+          ? await facebookAuth
+              .login(permissions: ['publicerrorprofile', 'email'])
           : null;
 
       final status = result?.status ?? IFacebookLoginStatus.failed;
@@ -415,32 +407,29 @@ class AuthDataSourceImpl extends AuthDataSource {
       } else {
         return response.withException('Token not valid!', status: Status.error);
       }
-    } catch (_) {
-      return response.withException(_.toString(), status: Status.failure);
+    } catch (error) {
+      return response.withException(error.toString(), status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithGameCenter() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithGithub() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithGoogle() async {
     final response = Response<Credential>();
     try {
@@ -479,58 +468,53 @@ class AuthDataSourceImpl extends AuthDataSource {
       } else {
         return response.withException('Sign in failed!', status: Status.error);
       }
-    } catch (_) {
-      return response.withException(_.toString(), status: Status.failure);
+    } catch (error) {
+      return response.withException(error.toString(), status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithMicrosoft() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithPlayGames() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithSAML() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithTwitter() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 
-  @override
   Future<Response<Credential>> signInWithYahoo() async {
     final response = Response<Credential>();
     try {
       return response.withStatus(Status.undefined);
-    } catch (_) {
-      return response.withException(_, status: Status.failure);
+    } catch (error) {
+      return response.withException(error, status: Status.failure);
     }
   }
 }

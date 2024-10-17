@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/extensions.dart';
 import '../models/auth.dart';
-import '../utils/authenticator_oauth.dart';
+import '../utils/authenticator.dart';
 
 typedef OauthButtonCallback = void Function(BuildContext context);
 

@@ -1,6 +1,6 @@
 name: auth_management
 description: Collection of auth service with advanced controlling system.
-version: 1.0.4
+version: 2.0.0
 repository: https://github.com/P-YMR/flutter_auth_management.git
 
 environment:
@@ -14,8 +14,6 @@ dependencies:
   flutter_entity: ^1.0.5
   firebase_auth: ^5.3.1
   auth_management_delegates: ^1.0.2+1
-
-  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../core/authorizer.dart';
 import '../core/extensions.dart';
 import '../models/auth.dart';
-import '../services/controllers/controller.dart';
 import '../utils/errors.dart';
 import 'provider.dart';
 
@@ -25,7 +25,7 @@ class AuthConsumer<T extends Auth> extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       return _Support<T>(
-        controller: context.findAuthController<T>(),
+        authorizer: context.findAuthorizer<T>(),
         initial: initial,
         builder: builder,
       );
@@ -39,13 +39,13 @@ class AuthConsumer<T extends Auth> extends StatelessWidget {
 
 class _Support<T extends Auth> extends StatefulWidget {
   final T? initial;
-  final AuthController<T> controller;
+  final Authorizer<T> authorizer;
   final OnAuthUserBuilder<T> builder;
 
   const _Support({
     super.key,
     this.initial,
-    required this.controller,
+    required this.authorizer,
     required this.builder,
   });
 
@@ -59,28 +59,28 @@ class _SupportState<T extends Auth> extends State<_Support<T>> {
   @override
   void initState() {
     super.initState();
-    widget.controller.auth.then(_change);
-    widget.controller.liveUser.addListener(_change);
+    widget.authorizer.auth.then(_change);
+    widget.authorizer.liveUser.addListener(_change);
   }
 
   @override
   void didUpdateWidget(_Support<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      oldWidget.controller.liveUser.removeListener(_change);
-      widget.controller.liveUser.addListener(_change);
-      widget.controller.auth.then(_change);
+    if (oldWidget.authorizer != widget.authorizer) {
+      oldWidget.authorizer.liveUser.removeListener(_change);
+      widget.authorizer.liveUser.addListener(_change);
+      widget.authorizer.auth.then(_change);
     }
   }
 
   @override
   void dispose() {
-    widget.controller.liveUser.removeListener(_change);
+    widget.authorizer.liveUser.removeListener(_change);
     super.dispose();
   }
 
   void _change([T? data]) {
-    setState(() => _data = data ?? widget.controller.liveUser.value);
+    setState(() => _data = data ?? widget.authorizer.liveUser.value);
   }
 
   @override
