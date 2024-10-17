@@ -1,4 +1,5 @@
 import '../models/auth.dart';
+import '../models/auth_providers.dart';
 
 class Authenticator extends Auth {
   Authenticator.empty() : super();
@@ -13,7 +14,7 @@ class Authenticator extends Auth {
     super.photo,
     super.username,
     super.extra,
-  }) : super(provider: "email", email: email, password: password);
+  }) : super(provider: AuthProviders.email, email: email, password: password);
 
   Authenticator.guest({
     super.id,
@@ -24,7 +25,7 @@ class Authenticator extends Auth {
     super.photo,
     super.username,
     super.extra,
-  }) : super(provider: "guest");
+  }) : super(provider: AuthProviders.guest);
 
   Authenticator.oauth({
     super.id,
@@ -63,7 +64,7 @@ class Authenticator extends Auth {
     super.photo,
     super.username,
     super.extra,
-  }) : super(provider: "phone", phone: phone);
+  }) : super(provider: AuthProviders.phone, phone: phone);
 
   Authenticator.username({
     required String username,
@@ -75,5 +76,9 @@ class Authenticator extends Auth {
     super.phone,
     super.photo,
     super.extra,
-  }) : super(provider: "username", username: username, password: password);
+  }) : super(
+          provider: AuthProviders.username,
+          username: username,
+          password: password,
+        );
 }

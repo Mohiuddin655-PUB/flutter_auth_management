@@ -66,8 +66,8 @@ class UserModel extends Auth<UserKeys> {
       verified: root.verified,
 
       // CHILD PROPERTIES
-      address: source.entityObject(key.address, Address.from),
-      contact: source.entityObject(key.address, Contact.from),
+      address: source.entityValue(key.address, Address.from),
+      contact: source.entityValue(key.address, Contact.from),
     );
   }
 
@@ -76,7 +76,7 @@ class UserModel extends Auth<UserKeys> {
     String? id,
     int? timeMills,
     String? accessToken,
-    String? biometric,
+    BiometricStatus? biometric,
     String? email,
     Map<String, dynamic>? extra,
     String? idToken,
@@ -87,7 +87,7 @@ class UserModel extends Auth<UserKeys> {
     String? password,
     String? phone,
     String? photo,
-    String? provider,
+    AuthProviders? provider,
     String? username,
     bool? verified,
     Address? address,

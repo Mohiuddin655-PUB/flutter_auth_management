@@ -1,83 +1,94 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter_entity/flutter_entity.dart';
 
 import '../utils/auth_helper.dart';
 import 'auth_providers.dart';
 import 'biometric_status.dart';
 
+List<String> _keys = [
+  AuthKeys.i.id,
+  AuthKeys.i.timeMills,
+  ...AuthKeys.i.keys,
+];
+
 /// ## Create an authorized key class for User:
 ///
 /// ```dart
-/// class UserKeys extends AuthKeys {
+/// class AuthKeys extends AuthKeys {
 ///   final address = "address";
 ///   final contact = "contact";
 ///
-///   const UserKeys._();
+///   const AuthKeys._();
 ///
-///   static UserKeys? _i;
+///   static AuthKeys? _i;
 ///
-///   static UserKeys get i => _i ??= const UserKeys._();
+///   static AuthKeys get i => _i ??= const AuthKeys._();
 /// }
 ///```
 class AuthKeys extends EntityKey {
   static const key = "__uid__";
 
-  final String accessToken;
-  final String biometric;
-  final String email;
-  final String extra;
-  final String idToken;
-  final String loggedIn;
-  final String loggedInTime;
-  final String loggedOutTime;
-  final String name;
-  final String password;
-  final String phone;
-  final String photo;
-  final String provider;
-  final String username;
-  final String verified;
+  final accessToken = "access_token";
+  final biometric = "biometric";
+  final email = "email";
+  final extra = "extra";
+  final idToken = "id_token";
+  final loggedIn = "logged_in";
+  final loggedInTime = "logged_in_time";
+  final loggedOutTime = "logged_out_time";
+  final name = "name";
+  final password = "password";
+  final phone = "phone";
+  final photo = "photo";
+  final provider = "provider";
+  final username = "username";
+  final verified = "verified";
 
   const AuthKeys({
     super.id,
     super.timeMills,
-    this.accessToken = "access_token",
-    this.biometric = "biometric",
-    this.email = "email",
-    this.extra = "extra",
-    this.idToken = "id_token",
-    this.loggedIn = "logged_in",
-    this.loggedInTime = "logged_in_time",
-    this.loggedOutTime = "logged_out_time",
-    this.name = "name",
-    this.password = "password",
-    this.phone = "phone",
-    this.photo = "photo",
-    this.provider = "provider",
-    this.username = "username",
-    this.verified = "verified",
   });
 
   static AuthKeys? _i;
 
   static AuthKeys get i => _i ??= const AuthKeys();
+
+  Iterable<String> get keys {
+    return [
+      accessToken,
+      biometric,
+      email,
+      extra,
+      idToken,
+      loggedIn,
+      loggedInTime,
+      loggedOutTime,
+      name,
+      password,
+      phone,
+      photo,
+      provider,
+      username,
+      verified,
+    ];
+  }
 }
 
 /// ## Create an authorized model class for User:
 ///
 /// ```dart
-/// class UserKeys extends AuthKeys {
+/// class AuthKeys extends AuthKeys {
 ///   final address = "address";
 ///   final contact = "contact";
 ///
-///   const UserKeys._();
+///   const AuthKeys._();
 ///
-///   static UserKeys? _i;
+///   static AuthKeys? _i;
 ///
-///   static UserKeys get i => _i ??= const UserKeys._();
+///   static AuthKeys get i => _i ??= const AuthKeys._();
 /// }
 ///
-/// class UserModel extends Auth<UserKeys> {
+/// class UserModel extends Auth<AuthKeys> {
 ///   final Address? _address;
 ///   final Contact? _contact;
 ///
@@ -106,7 +117,7 @@ class AuthKeys extends EntityKey {
 ///         _contact = contact;
 ///
 ///   factory UserModel.from(Object? source) {
-///     final key = UserKeys.i;
+///     final key = AuthKeys.i;
 ///     final root = Auth.from(source);
 ///     return UserModel(
 ///       // ROOT PROPERTIES
@@ -171,7 +182,7 @@ class AuthKeys extends EntityKey {
 ///   }
 ///
 ///   @override
-///   UserKeys makeKey() => UserKeys.i;
+///   AuthKeys makeKey() => AuthKeys.i;
 ///
 ///   @override
 ///   Map<String, dynamic> get source {
@@ -201,7 +212,7 @@ class AuthKeys extends EntityKey {
 
 class Auth<Key extends AuthKeys> extends Entity<Key> {
   final String? accessToken;
-  final String? biometric;
+  final BiometricStatus? _biometric;
   final String? idToken;
   final String? email;
   final Map<String, dynamic>? extra;
@@ -212,13 +223,17 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   final String? password;
   final String? phone;
   final String? photo;
-  final String? provider;
+  final AuthProviders? _provider;
   final String? username;
   final bool? verified;
 
+  BiometricStatus get biometric => _biometric ?? BiometricStatus.initial;
+
+  AuthProviders get provider => _provider ?? AuthProviders.none;
+
   bool get isLoggedIn => loggedIn ?? false;
 
-  bool get isVerified => verified ?? mProvider.isVerified;
+  bool get isVerified => verified ?? provider.isVerified;
 
   DateTime get lastLoggedInDate {
     return DateTime.fromMillisecondsSinceEpoch(loggedInTime ?? 0);
@@ -238,17 +253,12 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
 
   bool get isCurrentUid => id == AuthHelper.uid;
 
-  bool get isBiometric => mBiometric.isActivated;
-
-  BiometricStatus get mBiometric => BiometricStatus.from(biometric);
-
-  AuthProviders get mProvider => AuthProviders.from(provider);
+  bool get isBiometric => biometric.isActivated;
 
   Auth({
     super.id = "",
     super.timeMills,
     this.accessToken,
-    this.biometric,
     this.email,
     this.extra,
     this.idToken,
@@ -259,16 +269,18 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     this.password,
     this.phone,
     this.photo,
-    this.provider,
     this.username,
     this.verified,
-  });
+    BiometricStatus? biometric,
+    AuthProviders? provider,
+  })  : _biometric = biometric,
+        _provider = provider;
 
   Auth copy({
     String? id,
     int? timeMills,
     String? accessToken,
-    String? biometric,
+    BiometricStatus? biometric,
     String? email,
     Map<String, dynamic>? extra,
     String? idToken,
@@ -279,7 +291,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     String? password,
     String? phone,
     String? photo,
-    String? provider,
+    AuthProviders? provider,
     String? username,
     bool? verified,
   }) {
@@ -287,7 +299,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       id: id ?? this.id,
       timeMills: timeMills ?? this.timeMills,
       accessToken: accessToken ?? this.accessToken,
-      biometric: biometric ?? this.biometric,
+      biometric: biometric ?? this._biometric,
       email: email ?? this.email,
       extra: extra ?? this.extra,
       idToken: idToken ?? this.idToken,
@@ -310,7 +322,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       id: source.entityValue(key.id),
       timeMills: source.entityValue(key.timeMills),
       accessToken: source.entityValue(key.accessToken),
-      biometric: source.entityValue(key.biometric),
+      biometric: source.entityValue(key.biometric, BiometricStatus.from),
       loggedIn: source.entityValue(key.loggedIn),
       loggedInTime: source.entityValue(key.loggedInTime),
       loggedOutTime: source.entityValue(key.loggedOutTime),
@@ -323,7 +335,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       provider: source.entityValue(key.provider),
       username: source.entityValue(key.username),
       verified: source.entityValue(key.verified),
-      extra: source.entityObject(key.extra, (value) {
+      extra: source.entityValue(key.extra, (value) {
         return value is Map<String, dynamic> ? value : {};
       }),
     );
@@ -375,30 +387,28 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     }
   }
 
-  bool isInsertable(String key, dynamic value) => true;
+  @override
+  bool isInsertable(String key, value) => _keys.contains(key);
 
   @override
   Map<String, dynamic> get source {
-    return super.source
-      ..addAll({
-        if (isInsertable(key.accessToken, accessToken))
-          key.accessToken: accessToken,
-        if (isInsertable(key.biometric, biometric)) key.biometric: biometric,
-        if (isInsertable(key.email, email)) key.email: email,
-        if (isInsertable(key.extra, extra)) key.extra: extra,
-        if (isInsertable(key.idToken, idToken)) key.idToken: idToken,
-        if (isInsertable(key.loggedIn, loggedIn)) key.loggedIn: loggedIn,
-        if (isInsertable(key.loggedInTime, loggedInTime))
-          key.loggedInTime: loggedInTime,
-        if (isInsertable(key.loggedOutTime, loggedOutTime))
-          key.loggedOutTime: loggedOutTime,
-        if (isInsertable(key.name, name)) key.name: name,
-        if (isInsertable(key.password, password)) key.password: password,
-        if (isInsertable(key.phone, phone)) key.phone: phone,
-        if (isInsertable(key.photo, photo)) key.photo: photo,
-        if (isInsertable(key.provider, provider)) key.provider: provider,
-        if (isInsertable(key.username, username)) key.username: username,
-        if (isInsertable(key.verified, verified)) key.verified: verified,
-      });
+    final entries = {
+      AuthKeys.i.accessToken: accessToken,
+      AuthKeys.i.biometric: _biometric?.id,
+      AuthKeys.i.email: email,
+      AuthKeys.i.extra: extra,
+      AuthKeys.i.idToken: idToken,
+      AuthKeys.i.loggedIn: loggedIn,
+      AuthKeys.i.loggedInTime: loggedInTime,
+      AuthKeys.i.loggedOutTime: loggedOutTime,
+      AuthKeys.i.name: name,
+      AuthKeys.i.password: password,
+      AuthKeys.i.phone: phone,
+      AuthKeys.i.photo: photo,
+      AuthKeys.i.provider: _provider?.id,
+      AuthKeys.i.username: username,
+      AuthKeys.i.verified: verified,
+    }.entries.where((e) => isInsertable(e.key, e.value));
+    return super.source..addAll(Map.fromEntries(entries));
   }
 }

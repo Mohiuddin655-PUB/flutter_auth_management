@@ -1,3 +1,8 @@
+## 1.0.4
+
+* Update auth model
+* Update flutter_entity library
+
 ## 1.0.3-alpha1
 
 * Firebase auth version update

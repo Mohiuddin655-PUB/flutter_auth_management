@@ -140,7 +140,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 12),
                     Opacity(
-                      opacity: value?.mBiometric.isInitial ?? false ? 0.5 : 1,
+                      opacity: value?.biometric.isInitial ?? false ? 0.5 : 1,
                       child: SwitchListTile.adaptive(
                         value: value?.isBiometric ?? false,
                         onChanged: _biometricEnable,

@@ -183,7 +183,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
       }
 
       final biometric = callback != null
-          ? await callback(auth.mBiometric)
+          ? await callback(auth.biometric)
           : BiometricStatus.activated;
       final value = await _update(
         id: auth.id,
@@ -208,7 +208,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     final provider = AuthProviders.from(auth?.provider);
     final permission = auth != null &&
         auth.isLoggedIn &&
-        !auth.mBiometric.isInitial &&
+        !auth.biometric.isInitial &&
         provider.isAllowBiometric;
 
     if (!permission) {
@@ -692,22 +692,21 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.email.name,
+        provider: AuthProviders.email,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
       );
 
       BiometricStatus? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.mBiometric);
+      if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
         id: user.id,
         initials:
-            (biometric != null ? user.copy(biometric: biometric.name) : user)
-                .source,
+            (biometric != null ? user.copy(biometric: biometric) : user).source,
         updates: {
           ...user.extra ?? {},
-          if (biometric != null) AuthKeys.i.biometric: biometric.name,
+          if (biometric != null) AuthKeys.i.biometric: biometric.id,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: Entity.generateTimeMills,
         },
@@ -919,7 +918,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.phone.name,
+        provider: AuthProviders.phone,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1013,22 +1012,21 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.username.name,
+        provider: AuthProviders.username,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
       );
 
       BiometricStatus? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.mBiometric);
+      if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
         id: user.id,
         initials:
-            (biometric != null ? user.copy(biometric: biometric.name) : user)
-                .source,
+            (biometric != null ? user.copy(biometric: biometric) : user).source,
         updates: {
           ...user.extra ?? {},
-          if (biometric != null) AuthKeys.i.biometric: biometric.name,
+          if (biometric != null) AuthKeys.i.biometric: biometric.id,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: Entity.generateTimeMills,
         },
@@ -1111,20 +1109,19 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.email.name,
+        provider: AuthProviders.email,
         loggedIn: true,
         loggedInTime: creationTime,
         timeMills: creationTime,
       );
 
       BiometricStatus? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.mBiometric);
+      if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
         id: user.id,
         initials:
-            (biometric != null ? user.copy(biometric: biometric.name) : user)
-                .source,
+            (biometric != null ? user.copy(biometric: biometric) : user).source,
       );
 
       return emit(
@@ -1206,20 +1203,19 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.username.name,
+        provider: AuthProviders.username,
         loggedIn: true,
         loggedInTime: creationTime,
         timeMills: creationTime,
       );
 
       BiometricStatus? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.mBiometric);
+      if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
         id: user.id,
         initials:
-            (biometric != null ? user.copy(biometric: biometric.name) : user)
-                .source,
+            (biometric != null ? user.copy(biometric: biometric) : user).source,
       );
 
       return emit(
@@ -1255,7 +1251,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
     bool notifiable = true,
   }) async {
     try {
-      provider ??= (await _auth)?.mProvider;
+      provider ??= (await _auth)?.provider;
       emit(
         args: args,
         id: id,
@@ -1403,7 +1399,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.phone.name,
+        provider: AuthProviders.phone,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1494,7 +1490,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.apple.name,
+        provider: AuthProviders.apple,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1604,7 +1600,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.facebook.name,
+        provider: AuthProviders.facebook,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1717,7 +1713,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.gameCenter.name,
+        provider: AuthProviders.gameCenter,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1826,7 +1822,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.github.name,
+        provider: AuthProviders.github,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1935,7 +1931,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.google.name,
+        provider: AuthProviders.google,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2044,7 +2040,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.microsoft.name,
+        provider: AuthProviders.microsoft,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2153,7 +2149,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.playGames.name,
+        provider: AuthProviders.playGames,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2263,7 +2259,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.saml.name,
+        provider: AuthProviders.saml,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2374,7 +2370,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.twitter.name,
+        provider: AuthProviders.twitter,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2484,7 +2480,7 @@ class AuthControllerImpl<T extends Auth> extends AuthController<T> {
         name: raw.name ?? result.displayName,
         phone: result.phoneNumber,
         photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.yahoo.name,
+        provider: AuthProviders.yahoo,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,

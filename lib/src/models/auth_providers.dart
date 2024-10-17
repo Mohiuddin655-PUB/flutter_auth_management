@@ -1,56 +1,60 @@
 enum AuthProviders {
-  // OAUTH
-  apple,
-  facebook,
-  gameCenter,
-  github,
-  google,
-  microsoft,
-  playGames,
-  saml,
-  twitter,
-  yahoo,
-  // CUSTOM
-  biometric,
-  email,
-  guest,
-  phone,
-  username,
-  none;
+  apple(id: "APPLE", name: "Apple"),
+  facebook(id: "FACEBOOK", name: "facebook"),
+  gameCenter(id: "GAME_CENTER", name: "Game Center"),
+  github(id: "GITHUB", name: "Github"),
+  google(id: "GOOGLE", name: "Google"),
+  microsoft(id: "MICROSOFT", name: "Microsoft"),
+  playGames(id: "PLAY_GAMES", name: "Play Games"),
+  saml(id: "SAML", name: "SAML"),
+  twitter(id: "TWITTER", name: "Twitter"),
+  yahoo(id: "YAHOO", name: "YAHOO"),
+  biometric(id: "BIOMETRIC", name: "Biometric"),
+  email(id: "EMAIL", name: "Email"),
+  guest(id: "GUEST", name: "Guest"),
+  phone(id: "PHONE_NUMBER", name: "Phone Number"),
+  username(id: "USERNAME", name: "Username"),
+  none(id: "NONE", name: "None");
 
-  factory AuthProviders.from(String? source) {
-    // OAUTH
-    if (source == apple.name) {
+  final String id;
+  final String name;
+
+  const AuthProviders({
+    required this.id,
+    required this.name,
+  });
+
+  factory AuthProviders.from(Object? source) {
+    final key = source?.toString().trim().toUpperCase();
+    if (key == apple.id) {
       return AuthProviders.apple;
-    } else if (source == facebook.name) {
+    } else if (key == facebook.id) {
       return AuthProviders.facebook;
-    } else if (source == gameCenter.name) {
+    } else if (key == gameCenter.id) {
       return AuthProviders.gameCenter;
-    } else if (source == github.name) {
+    } else if (key == github.id) {
       return AuthProviders.github;
-    } else if (source == google.name) {
+    } else if (key == google.id) {
       return AuthProviders.google;
-    } else if (source == microsoft.name) {
+    } else if (key == microsoft.id) {
       return AuthProviders.microsoft;
-    } else if (source == playGames.name) {
+    } else if (key == playGames.id) {
       return AuthProviders.playGames;
-    } else if (source == saml.name) {
+    } else if (key == saml.id) {
       return AuthProviders.saml;
-    } else if (source == twitter.name) {
+    } else if (key == twitter.id) {
       return AuthProviders.twitter;
-    } else if (source == yahoo.name) {
+    } else if (key == yahoo.id) {
       return AuthProviders.yahoo;
-    } else
-    // CUSTOM
-    if (source == biometric.name) {
+    } else if (key == biometric.id) {
       return AuthProviders.biometric;
-    } else if (source == email.name) {
+    } else if (key == email.id) {
       return AuthProviders.email;
-    } else if (source == guest.name) {
+    } else if (key == guest.id) {
       return AuthProviders.guest;
-    } else if (source == phone.name) {
+    } else if (key == phone.id) {
       return AuthProviders.phone;
-    } else if (source == username.name) {
+    } else if (key == username.id) {
       return AuthProviders.username;
     } else {
       return AuthProviders.none;

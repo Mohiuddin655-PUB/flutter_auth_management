@@ -1,7 +1,10 @@
 enum BiometricStatus {
-  initial,
-  activated,
-  deactivated;
+  initial(id: "INITIAL", name: "Initial"),
+  activated(id: "ACTIVATED", name: "Activated"),
+  deactivated(id: "DEACTIVATED", name: "Deactivated");
+
+  final String id;
+  final String name;
 
   bool get isInitial => this == initial;
 
@@ -9,11 +12,16 @@ enum BiometricStatus {
 
   bool get isDeactivated => this == deactivated;
 
-  factory BiometricStatus.from(String? source) {
-    final key = source?.toLowerCase();
-    if (key == BiometricStatus.activated.name) {
+  const BiometricStatus({
+    required this.id,
+    required this.name,
+  });
+
+  factory BiometricStatus.from(Object? source) {
+    final key = source?.toString().trim().toUpperCase();
+    if (key == BiometricStatus.activated.id) {
       return BiometricStatus.activated;
-    } else if (key == BiometricStatus.deactivated.name) {
+    } else if (key == BiometricStatus.deactivated.id) {
       return BiometricStatus.deactivated;
     } else {
       return BiometricStatus.initial;
