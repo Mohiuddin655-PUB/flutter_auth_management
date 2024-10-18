@@ -116,7 +116,6 @@ class GoogleAuthDelegate extends IGoogleAuthDelegate {
     return IGoogleSignInTokenData(
       idToken: value.idToken,
       accessToken: value.accessToken,
-      serverAuthCode: value.serverAuthCode,
     );
   }
 }

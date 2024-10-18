@@ -19,25 +19,25 @@ class BackupRepository<T extends Auth> {
     ));
   }
 
-  Future<T?> get cache => source.cache.onError((_, __) => null);
+  Future<T?> get cache async {
+    try {
+      return source.cache;
+    } catch (error) {
+      return null;
+    }
+  }
 
   Future<T?> get([bool remotely = false]) {
     return cache.then((value) {
-      if (value != null && value.isLoggedIn) {
-        if (remotely) {
-          return source.onFetchUser(value.id);
-        } else {
-          return value;
-        }
-      } else {
-        return null;
-      }
+      if (value == null || !value.isLoggedIn) return null;
+      if (!remotely) return value;
+      return source.onFetchUser(value.id);
     });
   }
 
   Future<bool> set(T? data) async {
     if (data == null) return false;
-    return update(data.source);
+    return update(data.verifiedSource);
   }
 
   Future<bool> setAsLocal(T? data) {
@@ -48,24 +48,13 @@ class BackupRepository<T extends Auth> {
 
   Future<bool> update(Map<String, dynamic> data) async {
     if (data.isEmpty) return false;
-    try {
-      return cache.then((local) async {
-        if (local != null && local.isLoggedIn && local.id.isNotEmpty) {
-          await onUpdateUser(local.id, data);
-          return onFetchUser(local.id).then((value) {
-            if (value != null) {
-              return source.set(value);
-            } else {
-              return source.update(data);
-            }
-          });
-        } else {
-          return false;
-        }
-      });
-    } catch (_) {
-      return false;
-    }
+    return cache.then((local) {
+      if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
+      onUpdateUser(local.id, data);
+      final x = local.verifiedSource..addAll(data);
+      final y = build(x);
+      return setAsLocal(y);
+    });
   }
 
   Future<bool> save({
@@ -75,34 +64,28 @@ class BackupRepository<T extends Auth> {
     bool cacheUpdateMode = false,
   }) async {
     if (id.isEmpty) return false;
-    try {
-      if (cacheUpdateMode) {
-        return source.update(updates);
-      } else {
-        final remote = await onFetchUser(id);
-        if (remote != null) {
-          await onUpdateUser(id, updates);
-          Map<String, dynamic> current = Map.from(remote.source);
-          current.addAll(updates);
-          return source.set(build(current));
-        } else {
-          final cachedUser = await cache;
-          if (cachedUser == null) {
-            final user = build(initials);
-            await onCreateUser(user);
-            return source.set(user);
-          } else {
-            return source.update(updates);
-          }
-        }
-      }
-    } catch (_) {
-      return false;
+    if (cacheUpdateMode) return source.update(updates);
+    final remote = await onFetchUser(id);
+    if (remote != null) {
+      await onUpdateUser(id, updates);
+      Map<String, dynamic> current = Map.from(remote.verifiedSource);
+      current.addAll(updates);
+      return source.set(build(current));
     }
+
+    final cachedUser = await cache;
+    if (cachedUser != null) return source.update(updates);
+    final user = build(initials);
+    await onCreateUser(user);
+    return source.set(user);
   }
 
-  Future<bool> clear() {
-    return source.clear();
+  Future<bool> clear() async {
+    try {
+      return source.clear();
+    } catch (error) {
+      return false;
+    }
   }
 
   Future<T?> onFetchUser(String id) => source.onFetchUser(id);

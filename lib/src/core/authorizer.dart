@@ -46,9 +46,9 @@ class Authorizer<T extends Auth> {
   Future<T?> get auth async {
     try {
       final value = await _auth;
-      return value != null && value.isLoggedIn ? value : null;
+      if (value == null || !value.isLoggedIn) return null;
+      return value;
     } catch (error) {
-      _errorNotifier.value = error.toString();
       return null;
     }
   }
@@ -416,7 +416,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -857,7 +857,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1421,7 +1421,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1530,7 +1530,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1642,7 +1642,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1750,7 +1750,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1858,7 +1858,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1966,7 +1966,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2075,7 +2075,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2184,7 +2184,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2294,7 +2294,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2402,7 +2402,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.source,
+        initials: user.verifiedSource,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,

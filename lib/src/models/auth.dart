@@ -5,12 +5,6 @@ import '../utils/auth_helper.dart';
 import 'auth_providers.dart';
 import 'biometric_status.dart';
 
-List<String> _keys = [
-  AuthKeys.i.id,
-  AuthKeys.i.timeMills,
-  ...AuthKeys.i.keys,
-];
-
 /// ## Create an authorized key class for User:
 ///
 /// ```dart
@@ -55,6 +49,8 @@ class AuthKeys extends EntityKey {
 
   Iterable<String> get keys {
     return [
+      id,
+      timeMills,
       accessToken,
       biometric,
       email,
@@ -72,6 +68,8 @@ class AuthKeys extends EntityKey {
       verified,
     ];
   }
+
+  Iterable<String> get nullableKeys => [photo];
 }
 
 /// ## Create an authorized model class for User:
@@ -387,11 +385,17 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   }
 
   @override
-  bool isInsertable(String key, value) => _keys.contains(key);
+  bool isInsertable(String key, value) {
+    final x = this.key;
+    final a = x.keys.contains(key);
+    final b = value != null || x.nullableKeys.contains(key);
+    return a && b;
+  }
 
   @override
   Map<String, dynamic> get source {
-    final entries = {
+    return {
+      ...super.source,
       AuthKeys.i.accessToken: accessToken,
       AuthKeys.i.biometric: _biometric?.id,
       AuthKeys.i.email: email,
@@ -407,7 +411,11 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       AuthKeys.i.provider: _provider?.id,
       AuthKeys.i.username: username,
       AuthKeys.i.verified: verified,
-    }.entries.where((e) => isInsertable(e.key, e.value));
-    return super.source..addAll(Map.fromEntries(entries));
+    };
+  }
+
+  Map<String, dynamic> get verifiedSource {
+    final entries = source.entries.where((e) => isInsertable(e.key, e.value));
+    return Map.fromEntries(entries);
   }
 }

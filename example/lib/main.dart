@@ -85,7 +85,6 @@ class Application extends StatelessWidget {
 
 Route<T>? routes<T>(RouteSettings settings) {
   final name = settings.name;
-  final data = settings.arguments;
   if (name == "home") {
     return MaterialPageRoute(
       builder: (_) {

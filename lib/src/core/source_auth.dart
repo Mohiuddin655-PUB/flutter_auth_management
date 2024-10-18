@@ -262,7 +262,6 @@ class AuthDataSource {
     try {
       if (provider != null) {
         switch (provider) {
-          // OAUTH
           case AuthProviders.apple:
             break;
           case AuthProviders.facebook:
@@ -274,8 +273,8 @@ class AuthDataSource {
             break;
           case AuthProviders.google:
             if (await googleAuth.isSignedIn()) {
-              googleAuth.disconnect();
-              googleAuth.signOut();
+              await googleAuth.disconnect();
+              await googleAuth.signOut();
             }
             break;
           case AuthProviders.microsoft:
@@ -288,7 +287,6 @@ class AuthDataSource {
             break;
           case AuthProviders.yahoo:
             break;
-          // CUSTOM
           case AuthProviders.biometric:
           case AuthProviders.guest:
           case AuthProviders.email:
@@ -299,8 +297,8 @@ class AuthDataSource {
         }
       } else {
         if (await googleAuth.isSignedIn()) {
-          googleAuth.disconnect();
-          googleAuth.signOut();
+          await googleAuth.disconnect();
+          await googleAuth.signOut();
         }
       }
       await firebaseAuth.signOut();
