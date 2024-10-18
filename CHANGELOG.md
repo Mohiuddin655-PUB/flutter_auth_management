@@ -1,3 +1,8 @@
+## 2.0.1
+
+* Add lazy update account
+* Google auth delegate version update and clean all deprecated code
+
 ## 2.0.0
 
 * Easier version to use
