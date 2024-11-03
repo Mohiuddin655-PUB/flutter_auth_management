@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
 
   void _biometricEnable(bool? value) {
     context.biometricEnable<UserModel>(value ?? false).then((value) {
-      log("Biometric enable status : ${value.exception}");
+      log("Biometric enable status : ${value.error}");
     });
   }
 
@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
       ),
     )
         .then((value) {
-      log("Add biometric status : ${value.exception}");
+      log("Add biometric status : ${value.error}");
     });
   }
 

@@ -47,6 +47,7 @@ class AuthKeys extends EntityKey {
 
   static AuthKeys get i => _i ??= const AuthKeys();
 
+  @override
   Iterable<String> get keys {
     return [
       id,
@@ -68,8 +69,6 @@ class AuthKeys extends EntityKey {
       verified,
     ];
   }
-
-  Iterable<String> get nullableKeys => [photo];
 }
 
 /// ## Create an authorized model class for User:
@@ -385,14 +384,6 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   }
 
   @override
-  bool isInsertable(String key, value) {
-    final x = this.key;
-    final a = x.keys.contains(key);
-    final b = value != null || x.nullableKeys.contains(key);
-    return a && b;
-  }
-
-  @override
   Map<String, dynamic> get source {
     return {
       ...super.source,
@@ -412,10 +403,5 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       AuthKeys.i.username: username,
       AuthKeys.i.verified: verified,
     };
-  }
-
-  Map<String, dynamic> get verifiedSource {
-    final entries = source.entries.where((e) => isInsertable(e.key, e.value));
-    return Map.fromEntries(entries);
   }
 }

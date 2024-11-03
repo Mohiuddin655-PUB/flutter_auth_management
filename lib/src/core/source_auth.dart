@@ -64,23 +64,19 @@ class AuthDataSource {
   User? get user => FirebaseAuth.instance.currentUser;
 
   Future<Response> get delete async {
-    final response = Response();
     if (user != null) {
       try {
         return user!.delete().then((value) {
-          return response.withStatus(
-            Status.ok,
+          return Response(
+            status: Status.ok,
             message: "Account delete successful!",
           );
         });
       } on FirebaseAuthException catch (error) {
-        return response.withException(error.message, status: Status.failure);
+        return Response(status: Status.failure, error: error.message);
       }
     } else {
-      return response.withException(
-        "User isn't valid!",
-        status: Status.invalid,
-      );
+      return Response(status: Status.invalid, error: "User isn't valid!");
     }
   }
 
@@ -121,18 +117,21 @@ class AuthDataSource {
   }
 
   Future<Response<UserCredential>> signInAnonymously() async {
-    final response = Response<UserCredential>();
     try {
       final result = await firebaseAuth.signInAnonymously();
-      return response.withData(result, message: "Sign in successful!");
+      return Response(
+        status: Status.ok,
+        data: result,
+        message: "Sign in successful!",
+      );
     } on FirebaseAuthException catch (e) {
       if (e.code == "operation-not-allowed") {
-        return response.withException(
-          "Anonymous auth hasn't been enabled for this project.",
+        return Response(
           status: Status.notSupported,
+          error: "Anonymous auth hasn't been enabled for this project.",
         );
       }
-      return response.withException(e.message, status: Status.failure);
+      return Response(status: Status.failure, error: e.message);
     }
   }
 
@@ -145,7 +144,7 @@ class AuthDataSource {
       final bool isSupportable = check || await localAuth.isDeviceSupported();
       if (!isSupportable) {
         return Response(
-          exception: mConfig.deviceException,
+          error: mConfig.deviceException,
           status: Status.notSupported,
         );
       } else {
@@ -159,31 +158,34 @@ class AuthDataSource {
             return Response(status: Status.ok);
           } else {
             return Response(
-              exception: mConfig.failureException,
+              error: mConfig.failureException,
               status: Status.notFound,
             );
           }
         } else {
           return Response(
-            exception: mConfig.checkingException,
+            error: mConfig.checkingException,
             status: Status.undetected,
           );
         }
       }
     } catch (error) {
-      return Response(exception: error.toString(), status: Status.failure);
+      return Response(error: error.toString(), status: Status.failure);
     }
   }
 
   Future<Response<UserCredential>> signInWithCredential({
     required AuthCredential credential,
   }) async {
-    final response = Response<UserCredential>();
     try {
       final result = await firebaseAuth.signInWithCredential(credential);
-      return response.withData(result, message: "Sign in successful!");
+      return Response(
+        status: Status.ok,
+        data: result,
+        message: "Sign in successful!",
+      );
     } on FirebaseAuthException catch (error) {
-      return response.withException(error.message, status: Status.failure);
+      return Response(status: Status.failure, error: error.message);
     }
   }
 
@@ -191,15 +193,18 @@ class AuthDataSource {
     required String email,
     required String password,
   }) async {
-    final response = Response<UserCredential>();
     try {
       final result = await firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return response.withData(result, message: "Sign in successful!");
+      return Response(
+        status: Status.ok,
+        data: result,
+        message: "Sign in successful!",
+      );
     } on FirebaseAuthException catch (error) {
-      return response.withException(error.message, status: Status.failure);
+      return Response(status: Status.failure, error: error.message);
     }
   }
 
@@ -219,7 +224,7 @@ class AuthDataSource {
         message: "Sign in successful!",
       );
     } on FirebaseAuthException catch (error) {
-      return Response(exception: error.message, status: Status.failure);
+      return Response(error: error.message, status: Status.failure);
     }
   }
 
@@ -227,15 +232,18 @@ class AuthDataSource {
     required String email,
     required String password,
   }) async {
-    final response = Response<UserCredential>();
     try {
       final result = await firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return response.withData(result, message: "Sign up successful!");
+      return Response(
+        status: Status.ok,
+        data: result,
+        message: "Sign up successful!",
+      );
     } on FirebaseAuthException catch (error) {
-      return response.withException(error.message, status: Status.failure);
+      return Response(status: Status.failure, error: error.message);
     }
   }
 
@@ -243,21 +251,23 @@ class AuthDataSource {
     required String username,
     required String password,
   }) async {
-    final response = Response<UserCredential>();
     var mail = _toMail(username, "user", "org");
     try {
       final result = await firebaseAuth.createUserWithEmailAndPassword(
         email: mail ?? "example@user.org",
         password: password,
       );
-      return response.withData(result, message: "Sign up successful!");
+      return Response(
+        status: Status.ok,
+        data: result,
+        message: "Sign up successful!",
+      );
     } on FirebaseAuthException catch (error) {
-      return response.withException(error.message, status: Status.failure);
+      return Response(status: Status.failure, error: error.message);
     }
   }
 
   Future<Response<Auth>> signOut([AuthProviders? provider]) async {
-    final response = Response<Auth>();
     var data = Auth.fromUser(user);
     try {
       if (provider != null) {
@@ -303,9 +313,9 @@ class AuthDataSource {
       }
       await firebaseAuth.signOut();
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
-    return response.withData(data);
+    return Response(status: Status.ok, data: data);
   }
 
   Future<Response<void>> verifyPhoneNumber({
@@ -319,7 +329,6 @@ class AuthDataSource {
     required void Function(String verId, int? forceResendingToken) onCodeSent,
     required void Function(String verId) onCodeAutoRetrievalTimeout,
   }) async {
-    final response = Response();
     try {
       firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
@@ -332,16 +341,15 @@ class AuthDataSource {
         codeSent: onCodeSent,
         codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
       );
-      return response;
+      return Response(status: Status.none);
     } on FirebaseAuthException catch (error) {
-      return response.withException(error.message, status: Status.failure);
+      return Response(status: Status.failure, error: error.message);
     }
   }
 
   // OAUTH
 
   Future<Response<Credential>> signInWithApple() async {
-    final response = Response<Credential>();
     try {
       final result = await appleAuth.getAppleIDCredential(
         scopes: [
@@ -356,24 +364,26 @@ class AuthDataSource {
           accessToken: result.authorizationCode,
         );
 
-        return response.withData(Credential(
-          credential: credential,
-          accessToken: result.authorizationCode,
-          idToken: result.identityToken,
-          id: result.userIdentifier,
-          email: result.email,
-          name: result.givenName ?? result.familyName,
-        ));
+        return Response(
+          status: Status.ok,
+          data: Credential(
+            credential: credential,
+            accessToken: result.authorizationCode,
+            idToken: result.identityToken,
+            id: result.userIdentifier,
+            email: result.email,
+            name: result.givenName ?? result.familyName,
+          ),
+        );
       } else {
-        return response.withException('Token not valid!', status: Status.error);
+        return Response(status: Status.error, error: 'Token not valid!');
       }
     } catch (error) {
-      return response.withException(error.toString(), status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithFacebook() async {
-    final response = Response<Credential>();
     try {
       final token = await facebookAuth.accessToken;
       IFacebookLoginResult? result;
@@ -392,44 +402,41 @@ class AuthDataSource {
             accessToken.tokenString,
           );
           final fbData = await facebookAuth.getUserData();
-          return response.withData(Credential.fromMap(fbData).copy(
-            accessToken: accessToken.tokenString,
-            credential: credential,
-          ));
-        } else {
-          return response.withException(
-            'Token not valid!',
-            status: Status.error,
+          return Response(
+            status: Status.ok,
+            data: Credential.fromMap(fbData).copy(
+              accessToken: accessToken.tokenString,
+              credential: credential,
+            ),
           );
+        } else {
+          return Response(status: Status.error, error: 'Token not valid!');
         }
       } else {
-        return response.withException('Token not valid!', status: Status.error);
+        return Response(status: Status.error, error: 'Token not valid!');
       }
     } catch (error) {
-      return response.withException(error.toString(), status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithGameCenter() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithGithub() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithGoogle() async {
-    final response = Response<Credential>();
     try {
       IGoogleSignInAccount? result;
       final auth = googleAuth;
@@ -445,74 +452,69 @@ class AuthDataSource {
         final accessToken = authentication.accessToken;
         if (accessToken != null || idToken != null) {
           final receivedData = auth.currentUser;
-          return response.withData(Credential(
-            id: receivedData?.id,
-            email: receivedData?.email,
-            name: receivedData?.displayName,
-            photo: receivedData?.photoUrl,
-            accessToken: accessToken,
-            idToken: idToken,
-            credential: GoogleAuthProvider.credential(
-              idToken: idToken,
+          return Response(
+            status: Status.ok,
+            data: Credential(
+              id: receivedData?.id,
+              email: receivedData?.email,
+              name: receivedData?.displayName,
+              photo: receivedData?.photoUrl,
               accessToken: accessToken,
+              idToken: idToken,
+              credential: GoogleAuthProvider.credential(
+                idToken: idToken,
+                accessToken: accessToken,
+              ),
             ),
-          ));
-        } else {
-          return response.withException(
-            'Token not valid!',
-            status: Status.error,
           );
+        } else {
+          return Response(status: Status.error, error: 'Token not valid!');
         }
       } else {
-        return response.withException('Sign in failed!', status: Status.error);
+        return Response(status: Status.error, error: 'Sign in failed!');
       }
     } catch (error) {
-      return response.withException(error.toString(), status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithMicrosoft() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithPlayGames() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithSAML() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithTwitter() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 
   Future<Response<Credential>> signInWithYahoo() async {
-    final response = Response<Credential>();
     try {
-      return response.withStatus(Status.undefined);
+      return Response(status: Status.undefined);
     } catch (error) {
-      return response.withException(error, status: Status.failure);
+      return Response(status: Status.failure, error: error.toString());
     }
   }
 }

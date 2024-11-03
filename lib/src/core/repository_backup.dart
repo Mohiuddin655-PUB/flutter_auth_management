@@ -37,7 +37,7 @@ class BackupRepository<T extends Auth> {
 
   Future<bool> set(T? data) async {
     if (data == null) return false;
-    return update(data.verifiedSource);
+    return update(data.filtered);
   }
 
   Future<bool> setAsLocal(T? data) {
@@ -51,7 +51,7 @@ class BackupRepository<T extends Auth> {
     return cache.then((local) {
       if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
       onUpdateUser(local.id, data);
-      final x = local.verifiedSource..addAll(data);
+      final x = local.filtered..addAll(data);
       final y = build(x);
       return setAsLocal(y);
     });
@@ -68,7 +68,7 @@ class BackupRepository<T extends Auth> {
     final remote = await onFetchUser(id);
     if (remote != null) {
       await onUpdateUser(id, updates);
-      Map<String, dynamic> current = Map.from(remote.verifiedSource);
+      Map<String, dynamic> current = Map.from(remote.filtered);
       current.addAll(updates);
       return source.set(build(current));
     }

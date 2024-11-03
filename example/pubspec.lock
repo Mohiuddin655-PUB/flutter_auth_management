@@ -31,7 +31,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "2.0.1"
+    version: "2.0.2"
   auth_management_apple_delegate:
     dependency: "direct main"
     description:
@@ -285,10 +285,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_entity
-      sha256: "03b3a37426b3c5e2aa14ad52d6e47815d16726c175492dc08e93ec514f41b5e8"
+      sha256: a369cfb63747319aa42263d47655a7202d5123992e5a4f3c8f147060ee06a2cf
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.5"
+    version: "1.0.8"
   flutter_facebook_auth:
     dependency: transitive
     description:

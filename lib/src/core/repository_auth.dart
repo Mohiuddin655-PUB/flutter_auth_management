@@ -25,7 +25,7 @@ class AuthRepository {
   User? get user => source.user;
 
   Future<Response> get delete {
-    return source.delete.onError((e, __) => Response(exception: "$e"));
+    return source.delete.onError((e, __) => Response(error: "$e"));
   }
 
   Future<bool> isSignIn([AuthProviders? provider]) {
@@ -40,9 +40,9 @@ class AuthRepository {
     try {
       return source
           .signInAnonymously()
-          .onError((e, __) => Response<UserCredential>(exception: "$e"));
+          .onError((e, __) => Response<UserCredential>(error: "$e"));
     } catch (e) {
-      return Future.value(Response<UserCredential>(exception: "$e"));
+      return Future.value(Response<UserCredential>(error: "$e"));
     }
   }
 
@@ -51,10 +51,10 @@ class AuthRepository {
   }) {
     try {
       return source.signInWithBiometric(config: config).onError((e, __) {
-        return Response<bool>(exception: "$e");
+        return Response<bool>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<bool>(exception: "$e"));
+      return Future.value(Response<bool>(error: "$e"));
     }
   }
 
@@ -64,9 +64,9 @@ class AuthRepository {
     try {
       return source
           .signInWithCredential(credential: credential)
-          .onError((e, __) => Response<UserCredential>(exception: "$e"));
+          .onError((e, __) => Response<UserCredential>(error: "$e"));
     } catch (e) {
-      return Future.value(Response<UserCredential>(exception: "$e"));
+      return Future.value(Response<UserCredential>(error: "$e"));
     }
   }
 
@@ -77,9 +77,9 @@ class AuthRepository {
     try {
       return source
           .signInWithEmailNPassword(email: email, password: password)
-          .onError((e, __) => Response<UserCredential>(exception: "$e"));
+          .onError((e, __) => Response<UserCredential>(error: "$e"));
     } catch (e) {
-      return Future.value(Response<UserCredential>(exception: "$e"));
+      return Future.value(Response<UserCredential>(error: "$e"));
     }
   }
 
@@ -90,9 +90,9 @@ class AuthRepository {
     try {
       return source
           .signInWithUsernameNPassword(username: username, password: password)
-          .onError((e, __) => Response<UserCredential>(exception: "$e"));
+          .onError((e, __) => Response<UserCredential>(error: "$e"));
     } catch (e) {
-      return Future.value(Response<UserCredential>(exception: "$e"));
+      return Future.value(Response<UserCredential>(error: "$e"));
     }
   }
 
@@ -103,9 +103,9 @@ class AuthRepository {
     try {
       return source
           .signUpWithEmailNPassword(email: email, password: password)
-          .onError((e, __) => Response<UserCredential>(exception: "$e"));
+          .onError((e, __) => Response<UserCredential>(error: "$e"));
     } catch (e) {
-      return Future.value(Response<UserCredential>(exception: "$e"));
+      return Future.value(Response<UserCredential>(error: "$e"));
     }
   }
 
@@ -116,19 +116,19 @@ class AuthRepository {
     try {
       return source
           .signUpWithUsernameNPassword(username: username, password: password)
-          .onError((e, __) => Response<UserCredential>(exception: "$e"));
+          .onError((e, __) => Response<UserCredential>(error: "$e"));
     } catch (e) {
-      return Future.value(Response<UserCredential>(exception: "$e"));
+      return Future.value(Response<UserCredential>(error: "$e"));
     }
   }
 
   Future<Response<Auth>> signOut([AuthProviders? provider]) {
     try {
       return source.signOut(provider).onError((e, __) {
-        return Response<Auth>(exception: "$e");
+        return Response<Auth>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Auth>(exception: "$e"));
+      return Future.value(Response<Auth>(error: "$e"));
     }
   }
 
@@ -156,9 +156,9 @@ class AuthRepository {
             onCodeSent: onCodeSent,
             onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
           )
-          .onError((e, __) => Response(exception: "$e"));
+          .onError((e, __) => Response(error: "$e"));
     } catch (e) {
-      return Future.value(Response(exception: "$e"));
+      return Future.value(Response(error: "$e"));
     }
   }
 
@@ -167,100 +167,100 @@ class AuthRepository {
   Future<Response<Credential>> signInWithApple() {
     try {
       return source.signInWithApple().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithFacebook() {
     try {
       return source.signInWithFacebook().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithGameCenter() {
     try {
       return source.signInWithGameCenter().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithGithub() {
     try {
       return source.signInWithGithub().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithGoogle() {
     try {
       return source.signInWithGoogle().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithMicrosoft() {
     try {
       return source.signInWithMicrosoft().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithPlayGames() {
     try {
       return source.signInWithPlayGames().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithSAML() {
     try {
       return source.signInWithSAML().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithTwitter() {
     try {
       return source.signInWithTwitter().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 
   Future<Response<Credential>> signInWithYahoo() {
     try {
       return source.signInWithYahoo().onError((e, __) {
-        return Response<Credential>(exception: "$e");
+        return Response<Credential>(error: "$e");
       });
     } catch (e) {
-      return Future.value(Response<Credential>(exception: "$e"));
+      return Future.value(Response<Credential>(error: "$e"));
     }
   }
 }

@@ -112,16 +112,13 @@ class Authorizer<T extends Auth> {
       if (auth == null || !auth.isLoggedIn || !provider.isAllowBiometric) {
         return Response(
           status: Status.notSupported,
-          exception: "User not logged in with email or username!",
+          error: "User not logged in with email or username!",
         );
       }
 
       final response = await authRepository.signInWithBiometric(config: config);
       if (!response.isSuccessful) {
-        return Response(
-          status: response.status,
-          exception: response.exception,
-        );
+        return Response(status: response.status, error: response.error);
       }
 
       final biometric = callback != null
@@ -139,7 +136,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return Response(
         status: Status.failure,
-        exception: error.toString(),
+        error: error.toString(),
       );
     }
   }
@@ -155,7 +152,7 @@ class Authorizer<T extends Auth> {
     if (!permission) {
       return Response(
         status: Status.undefined,
-        exception: "Biometric not initialized yet!",
+        error: "Biometric not initialized yet!",
       );
     }
 
@@ -173,7 +170,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return Response(
         status: Status.failure,
-        exception: error.toString(),
+        error: error.toString(),
       );
     }
   }
@@ -381,7 +378,7 @@ class Authorizer<T extends Auth> {
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.guest,
             type: AuthType.none,
           ),
@@ -416,7 +413,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -483,7 +480,7 @@ class Authorizer<T extends Auth> {
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.biometric,
             type: AuthType.biometric,
           ),
@@ -533,7 +530,7 @@ class Authorizer<T extends Auth> {
       if (!current.isSuccessful) {
         return emit(
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.biometric,
             type: AuthType.biometric,
           ),
@@ -595,7 +592,7 @@ class Authorizer<T extends Auth> {
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.email,
             type: AuthType.login,
           ),
@@ -815,7 +812,7 @@ class Authorizer<T extends Auth> {
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.phone,
             type: AuthType.phone,
           ),
@@ -857,7 +854,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -915,7 +912,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.username,
             type: AuthType.login,
           ),
@@ -929,7 +926,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.username,
             type: AuthType.login,
           ),
@@ -1010,7 +1007,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.email,
             type: AuthType.register,
           ),
@@ -1103,7 +1100,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.username,
             type: AuthType.register,
           ),
@@ -1192,7 +1189,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: provider,
             type: AuthType.logout,
           ),
@@ -1301,7 +1298,7 @@ class Authorizer<T extends Auth> {
       );
       if (!response.isSuccessful) {
         return AuthResponse.failure(
-          response.exception,
+          response.error,
           provider: AuthProviders.phone,
           type: AuthType.phone,
         );
@@ -1368,7 +1365,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.apple,
             type: AuthType.oauth,
           ),
@@ -1385,7 +1382,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.apple,
             type: AuthType.oauth,
           ),
@@ -1421,7 +1418,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1477,7 +1474,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.facebook,
             type: AuthType.oauth,
           ),
@@ -1494,7 +1491,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.facebook,
             type: AuthType.oauth,
           ),
@@ -1530,7 +1527,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1589,7 +1586,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.gameCenter,
             type: AuthType.oauth,
           ),
@@ -1606,7 +1603,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.gameCenter,
             type: AuthType.oauth,
           ),
@@ -1642,7 +1639,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1698,7 +1695,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.github,
             type: AuthType.oauth,
           ),
@@ -1714,7 +1711,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.github,
             type: AuthType.oauth,
           ),
@@ -1750,7 +1747,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1806,7 +1803,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.google,
             type: AuthType.oauth,
           ),
@@ -1822,7 +1819,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.google,
             type: AuthType.oauth,
           ),
@@ -1858,7 +1855,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -1914,7 +1911,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.microsoft,
             type: AuthType.oauth,
           ),
@@ -1930,7 +1927,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.microsoft,
             type: AuthType.oauth,
           ),
@@ -1966,7 +1963,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2022,7 +2019,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.playGames,
             type: AuthType.oauth,
           ),
@@ -2038,7 +2035,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.playGames,
             type: AuthType.oauth,
           ),
@@ -2075,7 +2072,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2131,7 +2128,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.saml,
             type: AuthType.oauth,
           ),
@@ -2147,7 +2144,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.saml,
             type: AuthType.oauth,
           ),
@@ -2184,7 +2181,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2241,7 +2238,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.twitter,
             type: AuthType.oauth,
           ),
@@ -2257,7 +2254,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.twitter,
             type: AuthType.oauth,
           ),
@@ -2294,7 +2291,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
@@ -2350,7 +2347,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            response.exception,
+            response.error,
             provider: AuthProviders.yahoo,
             type: AuthType.oauth,
           ),
@@ -2366,7 +2363,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            current.exception,
+            current.error,
             provider: AuthProviders.yahoo,
             type: AuthType.oauth,
           ),
@@ -2402,7 +2399,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        initials: user.verifiedSource,
+        initials: user.filtered,
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,

@@ -1,3 +1,7 @@
+## 2.0.2
+
+* External libraries updates
+
 ## 2.0.1
 
 * Add lazy update account
