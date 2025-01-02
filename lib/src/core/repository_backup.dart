@@ -66,18 +66,15 @@ class BackupRepository<T extends Auth> {
     if (id.isEmpty) return false;
     if (cacheUpdateMode) return source.update(updates);
     final remote = await onFetchUser(id);
-    if (remote != null) {
-      await onUpdateUser(id, updates);
-      Map<String, dynamic> current = Map.from(remote.filtered);
-      current.addAll(updates);
-      return source.set(build(current));
+    if (remote == null || !remote.isAuthenticated) {
+      final user = build(initials);
+      await onCreateUser(user);
+      return source.set(user);
     }
-
-    final cachedUser = await cache;
-    if (cachedUser != null) return source.update(updates);
-    final user = build(initials);
-    await onCreateUser(user);
-    return source.set(user);
+    await onUpdateUser(id, updates);
+    Map<String, dynamic> current = Map.from(remote.filtered);
+    current.addAll(updates);
+    return source.set(build(current));
   }
 
   Future<bool> clear() async {

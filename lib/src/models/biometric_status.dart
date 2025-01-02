@@ -17,15 +17,13 @@ enum BiometricStatus {
     required this.name,
   });
 
-  factory BiometricStatus.from(Object? source) {
-    final key = source?.toString().trim().toUpperCase();
-    if (key == BiometricStatus.activated.id) {
-      return BiometricStatus.activated;
-    } else if (key == BiometricStatus.deactivated.id) {
-      return BiometricStatus.deactivated;
-    } else {
-      return BiometricStatus.initial;
-    }
+  static BiometricStatus? from(Object? source) {
+    return values.where((e) {
+      if (e == source) return true;
+      if (e.id == source) return true;
+      if (e.name == source) return true;
+      return false;
+    }).firstOrNull;
   }
 
   factory BiometricStatus.value(bool value) {

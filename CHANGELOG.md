@@ -1,3 +1,7 @@
+## 2.0.3
+
+* Improve sign in operation
+
 ## 2.0.2
 
 * External libraries updates

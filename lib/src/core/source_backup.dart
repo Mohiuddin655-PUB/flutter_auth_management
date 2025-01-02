@@ -70,7 +70,7 @@ class BackupDataSource<T extends Auth> {
     });
   }
 
-  Future<bool> clear() => _w(key, null);
+  Future<bool> clear() => writer(key, null);
 
   Future<T?> onFetchUser(String id) {
     if (delegate != null) {

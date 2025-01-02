@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter_entity/flutter_entity.dart';
 
@@ -225,11 +227,11 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
 
   BiometricStatus get biometric => _biometric ?? BiometricStatus.initial;
 
-  AuthProviders get provider => _provider ?? AuthProviders.none;
+  AuthProviders? get provider => _provider;
 
   bool get isLoggedIn => loggedIn ?? false;
 
-  bool get isVerified => verified ?? provider.isVerified;
+  bool get isVerified => verified ?? provider?.isVerified ?? false;
 
   DateTime get lastLoggedInDate {
     return DateTime.fromMillisecondsSinceEpoch(loggedInTime ?? 0);
@@ -250,6 +252,8 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   bool get isCurrentUid => id == AuthHelper.uid;
 
   bool get isBiometric => biometric.isActivated;
+
+  bool get isAuthenticated => true;
 
   Auth({
     super.id = "",
@@ -318,7 +322,10 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       id: source.entityValue(key.id),
       timeMills: source.entityValue(key.timeMills),
       accessToken: source.entityValue(key.accessToken),
-      biometric: source.entityValue(key.biometric, BiometricStatus.from),
+      biometric: source.entityValue<BiometricStatus?>(
+        key.biometric,
+        BiometricStatus.from,
+      ),
       loggedIn: source.entityValue(key.loggedIn),
       loggedInTime: source.entityValue(key.loggedInTime),
       loggedOutTime: source.entityValue(key.loggedOutTime),
@@ -404,4 +411,10 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       AuthKeys.i.verified: verified,
     };
   }
+
+  @override
+  String get json => jsonEncode(source);
+
+  @override
+  String toString() => "$Auth($json)";
 }
