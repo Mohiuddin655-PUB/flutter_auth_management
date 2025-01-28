@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/extensions.dart';
+import '../core/helper.dart';
 import '../models/auth.dart';
 import '../utils/authenticator.dart';
 

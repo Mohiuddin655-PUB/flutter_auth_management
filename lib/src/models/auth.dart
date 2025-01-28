@@ -1,11 +1,9 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter_entity/flutter_entity.dart';
 
-import '../utils/auth_helper.dart';
-import 'auth_providers.dart';
 import 'biometric_status.dart';
+import 'provider.dart';
 
 /// ## Create an authorized key class for User:
 ///
@@ -221,13 +219,13 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   final String? password;
   final String? phone;
   final String? photo;
-  final AuthProviders? _provider;
+  final Provider? _provider;
   final String? username;
   final bool? verified;
 
   BiometricStatus get biometric => _biometric ?? BiometricStatus.initial;
 
-  AuthProviders? get provider => _provider;
+  Provider? get provider => _provider;
 
   bool get isLoggedIn => loggedIn ?? false;
 
@@ -248,8 +246,6 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   Duration get lastLoggedOutTime {
     return DateTime.now().difference(lastLoggedOutDate);
   }
-
-  bool get isCurrentUid => id == AuthHelper.uid;
 
   bool get isBiometric => biometric.isActivated;
 
@@ -272,7 +268,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     this.username,
     this.verified,
     BiometricStatus? biometric,
-    AuthProviders? provider,
+    Provider? provider,
   })  : _biometric = biometric,
         _provider = provider;
 
@@ -291,7 +287,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     String? password,
     String? phone,
     String? photo,
-    AuthProviders? provider,
+    Provider? provider,
     String? username,
     bool? verified,
   }) {
@@ -341,41 +337,6 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       extra: source.entityValue(key.extra, (value) {
         return value is Map<String, dynamic> ? value : {};
       }),
-    );
-  }
-
-  factory Auth.fromUser(User? user) {
-    return Auth(
-      id: user?.uid,
-      email: user?.email,
-      name: user?.displayName,
-      phone: user?.phoneNumber,
-      photo: user?.photoURL,
-      loggedIn: user != null,
-      loggedInTime: user?.metadata.lastSignInTime?.millisecondsSinceEpoch,
-      loggedOutTime: Entity.generateTimeMills,
-      verified: user?.emailVerified,
-      extra: {
-        "emailVerified": user?.emailVerified,
-        "isAnonymous": user?.isAnonymous,
-        "metadata": {
-          "creationTime": user?.metadata.creationTime?.millisecondsSinceEpoch,
-          "lastSignInTime":
-              user?.metadata.lastSignInTime?.millisecondsSinceEpoch,
-        },
-        "providerData": user?.providerData.map((e) {
-          return {
-            "displayName": e.displayName,
-            "email": e.email,
-            "phoneNumber": e.phoneNumber,
-            "photoURL": e.photoURL,
-            "providerId": e.providerId,
-            "uid": e.uid,
-          };
-        }).toList(),
-        "refreshToken": user?.refreshToken,
-        "tenantId": user?.tenantId,
-      },
     );
   }
 

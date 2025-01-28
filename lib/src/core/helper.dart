@@ -1,13 +1,14 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_entity/flutter_entity.dart';
 
 import '../models/auth.dart';
-import '../models/auth_providers.dart';
 import '../models/auth_status.dart';
 import '../models/biometric_config.dart';
+import '../models/credential.dart';
+import '../models/exception.dart';
+import '../models/provider.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/auth_response.dart';
 import '../utils/authenticator.dart';
@@ -16,7 +17,7 @@ import '../widgets/provider.dart';
 import 'authorizer.dart';
 import 'typedefs.dart';
 
-extension AuthContextExtension on BuildContext {
+extension AuthHelper on BuildContext {
   Authorizer<T> _i<T extends Auth>(
     String name, [
     List<String> updaters = const [],
@@ -94,20 +95,6 @@ extension AuthContextExtension on BuildContext {
 
   T? user<T extends Auth>() => _i<T>("user").user;
 
-  User? firebaseUser<T extends Auth>() => _i<T>("firebaseUser").firebaseUser;
-
-  Stream<User?> firebaseAuthChanges<T extends Auth>() {
-    return _i<T>("firebaseAuthChanges").firebaseAuthChanges;
-  }
-
-  Stream<User?> firebaseIdTokenChanges<T extends Auth>() {
-    return _i<T>("firebaseIdTokenChanges").firebaseIdTokenChanges;
-  }
-
-  Stream<User?> firebaseUserChanges<T extends Auth>() {
-    return _i<T>("firebaseUserChanges").firebaseUserChanges;
-  }
-
   Future<Response<void>> addBiometric<T extends Auth>({
     SignByBiometricCallback? callback,
     BiometricConfig? config,
@@ -157,7 +144,7 @@ extension AuthContextExtension on BuildContext {
   }
 
   Future<AuthResponse<T>> isSignIn<T extends Auth>({
-    AuthProviders? provider,
+    Provider? provider,
   }) {
     return _i<T>("isSignIn").isSignIn(provider: provider);
   }
@@ -208,11 +195,11 @@ extension AuthContextExtension on BuildContext {
 
   Future<AuthResponse<T>> signInByPhone<T extends Auth>(
     PhoneAuthenticator authenticator, {
-    PhoneMultiFactorInfo? multiFactorInfo,
-    MultiFactorSession? multiFactorSession,
+    Object? multiFactorInfo,
+    Object? multiFactorSession,
     Duration timeout = const Duration(minutes: 2),
-    void Function(PhoneAuthCredential credential)? onComplete,
-    void Function(FirebaseAuthException exception)? onFailed,
+    void Function(Credential credential)? onComplete,
+    void Function(AuthException exception)? onFailed,
     void Function(String verId, int? forceResendingToken)? onCodeSent,
     void Function(String verId)? onCodeAutoRetrievalTimeout,
     Object? args,
@@ -299,7 +286,7 @@ extension AuthContextExtension on BuildContext {
   }
 
   Future<AuthResponse<T>> signOut<T extends Auth>({
-    AuthProviders? provider,
+    Provider? provider,
     Object? args,
     String? id,
     bool notifiable = true,

@@ -1,25 +1,18 @@
-import 'package:auth_management_delegates/auth_management_delegates.dart';
+import 'package:auth_management/auth_management.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
-import 'package:flutter_entity/flutter_entity.dart';
-
-import '../models/auth.dart';
-import '../models/auth_providers.dart';
-import '../models/biometric_config.dart';
-import '../models/credential.dart';
-import 'exceptions.dart';
 
 String? _toMail(String prefix, String suffix, [String type = "com"]) {
   return "$prefix@$suffix.$type";
 }
 
-class AuthDataSource {
+class FirebaseAuthDelegate extends AuthDelegate {
   final IAppleAuthDelegate? appleAuthDelegate;
   final IBiometricAuthDelegate? biometricAuthDelegate;
   final IFacebookAuthDelegate? facebookAuthDelegate;
   final IGoogleAuthDelegate? googleAuthDelegate;
   final FirebaseAuth? _firebaseAuth;
 
-  const AuthDataSource({
+  const FirebaseAuthDelegate({
     this.appleAuthDelegate,
     this.biometricAuthDelegate,
     this.facebookAuthDelegate,
@@ -33,7 +26,7 @@ class AuthDataSource {
     if (appleAuthDelegate != null) {
       return appleAuthDelegate!;
     } else {
-      throw const AuthDelegateException("IAppleAuthDelegate");
+      throw const AuthException("IAppleAuthDelegate");
     }
   }
 
@@ -41,7 +34,7 @@ class AuthDataSource {
     if (facebookAuthDelegate != null) {
       return facebookAuthDelegate!;
     } else {
-      throw const AuthDelegateException("IFacebookAuthDelegate");
+      throw const AuthException("IFacebookAuthDelegate");
     }
   }
 
@@ -49,7 +42,7 @@ class AuthDataSource {
     if (biometricAuthDelegate != null) {
       return biometricAuthDelegate!;
     } else {
-      throw const AuthDelegateException("IBiometricAuthDelegate");
+      throw const AuthException("IBiometricAuthDelegate");
     }
   }
 
@@ -57,13 +50,36 @@ class AuthDataSource {
     if (googleAuthDelegate != null) {
       return googleAuthDelegate!;
     } else {
-      throw const AuthDelegateException("IGoogleAuthDelegate");
+      throw const AuthException("IGoogleAuthDelegate");
     }
   }
 
   User? get user => FirebaseAuth.instance.currentUser;
 
-  Future<Response> get delete async {
+  @override
+  Object credential(Provider provider, Credential credential) {
+    final token = credential.accessToken;
+    final idToken = credential.idToken;
+    switch (provider) {
+      case Provider.apple:
+        return OAuthProvider("apple.com").credential(
+          idToken: idToken,
+          accessToken: token,
+        );
+      case Provider.facebook:
+        return FacebookAuthProvider.credential(token ?? "");
+      case Provider.google:
+        return GoogleAuthProvider.credential(
+          idToken: idToken,
+          accessToken: token,
+        );
+      default:
+        throw UnimplementedError();
+    }
+  }
+
+  @override
+  Future<Response<void>> delete() async {
     if (user != null) {
       try {
         return user!.delete().then((value) {
@@ -80,48 +96,50 @@ class AuthDataSource {
     }
   }
 
-  Future<bool> isSignIn([AuthProviders? provider]) async {
+  @override
+  Future<bool> isSignIn([Provider? provider]) async {
     if (provider != null) {
       switch (provider) {
-        case AuthProviders.apple:
+        case Provider.apple:
           return false;
-        case AuthProviders.facebook:
+        case Provider.facebook:
           return (await facebookAuth.accessToken) != null;
-        case AuthProviders.gameCenter:
+        case Provider.gameCenter:
           return false;
-        case AuthProviders.github:
+        case Provider.github:
           return false;
-        case AuthProviders.google:
+        case Provider.google:
           return googleAuth.isSignedIn();
-        case AuthProviders.microsoft:
+        case Provider.microsoft:
           return false;
-        case AuthProviders.playGames:
+        case Provider.playGames:
           return false;
-        case AuthProviders.saml:
+        case Provider.saml:
           return false;
-        case AuthProviders.twitter:
+        case Provider.twitter:
           return false;
-        case AuthProviders.yahoo:
+        case Provider.yahoo:
           return false;
-        case AuthProviders.email:
-        case AuthProviders.guest:
-        case AuthProviders.username:
-        case AuthProviders.phone:
+        case Provider.email:
+        case Provider.guest:
+        case Provider.username:
+        case Provider.phone:
           return firebaseAuth.currentUser != null;
-        case AuthProviders.biometric:
-        case AuthProviders.none:
+        case Provider.biometric:
+        case Provider.none:
           return false;
       }
     }
     return firebaseAuth.currentUser != null;
   }
 
-  Future<Response<UserCredential>> signInAnonymously() async {
+  @override
+  Future<Response<Credential>> signInAnonymously() async {
     try {
       final result = await firebaseAuth.signInAnonymously();
       return Response(
         status: Status.ok,
-        data: result,
+        data: result._credential,
         message: "Sign in successful!",
       );
     } on FirebaseAuthException catch (e) {
@@ -135,9 +153,8 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<void>> signInWithBiometric({
-    BiometricConfig? config,
-  }) async {
+  @override
+  Future<Response<void>> signInWithBiometric([BiometricConfig? config]) async {
     final mConfig = config ?? const BiometricConfig();
     try {
       final bool check = await localAuth.canCheckBiometrics;
@@ -174,14 +191,16 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<UserCredential>> signInWithCredential({
-    required AuthCredential credential,
-  }) async {
+  @override
+  Future<Response<Credential>> signInWithCredential(Object credential) async {
+    if (credential is! AuthCredential) {
+      return Response(error: "Credential exception!");
+    }
     try {
       final result = await firebaseAuth.signInWithCredential(credential);
       return Response(
         status: Status.ok,
-        data: result,
+        data: result._credential,
         message: "Sign in successful!",
       );
     } on FirebaseAuthException catch (error) {
@@ -189,10 +208,9 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<UserCredential>> signInWithEmailNPassword({
-    required String email,
-    required String password,
-  }) async {
+  @override
+  Future<Response<Credential>> signInWithEmailNPassword(
+      String email, String password) async {
     try {
       final result = await firebaseAuth.signInWithEmailAndPassword(
         email: email,
@@ -200,7 +218,7 @@ class AuthDataSource {
       );
       return Response(
         status: Status.ok,
-        data: result,
+        data: result._credential,
         message: "Sign in successful!",
       );
     } on FirebaseAuthException catch (error) {
@@ -208,10 +226,11 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<UserCredential>> signInWithUsernameNPassword({
-    required String username,
-    required String password,
-  }) async {
+  @override
+  Future<Response<Credential>> signInWithUsernameNPassword(
+    String username,
+    String password,
+  ) async {
     var mail = _toMail(username, "user", "org");
     try {
       final result = await firebaseAuth.signInWithEmailAndPassword(
@@ -220,7 +239,7 @@ class AuthDataSource {
       );
       return Response(
         status: Status.ok,
-        data: result,
+        data: result._credential,
         message: "Sign in successful!",
       );
     } on FirebaseAuthException catch (error) {
@@ -228,10 +247,11 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<UserCredential>> signUpWithEmailNPassword({
-    required String email,
-    required String password,
-  }) async {
+  @override
+  Future<Response<Credential>> signUpWithEmailNPassword(
+    String email,
+    String password,
+  ) async {
     try {
       final result = await firebaseAuth.createUserWithEmailAndPassword(
         email: email,
@@ -239,7 +259,7 @@ class AuthDataSource {
       );
       return Response(
         status: Status.ok,
-        data: result,
+        data: result._credential,
         message: "Sign up successful!",
       );
     } on FirebaseAuthException catch (error) {
@@ -247,10 +267,11 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<UserCredential>> signUpWithUsernameNPassword({
-    required String username,
-    required String password,
-  }) async {
+  @override
+  Future<Response<Credential>> signUpWithUsernameNPassword(
+    String username,
+    String password,
+  ) async {
     var mail = _toMail(username, "user", "org");
     try {
       final result = await firebaseAuth.createUserWithEmailAndPassword(
@@ -259,7 +280,7 @@ class AuthDataSource {
       );
       return Response(
         status: Status.ok,
-        data: result,
+        data: result._credential,
         message: "Sign up successful!",
       );
     } on FirebaseAuthException catch (error) {
@@ -267,42 +288,42 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<Auth>> signOut([AuthProviders? provider]) async {
-    var data = Auth.fromUser(user);
+  @override
+  Future<Response<void>> signOut([Provider? provider]) async {
     try {
       if (provider != null) {
         switch (provider) {
-          case AuthProviders.apple:
+          case Provider.apple:
             break;
-          case AuthProviders.facebook:
+          case Provider.facebook:
             await facebookAuth.logOut();
             break;
-          case AuthProviders.gameCenter:
+          case Provider.gameCenter:
             break;
-          case AuthProviders.github:
+          case Provider.github:
             break;
-          case AuthProviders.google:
+          case Provider.google:
             if (await googleAuth.isSignedIn()) {
               await googleAuth.disconnect();
               await googleAuth.signOut();
             }
             break;
-          case AuthProviders.microsoft:
+          case Provider.microsoft:
             break;
-          case AuthProviders.playGames:
+          case Provider.playGames:
             break;
-          case AuthProviders.saml:
+          case Provider.saml:
             break;
-          case AuthProviders.twitter:
+          case Provider.twitter:
             break;
-          case AuthProviders.yahoo:
+          case Provider.yahoo:
             break;
-          case AuthProviders.biometric:
-          case AuthProviders.guest:
-          case AuthProviders.email:
-          case AuthProviders.phone:
-          case AuthProviders.username:
-          case AuthProviders.none:
+          case Provider.biometric:
+          case Provider.guest:
+          case Provider.email:
+          case Provider.phone:
+          case Provider.username:
+          case Provider.none:
             break;
         }
       } else {
@@ -315,17 +336,18 @@ class AuthDataSource {
     } catch (error) {
       return Response(status: Status.failure, error: error.toString());
     }
-    return Response(status: Status.ok, data: data);
+    return Response(status: Status.ok);
   }
 
-  Future<Response<void>> verifyPhoneNumber({
+  @override
+  Future<void> verifyPhoneNumber({
     String? phoneNumber,
     int? forceResendingToken,
-    PhoneMultiFactorInfo? multiFactorInfo,
-    MultiFactorSession? multiFactorSession,
+    Object? multiFactorInfo,
+    Object? multiFactorSession,
     Duration timeout = const Duration(seconds: 30),
-    required void Function(PhoneAuthCredential credential) onComplete,
-    required void Function(FirebaseAuthException exception) onFailed,
+    required void Function(Credential credential) onComplete,
+    required void Function(AuthException exception) onFailed,
     required void Function(String verId, int? forceResendingToken) onCodeSent,
     required void Function(String verId) onCodeAutoRetrievalTimeout,
   }) async {
@@ -333,22 +355,32 @@ class AuthDataSource {
       firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         forceResendingToken: forceResendingToken,
-        multiFactorInfo: multiFactorInfo,
-        multiFactorSession: multiFactorSession,
+        multiFactorInfo:
+            multiFactorInfo is PhoneMultiFactorInfo ? multiFactorInfo : null,
+        multiFactorSession: multiFactorSession is MultiFactorSession
+            ? multiFactorSession
+            : null,
         timeout: timeout,
-        verificationCompleted: onComplete,
-        verificationFailed: onFailed,
+        verificationCompleted: (credential) => onComplete(Credential(
+          providerId: credential.providerId,
+          verificationId: credential.verificationId,
+          signInMethod: credential.signInMethod,
+          smsCode: credential.smsCode,
+          accessToken: credential.token.toString(),
+        )),
+        verificationFailed: (e) => onFailed(AuthException(
+          e.message ?? "",
+          e.code,
+        )),
         codeSent: onCodeSent,
         codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
       );
-      return Response(status: Status.none);
-    } on FirebaseAuthException catch (error) {
-      return Response(status: Status.failure, error: error.message);
+    } catch (error) {
+      throw AuthException(error.toString());
     }
   }
 
-  // OAUTH
-
+  @override
   Future<Response<Credential>> signInWithApple() async {
     try {
       final result = await appleAuth.getAppleIDCredential(
@@ -367,12 +399,14 @@ class AuthDataSource {
         return Response(
           status: Status.ok,
           data: Credential(
-            credential: credential,
+            providerId: credential.providerId,
+            signInMethod: credential.signInMethod,
             accessToken: result.authorizationCode,
             idToken: result.identityToken,
-            id: result.userIdentifier,
+            credential: credential,
+            uid: result.userIdentifier,
             email: result.email,
-            name: result.givenName ?? result.familyName,
+            displayName: result.givenName ?? result.familyName,
           ),
         );
       } else {
@@ -383,6 +417,7 @@ class AuthDataSource {
     }
   }
 
+  @override
   Future<Response<Credential>> signInWithFacebook() async {
     try {
       final token = await facebookAuth.accessToken;
@@ -404,7 +439,7 @@ class AuthDataSource {
           final fbData = await facebookAuth.getUserData();
           return Response(
             status: Status.ok,
-            data: Credential.fromMap(fbData).copy(
+            data: Credential.fromFbData(fbData).copyWith(
               accessToken: accessToken.tokenString,
               credential: credential,
             ),
@@ -420,22 +455,7 @@ class AuthDataSource {
     }
   }
 
-  Future<Response<Credential>> signInWithGameCenter() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
-  }
-
-  Future<Response<Credential>> signInWithGithub() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
-  }
-
+  @override
   Future<Response<Credential>> signInWithGoogle() async {
     try {
       IGoogleSignInAccount? result;
@@ -455,11 +475,13 @@ class AuthDataSource {
           return Response(
             status: Status.ok,
             data: Credential(
-              id: receivedData?.id,
-              email: receivedData?.email,
-              name: receivedData?.displayName,
-              photo: receivedData?.photoUrl,
+              uid: receivedData?.id ?? result.id,
+              email: receivedData?.email ?? result.email,
+              displayName: receivedData?.displayName ?? result.displayName,
+              photoURL: receivedData?.photoUrl ?? result.photoUrl,
               accessToken: accessToken,
+              signInMethod:
+                  receivedData?.serverAuthCode ?? result.serverAuthCode,
               idToken: idToken,
               credential: GoogleAuthProvider.credential(
                 idToken: idToken,
@@ -477,44 +499,52 @@ class AuthDataSource {
       return Response(status: Status.failure, error: error.toString());
     }
   }
+}
 
-  Future<Response<Credential>> signInWithMicrosoft() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
-  }
-
-  Future<Response<Credential>> signInWithPlayGames() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
-  }
-
-  Future<Response<Credential>> signInWithSAML() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
-  }
-
-  Future<Response<Credential>> signInWithTwitter() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
-  }
-
-  Future<Response<Credential>> signInWithYahoo() async {
-    try {
-      return Response(status: Status.undefined);
-    } catch (error) {
-      return Response(status: Status.failure, error: error.toString());
-    }
+extension on UserCredential {
+  Credential get _credential {
+    final ai = additionalUserInfo;
+    final meta = user?.metadata;
+    return Credential(
+      accessToken: credential?.accessToken,
+      additionalUserInfo: ai != null
+          ? AdditionalInfo(
+              isNewUser: ai.isNewUser,
+              authorizationCode: ai.authorizationCode,
+              profile: ai.profile,
+              providerId: ai.providerId,
+              username: ai.username,
+            )
+          : null,
+      credential: credential,
+      displayName: user?.displayName,
+      email: user?.email,
+      emailVerified: user?.emailVerified,
+      idToken: credential?.token.toString(),
+      isAnonymous: user?.isAnonymous,
+      metadata: meta != null
+          ? Metadata(
+              creationTime: meta.creationTime,
+              lastSignInTime: meta.lastSignInTime,
+            )
+          : null,
+      multiFactor: user?.multiFactor,
+      phoneNumber: user?.phoneNumber,
+      photoURL: user?.photoURL,
+      providerId: credential?.providerId,
+      providerData: user?.providerData.map((e) {
+        return Info(
+          providerId: e.providerId,
+          displayName: e.displayName,
+          email: e.email,
+          phoneNumber: e.phoneNumber,
+          photoURL: e.photoURL,
+          uid: e.uid,
+        );
+      }).toList(),
+      refreshToken: user?.refreshToken,
+      tenantId: user?.tenantId,
+      uid: user?.uid ?? '',
+    );
   }
 }

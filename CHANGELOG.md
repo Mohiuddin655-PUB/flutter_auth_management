@@ -1,3 +1,7 @@
+## 3.0.0
+
+* Firebase external library remove and add auth delegate system
+
 ## 2.0.3
 
 * Improve sign in operation

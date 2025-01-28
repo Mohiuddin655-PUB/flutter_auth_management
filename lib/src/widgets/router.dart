@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/extensions.dart';
+import '../core/helper.dart';
 import '../models/auth.dart';
 import '../models/auth_status.dart';
 
@@ -23,7 +23,7 @@ class AuthRouter<T extends Auth> extends StatelessWidget {
     return FutureBuilder(
       future: context.isSignIn<T>(),
       builder: (context, snapshot) {
-        final state = snapshot.data?.state ?? AuthStatus.unauthorized;
+        final state = snapshot.data?.status ?? AuthStatus.unauthorized;
         if (state.isAuthenticated) {
           return builder(context, authenticatedRoute);
         } else if (state.isUnauthenticated) {

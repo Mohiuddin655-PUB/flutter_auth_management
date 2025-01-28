@@ -1,26 +1,30 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_entity/flutter_entity.dart';
 
+import '../delegates/auth.dart';
+import '../delegates/backup.dart';
 import '../models/auth.dart';
-import '../models/auth_providers.dart';
 import '../models/auth_status.dart';
 import '../models/auth_type.dart';
 import '../models/biometric_config.dart';
 import '../models/biometric_status.dart';
+import '../models/credential.dart';
+import '../models/exception.dart';
+import '../models/provider.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/auth_response.dart';
 import '../utils/authenticator.dart';
 import 'messages.dart';
-import 'repository_auth.dart';
-import 'repository_backup.dart';
 import 'typedefs.dart';
 
+part '../repositories/backup.dart';
+
 class Authorizer<T extends Auth> {
-  final AuthMessages msg;
-  final AuthRepository authRepository;
-  final BackupRepository<T> backupRepository;
+  final AuthMessages _msg;
+  final AuthDelegate _delegate;
+  final _BackupRepository<T> _backup;
+
   final _errorNotifier = AuthNotifier("");
   final _loadingNotifier = AuthNotifier(false);
   final _messageNotifier = AuthNotifier("");
@@ -35,13 +39,15 @@ class Authorizer<T extends Auth> {
 
   String? get id => _id;
 
-  Future<T?> get _auth => backupRepository.cache;
+  Future<T?> get _auth => _backup.cache;
 
   Authorizer({
-    required this.authRepository,
-    required this.backupRepository,
-    this.msg = const AuthMessages(),
-  });
+    required AuthDelegate delegate,
+    required BackupDelegate<T> backup,
+    AuthMessages msg = const AuthMessages(),
+  })  : _msg = msg,
+        _delegate = delegate,
+        _backup = _BackupRepository<T>(backup);
 
   Future<T?> get auth async {
     try {
@@ -88,27 +94,13 @@ class Authorizer<T extends Auth> {
 
   T? get user => _userNotifier.value;
 
-  User? get firebaseUser => FirebaseAuth.instance.currentUser;
-
-  Stream<User?> get firebaseAuthChanges {
-    return FirebaseAuth.instance.authStateChanges();
-  }
-
-  Stream<User?> get firebaseIdTokenChanges {
-    return FirebaseAuth.instance.idTokenChanges();
-  }
-
-  Stream<User?> get firebaseUserChanges {
-    return FirebaseAuth.instance.userChanges();
-  }
-
   Future<Response<T>> addBiometric({
     SignByBiometricCallback? callback,
     BiometricConfig? config,
   }) async {
     try {
       final auth = await _auth;
-      final provider = AuthProviders.from(auth?.provider);
+      final provider = Provider.from(auth?.provider);
       if (auth == null || !auth.isLoggedIn || !provider.isAllowBiometric) {
         return Response(
           status: Status.notSupported,
@@ -116,7 +108,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final response = await authRepository.signInWithBiometric(config: config);
+      final response = await _delegate.signInWithBiometric(config);
       if (!response.isSuccessful) {
         return Response(status: response.status, error: response.error);
       }
@@ -143,7 +135,7 @@ class Authorizer<T extends Auth> {
 
   Future<Response<T>> biometricEnable(bool enabled) async {
     final auth = await _auth;
-    final provider = AuthProviders.from(auth?.provider);
+    final provider = Provider.from(auth?.provider);
     final permission = auth != null &&
         auth.isLoggedIn &&
         !auth.biometric.isInitial &&
@@ -181,7 +173,7 @@ class Authorizer<T extends Auth> {
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(AuthProviders.none, AuthType.delete),
+      const AuthResponse.loading(Provider.none, AuthType.delete),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -191,8 +183,8 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.rollback(
           data,
-          msg: msg.loggedIn.failure,
-          provider: AuthProviders.none,
+          msg: _msg.loggedIn.failure,
+          provider: Provider.none,
           type: AuthType.delete,
         ),
         args: args,
@@ -202,13 +194,13 @@ class Authorizer<T extends Auth> {
     }
 
     try {
-      final response = await authRepository.delete;
+      final response = await _delegate.delete();
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.rollback(
             data,
             msg: response.message,
-            provider: AuthProviders.none,
+            provider: Provider.none,
             type: AuthType.delete,
           ),
           args: args,
@@ -218,12 +210,12 @@ class Authorizer<T extends Auth> {
       }
 
       await _delete();
-      await backupRepository.onDeleteUser(data.id);
+      await _backup.onDeleteUser(data.id);
 
       return emit(
         AuthResponse.unauthenticated(
-          msg: msg.delete.done,
-          provider: AuthProviders.none,
+          msg: _msg.delete.done,
+          provider: Provider.none,
           type: AuthType.delete,
         ),
         args: args,
@@ -234,8 +226,8 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.rollback(
           data,
-          msg: msg.delete.failure ?? error,
-          provider: AuthProviders.none,
+          msg: _msg.delete.failure ?? error,
+          provider: Provider.none,
           type: AuthType.delete,
         ),
         args: args,
@@ -247,7 +239,7 @@ class Authorizer<T extends Auth> {
 
   Future<bool> _delete() async {
     try {
-      final cleared = await backupRepository.clear();
+      final cleared = await _backup.clear();
       if (cleared) _emitUser(null);
       return cleared;
     } catch (error) {
@@ -308,8 +300,8 @@ class Authorizer<T extends Auth> {
   }
 
   void _emitStatus(AuthResponse<T> data) {
-    if (data.isState && _statusNotifier.value != data.state) {
-      _statusNotifier.value = data.state;
+    if (data.isState && _statusNotifier.value != data.status) {
+      _statusNotifier.value = data.status;
     }
   }
 
@@ -326,20 +318,20 @@ class Authorizer<T extends Auth> {
         _statusNotifier.value = AuthStatus.authenticated;
       }
     }
-    final remote = await backupRepository.onFetchUser(value.id);
+    final remote = await _backup.onFetchUser(value.id);
     _userNotifier.value = remote;
-    await backupRepository.setAsLocal(remote ?? value);
+    await _backup.setAsLocal(remote ?? value);
     return remote ?? value;
   }
 
   Future<AuthResponse<T>> isSignIn({
-    AuthProviders? provider,
+    Provider? provider,
   }) async {
     try {
-      final signedIn = await authRepository.isSignIn(provider);
+      final signedIn = await _delegate.isSignIn(provider);
       final data = signedIn ? await auth : null;
       if (data == null) {
-        if (signedIn) await authRepository.signOut(provider);
+        if (signedIn) await _delegate.signOut(provider);
         return AuthResponse.unauthenticated(
           provider: provider,
           type: AuthType.signedIn,
@@ -353,7 +345,7 @@ class Authorizer<T extends Auth> {
       );
     } catch (error) {
       return AuthResponse.failure(
-        msg.loggedIn.failure ?? error,
+        _msg.loggedIn.failure ?? error,
         provider: provider,
         type: AuthType.signedIn,
       );
@@ -368,18 +360,18 @@ class Authorizer<T extends Auth> {
   }) async {
     try {
       emit(
-        const AuthResponse.loading(AuthProviders.email, AuthType.login),
+        const AuthResponse.loading(Provider.email, AuthType.login),
         args: args,
         id: id,
         notifiable: notifiable,
       );
 
-      final response = await authRepository.signInAnonymously();
+      final response = await _delegate.signInAnonymously();
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.guest,
+            provider: Provider.guest,
             type: AuthType.none,
           ),
           args: args,
@@ -388,12 +380,12 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return emit(
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.guest,
+            _msg.authorization,
+            provider: Provider.guest,
             type: AuthType.none,
           ),
           args: args,
@@ -423,8 +415,8 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithEmail.done,
-          provider: AuthProviders.guest,
+          msg: _msg.signInWithEmail.done,
+          provider: Provider.guest,
           type: AuthType.none,
         ),
         args: args,
@@ -434,8 +426,8 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          msg.signInWithEmail.failure ?? error,
-          provider: AuthProviders.guest,
+          _msg.signInWithEmail.failure ?? error,
+          provider: Provider.guest,
           type: AuthType.none,
         ),
         args: args,
@@ -453,7 +445,7 @@ class Authorizer<T extends Auth> {
   }) async {
     emit(
       const AuthResponse.loading(
-        AuthProviders.biometric,
+        Provider.biometric,
         AuthType.biometric,
       ),
       args: args,
@@ -466,8 +458,8 @@ class Authorizer<T extends Auth> {
       if (user == null || !user.isBiometric) {
         return emit(
           AuthResponse.unauthorized(
-            msg: msg.signInWithBiometric.failure ?? errorText,
-            provider: AuthProviders.biometric,
+            msg: _msg.signInWithBiometric.failure ?? errorText,
+            provider: Provider.biometric,
             type: AuthType.biometric,
           ),
           args: args,
@@ -476,12 +468,12 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final response = await authRepository.signInWithBiometric(config: config);
+      final response = await _delegate.signInWithBiometric(config);
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.biometric,
+            provider: Provider.biometric,
             type: AuthType.biometric,
           ),
           args: args,
@@ -491,47 +483,34 @@ class Authorizer<T extends Auth> {
       }
 
       final token = user.accessToken;
-      final provider = AuthProviders.from(user.provider);
-      var current = Response<UserCredential>();
+      final provider = Provider.from(user.provider);
+      var current = Response<Credential>();
       if ((user.email ?? user.username ?? "").isNotEmpty &&
           (user.password ?? '').isNotEmpty) {
         if (provider.isEmail) {
-          current = await authRepository.signInWithEmailNPassword(
-            email: user.email ?? "",
-            password: user.password ?? "",
+          current = await _delegate.signInWithEmailNPassword(
+            user.email ?? "",
+            user.password ?? "",
           );
         } else if (provider.isUsername) {
-          current = await authRepository.signInWithUsernameNPassword(
-            username: user.username ?? "",
-            password: user.password ?? "",
+          current = await _delegate.signInWithUsernameNPassword(
+            user.username ?? "",
+            user.password ?? "",
           );
         }
       } else if ((token ?? user.idToken ?? "").isNotEmpty) {
-        if (provider.isApple) {
-          current = await authRepository.signInWithCredential(
-            credential: OAuthProvider("apple.com").credential(
-              idToken: user.idToken,
-              accessToken: token,
-            ),
-          );
-        } else if (provider.isFacebook) {
-          current = await authRepository.signInWithCredential(
-            credential: FacebookAuthProvider.credential(token ?? ""),
-          );
-        } else if (provider.isGoogle) {
-          current = await authRepository.signInWithCredential(
-            credential: GoogleAuthProvider.credential(
-              idToken: user.idToken,
-              accessToken: token,
-            ),
-          );
-        }
+        current = await _delegate.signInWithCredential(Credential(
+          uid: user.id,
+          providerId: provider.id,
+          idToken: user.idToken,
+          accessToken: token,
+        ));
       }
       if (!current.isSuccessful) {
         return emit(
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.biometric,
+            provider: Provider.biometric,
             type: AuthType.biometric,
           ),
           args: args,
@@ -548,8 +527,8 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithBiometric.done,
-          provider: AuthProviders.biometric,
+          msg: _msg.signInWithBiometric.done,
+          provider: Provider.biometric,
           type: AuthType.biometric,
         ),
         args: args,
@@ -559,8 +538,8 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          msg.signInWithBiometric.failure ?? error,
-          provider: AuthProviders.biometric,
+          _msg.signInWithBiometric.failure ?? error,
+          provider: Provider.biometric,
           type: AuthType.biometric,
         ),
         args: args,
@@ -578,22 +557,22 @@ class Authorizer<T extends Auth> {
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(AuthProviders.email, AuthType.login),
+      const AuthResponse.loading(Provider.email, AuthType.login),
       args: args,
       id: id,
       notifiable: notifiable,
     );
 
     try {
-      final response = await authRepository.signInWithEmailNPassword(
-        email: authenticator.email,
-        password: authenticator.password,
+      final response = await _delegate.signInWithEmailNPassword(
+        authenticator.email,
+        authenticator.password,
       );
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.email,
+            provider: Provider.email,
             type: AuthType.login,
           ),
           args: args,
@@ -602,12 +581,12 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return emit(
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.email,
+            _msg.authorization,
+            provider: Provider.email,
             type: AuthType.login,
           ),
           args: args,
@@ -622,7 +601,7 @@ class Authorizer<T extends Auth> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.email,
+        provider: Provider.email,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
       );
@@ -645,8 +624,8 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithEmail.done,
-          provider: AuthProviders.email,
+          msg: _msg.signInWithEmail.done,
+          provider: Provider.email,
           type: AuthType.login,
         ),
         args: args,
@@ -656,8 +635,8 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          msg.signInWithEmail.failure ?? error,
-          provider: AuthProviders.email,
+          _msg.signInWithEmail.failure ?? error,
+          provider: Provider.email,
           type: AuthType.login,
         ),
         args: args,
@@ -669,11 +648,11 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse<T>> signInByPhone(
     PhoneAuthenticator authenticator, {
-    PhoneMultiFactorInfo? multiFactorInfo,
-    MultiFactorSession? multiFactorSession,
+    Object? multiFactorInfo,
+    Object? multiFactorSession,
     Duration timeout = const Duration(minutes: 2),
-    void Function(PhoneAuthCredential credential)? onComplete,
-    void Function(FirebaseAuthException exception)? onFailed,
+    void Function(Credential credential)? onComplete,
+    void Function(AuthException exception)? onFailed,
     void Function(String verId, int? forceResendingToken)? onCodeSent,
     void Function(String verId)? onCodeAutoRetrievalTimeout,
     Object? args,
@@ -681,18 +660,18 @@ class Authorizer<T extends Auth> {
     bool notifiable = true,
   }) async {
     try {
-      authRepository.verifyPhoneNumber(
+      _delegate.verifyPhoneNumber(
         phoneNumber: authenticator.phone,
         forceResendingToken: int.tryParse(authenticator.accessToken ?? ""),
         multiFactorInfo: multiFactorInfo,
         multiFactorSession: multiFactorSession,
         timeout: timeout,
-        onComplete: (PhoneAuthCredential credential) async {
+        onComplete: (credential) async {
           if (onComplete != null) {
             emit(
               const AuthResponse.message(
                 "Verification done!",
-                provider: AuthProviders.phone,
+                provider: Provider.phone,
                 type: AuthType.otp,
               ),
               args: args,
@@ -714,7 +693,7 @@ class Authorizer<T extends Auth> {
               emit(
                 const AuthResponse.failure(
                   "Verification token or otp code not valid!",
-                  provider: AuthProviders.phone,
+                  provider: Provider.phone,
                   type: AuthType.otp,
                 ),
                 args: args,
@@ -728,7 +707,7 @@ class Authorizer<T extends Auth> {
           emit(
             const AuthResponse.message(
               "Code sent to your device!",
-              provider: AuthProviders.phone,
+              provider: Provider.phone,
               type: AuthType.otp,
             ),
             args: args,
@@ -737,11 +716,11 @@ class Authorizer<T extends Auth> {
           );
           if (onCodeSent != null) onCodeSent(verId, forceResendingToken);
         },
-        onFailed: (FirebaseAuthException exception) {
+        onFailed: (exception) {
           emit(
             AuthResponse.failure(
-              exception.message,
-              provider: AuthProviders.phone,
+              exception.msg,
+              provider: Provider.phone,
               type: AuthType.otp,
             ),
             args: args,
@@ -754,7 +733,7 @@ class Authorizer<T extends Auth> {
           emit(
             const AuthResponse.failure(
               "Auto retrieval code timeout!",
-              provider: AuthProviders.phone,
+              provider: Provider.phone,
               type: AuthType.otp,
             ),
             args: args,
@@ -768,7 +747,7 @@ class Authorizer<T extends Auth> {
       );
       return emit(
         const AuthResponse.loading(
-          AuthProviders.phone,
+          Provider.phone,
           AuthType.otp,
         ),
         args: args,
@@ -778,8 +757,8 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          msg.signOut.failure ?? error,
-          provider: AuthProviders.phone,
+          _msg.signOut.failure ?? error,
+          provider: Provider.phone,
           type: AuthType.otp,
         ),
         args: args,
@@ -797,23 +776,28 @@ class Authorizer<T extends Auth> {
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(AuthProviders.phone, AuthType.phone),
+      const AuthResponse.loading(Provider.phone, AuthType.phone),
       args: args,
       id: id,
       notifiable: notifiable,
     );
 
     try {
-      final credential = authenticator.credential;
-      final response = await authRepository.signInWithCredential(
-        credential: credential,
+      final credential = _delegate.credential(
+        Provider.phone,
+        Credential(
+          smsCode: authenticator.smsCode,
+          verificationId: authenticator.token,
+        ),
       );
+
+      final response = await _delegate.signInWithCredential(credential);
 
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.phone,
+            provider: Provider.phone,
             type: AuthType.phone,
           ),
           args: args,
@@ -822,12 +806,12 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return emit(
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.phone,
+            _msg.authorization,
+            provider: Provider.phone,
             type: AuthType.phone,
           ),
           args: args,
@@ -838,15 +822,13 @@ class Authorizer<T extends Auth> {
 
       final user = authenticator.copy(
         id: result.uid,
-        accessToken: storeToken ? credential.accessToken : null,
-        idToken: storeToken && credential.token != null
-            ? "${credential.token}"
-            : null,
+        accessToken: storeToken ? result.accessToken : null,
+        idToken: storeToken ? result.idToken : null,
         email: result.email,
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.phone,
+        provider: Provider.phone,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -865,8 +847,8 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithPhone.done,
-          provider: AuthProviders.phone,
+          msg: _msg.signInWithPhone.done,
+          provider: Provider.phone,
           type: AuthType.phone,
         ),
         args: args,
@@ -876,8 +858,8 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          msg.signInWithPhone.failure ?? error,
-          provider: AuthProviders.phone,
+          _msg.signInWithPhone.failure ?? error,
+          provider: Provider.phone,
           type: AuthType.phone,
         ),
         args: args,
@@ -898,13 +880,13 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.username, AuthType.login),
+      const AuthResponse.loading(Provider.username, AuthType.login),
     );
 
     try {
-      final response = await authRepository.signInWithUsernameNPassword(
-        username: authenticator.username,
-        password: authenticator.password,
+      final response = await _delegate.signInWithUsernameNPassword(
+        authenticator.username,
+        authenticator.password,
       );
       if (!response.isSuccessful) {
         return emit(
@@ -913,13 +895,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.username,
+            provider: Provider.username,
             type: AuthType.login,
           ),
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return emit(
           args: args,
@@ -927,7 +909,7 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.username,
+            provider: Provider.username,
             type: AuthType.login,
           ),
         );
@@ -939,7 +921,7 @@ class Authorizer<T extends Auth> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.username,
+        provider: Provider.username,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
       );
@@ -964,8 +946,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithUsername.done,
-          provider: AuthProviders.username,
+          msg: _msg.signInWithUsername.done,
+          provider: Provider.username,
           type: AuthType.login,
         ),
       );
@@ -975,8 +957,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithUsername.failure ?? error,
-          provider: AuthProviders.username,
+          _msg.signInWithUsername.failure ?? error,
+          provider: Provider.username,
           type: AuthType.login,
         ),
       );
@@ -994,12 +976,12 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.email, AuthType.register),
+      const AuthResponse.loading(Provider.email, AuthType.register),
     );
     try {
-      final response = await authRepository.signUpWithEmailNPassword(
-        email: authenticator.email,
-        password: authenticator.password,
+      final response = await _delegate.signUpWithEmailNPassword(
+        authenticator.email,
+        authenticator.password,
       );
       if (!response.isSuccessful) {
         return emit(
@@ -1008,21 +990,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.email,
+            provider: Provider.email,
             type: AuthType.register,
           ),
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.email,
+            _msg.authorization,
+            provider: Provider.email,
             type: AuthType.register,
           ),
         );
@@ -1035,7 +1017,7 @@ class Authorizer<T extends Auth> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.email,
+        provider: Provider.email,
         loggedIn: true,
         loggedInTime: creationTime,
         timeMills: creationTime,
@@ -1056,8 +1038,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signUpWithEmail.done,
-          provider: AuthProviders.email,
+          msg: _msg.signUpWithEmail.done,
+          provider: Provider.email,
           type: AuthType.register,
         ),
       );
@@ -1067,8 +1049,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signUpWithEmail.failure ?? error,
-          provider: AuthProviders.email,
+          _msg.signUpWithEmail.failure ?? error,
+          provider: Provider.email,
           type: AuthType.register,
         ),
       );
@@ -1086,13 +1068,13 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.username, AuthType.register),
+      const AuthResponse.loading(Provider.username, AuthType.register),
     );
 
     try {
-      final response = await authRepository.signUpWithUsernameNPassword(
-        username: authenticator.username,
-        password: authenticator.password,
+      final response = await _delegate.signUpWithUsernameNPassword(
+        authenticator.username,
+        authenticator.password,
       );
       if (!response.isSuccessful) {
         return emit(
@@ -1101,21 +1083,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.username,
+            provider: Provider.username,
             type: AuthType.register,
           ),
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.username,
+            _msg.authorization,
+            provider: Provider.username,
             type: AuthType.register,
           ),
         );
@@ -1128,7 +1110,7 @@ class Authorizer<T extends Auth> {
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.username,
+        provider: Provider.username,
         loggedIn: true,
         loggedInTime: creationTime,
         timeMills: creationTime,
@@ -1149,8 +1131,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signUpWithUsername.done,
-          provider: AuthProviders.username,
+          msg: _msg.signUpWithUsername.done,
+          provider: Provider.username,
           type: AuthType.register,
         ),
       );
@@ -1160,8 +1142,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signUpWithUsername.failure ?? error,
-          provider: AuthProviders.username,
+          _msg.signUpWithUsername.failure ?? error,
+          provider: Provider.username,
           type: AuthType.register,
         ),
       );
@@ -1169,7 +1151,7 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signOut({
-    AuthProviders? provider,
+    Provider? provider,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1182,7 +1164,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.loading(provider, AuthType.logout),
       );
-      final response = await authRepository.signOut(provider);
+      final response = await _delegate.signOut(provider);
       if (!response.isSuccessful) {
         return emit(
           args: args,
@@ -1203,7 +1185,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.unauthenticated(
-            msg: msg.signOut.done,
+            msg: _msg.signOut.done,
             provider: provider,
             type: AuthType.logout,
           ),
@@ -1233,7 +1215,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.unauthenticated(
-          msg: msg.signOut.done,
+          msg: _msg.signOut.done,
           provider: provider,
           type: AuthType.logout,
         ),
@@ -1244,7 +1226,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signOut.failure ?? error,
+          _msg.signOut.failure ?? error,
           provider: provider,
           type: AuthType.logout,
         ),
@@ -1258,7 +1240,7 @@ class Authorizer<T extends Auth> {
     bool notifiable = true,
   }) async {
     try {
-      await backupRepository.update(data);
+      await _backup.update(data);
       final updated = await auth;
       if (notifiable) _emitUser(updated);
       return updated;
@@ -1275,7 +1257,7 @@ class Authorizer<T extends Auth> {
     bool updateMode = false,
   }) async {
     try {
-      await backupRepository.save(
+      await _backup.save(
         id: id,
         initials: initials,
         cacheUpdateMode: updateMode,
@@ -1292,36 +1274,41 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse> verifyPhoneByOtp(OtpAuthenticator authenticator) async {
     try {
-      final credential = authenticator.credential;
-      final response = await authRepository.signInWithCredential(
-        credential: credential,
+      final credential = _delegate.credential(
+        Provider.phone,
+        Credential(
+          smsCode: authenticator.smsCode,
+          verificationId: authenticator.token,
+        ),
       );
+
+      final response = await _delegate.signInWithCredential(credential);
       if (!response.isSuccessful) {
         return AuthResponse.failure(
           response.error,
-          provider: AuthProviders.phone,
+          provider: Provider.phone,
           type: AuthType.phone,
         );
       }
 
-      final result = response.data?.user;
+      final result = response.data;
       if (result == null) {
         return AuthResponse.failure(
-          msg.authorization,
-          provider: AuthProviders.phone,
+          _msg.authorization,
+          provider: Provider.phone,
           type: AuthType.phone,
         );
       }
 
       final user = authenticator.copy(
         id: result.uid,
-        accessToken: credential.accessToken,
-        idToken: credential.token != null ? "${credential.token}" : null,
+        accessToken: result.accessToken,
+        idToken: result.idToken,
         email: result.email,
         name: result.displayName,
         phone: result.phoneNumber,
         photo: result.photoURL,
-        provider: AuthProviders.phone,
+        provider: Provider.phone,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1329,14 +1316,14 @@ class Authorizer<T extends Auth> {
 
       return AuthResponse.authenticated(
         user,
-        msg: msg.signInWithPhone.done,
-        provider: AuthProviders.phone,
+        msg: _msg.signInWithPhone.done,
+        provider: Provider.phone,
         type: AuthType.phone,
       );
     } catch (error) {
       return AuthResponse.failure(
-        msg.signInWithPhone.failure ?? error,
-        provider: AuthProviders.phone,
+        _msg.signInWithPhone.failure ?? error,
+        provider: Provider.phone,
         type: AuthType.phone,
       );
     }
@@ -1353,11 +1340,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.apple, AuthType.oauth),
+      const AuthResponse.loading(Provider.apple, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithApple();
+      final response = await _delegate.signInWithApple();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1366,15 +1353,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.apple,
+            provider: Provider.apple,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
 
       if (!current.isSuccessful) {
         return emit(
@@ -1383,21 +1368,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.apple,
+            provider: Provider.apple,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.apple,
+            _msg.authorization,
+            provider: Provider.apple,
             type: AuthType.oauth,
           ),
         );
@@ -1408,10 +1393,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.apple,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.apple,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1432,8 +1417,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithApple.done,
-          provider: AuthProviders.apple,
+          msg: _msg.signInWithApple.done,
+          provider: Provider.apple,
           type: AuthType.oauth,
         ),
       );
@@ -1443,8 +1428,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithApple.failure ?? error,
-          provider: AuthProviders.apple,
+          _msg.signInWithApple.failure ?? error,
+          provider: Provider.apple,
           type: AuthType.oauth,
         ),
       );
@@ -1462,11 +1447,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.facebook, AuthType.oauth),
+      const AuthResponse.loading(Provider.facebook, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithFacebook();
+      final response = await _delegate.signInWithFacebook();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1475,15 +1460,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.facebook,
+            provider: Provider.facebook,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
 
       if (!current.isSuccessful) {
         return emit(
@@ -1492,21 +1475,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.facebook,
+            provider: Provider.facebook,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.facebook,
+            _msg.authorization,
+            provider: Provider.facebook,
             type: AuthType.oauth,
           ),
         );
@@ -1517,10 +1500,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.facebook,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.facebook,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1541,8 +1524,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithFacebook.done,
-          provider: AuthProviders.facebook,
+          msg: _msg.signInWithFacebook.done,
+          provider: Provider.facebook,
           type: AuthType.oauth,
         ),
       );
@@ -1552,8 +1535,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithFacebook.failure ?? error,
-          provider: AuthProviders.facebook,
+          _msg.signInWithFacebook.failure ?? error,
+          provider: Provider.facebook,
           type: AuthType.oauth,
         ),
       );
@@ -1572,13 +1555,13 @@ class Authorizer<T extends Auth> {
       id: id,
       notifiable: notifiable,
       const AuthResponse.loading(
-        AuthProviders.gameCenter,
+        Provider.gameCenter,
         AuthType.oauth,
       ),
     );
 
     try {
-      final response = await authRepository.signInWithGameCenter();
+      final response = await _delegate.signInWithGameCenter();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1587,15 +1570,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.gameCenter,
+            provider: Provider.gameCenter,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
 
       if (!current.isSuccessful) {
         return emit(
@@ -1604,21 +1585,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.gameCenter,
+            provider: Provider.gameCenter,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.gameCenter,
+            _msg.authorization,
+            provider: Provider.gameCenter,
             type: AuthType.oauth,
           ),
         );
@@ -1629,10 +1610,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.gameCenter,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.gameCenter,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1653,8 +1634,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.gameCenter,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.gameCenter,
           type: AuthType.oauth,
         ),
       );
@@ -1664,8 +1645,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.gameCenter,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.gameCenter,
           type: AuthType.oauth,
         ),
       );
@@ -1683,11 +1664,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.github, AuthType.oauth),
+      const AuthResponse.loading(Provider.github, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithGithub();
+      final response = await _delegate.signInWithGithub();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1696,15 +1677,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.github,
+            provider: Provider.github,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -1712,21 +1691,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.github,
+            provider: Provider.github,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.github,
+            _msg.authorization,
+            provider: Provider.github,
             type: AuthType.oauth,
           ),
         );
@@ -1737,10 +1716,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.github,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.github,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1761,8 +1740,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.github,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.github,
           type: AuthType.oauth,
         ),
       );
@@ -1772,8 +1751,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.github,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.github,
           type: AuthType.oauth,
         ),
       );
@@ -1791,11 +1770,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.google, AuthType.oauth),
+      const AuthResponse.loading(Provider.google, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithGoogle();
+      final response = await _delegate.signInWithGoogle();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1804,15 +1783,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.google,
+            provider: Provider.google,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -1820,21 +1797,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.google,
+            provider: Provider.google,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.google,
+            _msg.authorization,
+            provider: Provider.google,
             type: AuthType.oauth,
           ),
         );
@@ -1845,10 +1822,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.google,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.google,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1869,8 +1846,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGoogle.done,
-          provider: AuthProviders.google,
+          msg: _msg.signInWithGoogle.done,
+          provider: Provider.google,
           type: AuthType.oauth,
         ),
       );
@@ -1880,8 +1857,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGoogle.failure ?? error,
-          provider: AuthProviders.google,
+          _msg.signInWithGoogle.failure ?? error,
+          provider: Provider.google,
           type: AuthType.oauth,
         ),
       );
@@ -1899,11 +1876,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.microsoft, AuthType.oauth),
+      const AuthResponse.loading(Provider.microsoft, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithMicrosoft();
+      final response = await _delegate.signInWithMicrosoft();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1912,15 +1889,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.microsoft,
+            provider: Provider.microsoft,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -1928,21 +1903,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.microsoft,
+            provider: Provider.microsoft,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.microsoft,
+            _msg.authorization,
+            provider: Provider.microsoft,
             type: AuthType.oauth,
           ),
         );
@@ -1953,10 +1928,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.microsoft,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.microsoft,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -1977,8 +1952,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.microsoft,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.microsoft,
           type: AuthType.oauth,
         ),
       );
@@ -1988,8 +1963,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.microsoft,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.microsoft,
           type: AuthType.oauth,
         ),
       );
@@ -2007,11 +1982,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.playGames, AuthType.oauth),
+      const AuthResponse.loading(Provider.playGames, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithPlayGames();
+      final response = await _delegate.signInWithPlayGames();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2020,15 +1995,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.playGames,
+            provider: Provider.playGames,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2036,21 +2009,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.playGames,
+            provider: Provider.playGames,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.playGames,
+            _msg.authorization,
+            provider: Provider.playGames,
             type: AuthType.oauth,
           ),
         );
@@ -2061,10 +2034,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.playGames,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.playGames,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2086,8 +2059,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.playGames,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.playGames,
           type: AuthType.oauth,
         ),
       );
@@ -2097,8 +2070,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.playGames,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.playGames,
           type: AuthType.oauth,
         ),
       );
@@ -2116,11 +2089,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.saml, AuthType.oauth),
+      const AuthResponse.loading(Provider.saml, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithSAML();
+      final response = await _delegate.signInWithSAML();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2129,15 +2102,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.saml,
+            provider: Provider.saml,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2145,21 +2116,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.saml,
+            provider: Provider.saml,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.saml,
+            _msg.authorization,
+            provider: Provider.saml,
             type: AuthType.oauth,
           ),
         );
@@ -2170,10 +2141,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.saml,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.saml,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2195,8 +2166,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.saml,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.saml,
           type: AuthType.oauth,
         ),
       );
@@ -2206,8 +2177,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.saml,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.saml,
           type: AuthType.oauth,
         ),
       );
@@ -2225,11 +2196,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.twitter, AuthType.oauth),
+      const AuthResponse.loading(Provider.twitter, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithTwitter();
+      final response = await _delegate.signInWithTwitter();
       final raw = response.data;
 
       if (raw == null || raw.credential == null) {
@@ -2239,15 +2210,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.twitter,
+            provider: Provider.twitter,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2255,21 +2224,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.twitter,
+            provider: Provider.twitter,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.twitter,
+            _msg.authorization,
+            provider: Provider.twitter,
             type: AuthType.oauth,
           ),
         );
@@ -2280,10 +2249,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.twitter,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.twitter,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2305,8 +2274,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.twitter,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.twitter,
           type: AuthType.oauth,
         ),
       );
@@ -2316,8 +2285,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.twitter,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.twitter,
           type: AuthType.oauth,
         ),
       );
@@ -2335,11 +2304,11 @@ class Authorizer<T extends Auth> {
       args: args,
       id: id,
       notifiable: notifiable,
-      const AuthResponse.loading(AuthProviders.yahoo, AuthType.oauth),
+      const AuthResponse.loading(Provider.yahoo, AuthType.oauth),
     );
 
     try {
-      final response = await authRepository.signInWithYahoo();
+      final response = await _delegate.signInWithYahoo();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2348,15 +2317,13 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             response.error,
-            provider: AuthProviders.yahoo,
+            provider: Provider.yahoo,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final current = await authRepository.signInWithCredential(
-        credential: raw.credential!,
-      );
+      final current = await _delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2364,21 +2331,21 @@ class Authorizer<T extends Auth> {
           notifiable: notifiable,
           AuthResponse.failure(
             current.error,
-            provider: AuthProviders.yahoo,
+            provider: Provider.yahoo,
             type: AuthType.oauth,
           ),
         );
       }
 
-      final result = current.data?.user;
+      final result = current.data;
       if (result == null) {
         return emit(
           args: args,
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            msg.authorization,
-            provider: AuthProviders.yahoo,
+            _msg.authorization,
+            provider: Provider.yahoo,
             type: AuthType.oauth,
           ),
         );
@@ -2389,10 +2356,10 @@ class Authorizer<T extends Auth> {
         accessToken: storeToken ? raw.accessToken : null,
         idToken: storeToken ? raw.idToken : null,
         email: raw.email ?? result.email,
-        name: raw.name ?? result.displayName,
+        name: raw.displayName ?? result.displayName,
         phone: result.phoneNumber,
-        photo: raw.photo ?? result.photoURL,
-        provider: AuthProviders.yahoo,
+        photo: raw.photoURL ?? result.photoURL,
+        provider: Provider.yahoo,
         loggedIn: true,
         loggedInTime: Entity.generateTimeMills,
         verified: true,
@@ -2413,8 +2380,8 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
-          provider: AuthProviders.yahoo,
+          msg: _msg.signInWithGithub.done,
+          provider: Provider.yahoo,
           type: AuthType.oauth,
         ),
       );
@@ -2424,8 +2391,8 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
-          provider: AuthProviders.yahoo,
+          _msg.signInWithGithub.failure ?? error,
+          provider: Provider.yahoo,
           type: AuthType.oauth,
         ),
       );

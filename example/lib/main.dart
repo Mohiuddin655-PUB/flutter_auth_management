@@ -1,9 +1,6 @@
-import 'package:auth_management/core.dart';
-import 'package:auth_management_biometric_delegate/auth_management_biometric_delegate.dart';
-import 'package:auth_management_google_delegate/auth_management_google_delegate.dart';
+import 'package:auth_management_firebase_delegate/auth_management_firebase_delegate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backup_delegate.dart';
@@ -28,19 +25,9 @@ class Application extends StatelessWidget {
     return AuthProvider<UserModel>(
       initialCheck: true,
       authorizer: Authorizer(
-        authRepository: AuthRepository.create(
-          // appleAuthDelegate: AppleAuthDelegate(),
-          biometricAuthDelegate: BiometricAuthDelegate(),
-          // facebookAuthDelegate: FacebookAuthDelegate(),
-          googleAuthDelegate: GoogleAuthDelegate(
-            googleSignIn: GoogleSignIn(scopes: [
-              'email',
-            ]),
-          ),
-        ),
-        backupRepository: BackupRepository.create(
+        delegate: const FirebaseAuthDelegate(),
+        backup: InAppBackupDelegate(
           key: "_local_user_key_",
-          delegate: UserBackupDelegate(),
           reader: (key) async {
             final db = await SharedPreferences.getInstance();
             // get from any local db [Hive, SharedPreferences, etc]

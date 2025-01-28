@@ -1,7 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
-
 import '../models/auth.dart';
-import '../models/auth_providers.dart';
+import '../models/provider.dart';
 
 class Authenticator extends Auth {
   Authenticator.empty() : super();
@@ -16,7 +14,7 @@ class Authenticator extends Auth {
     super.photo,
     super.username,
     super.extra,
-  }) : super(provider: AuthProviders.email, email: email, password: password);
+  }) : super(provider: Provider.email, email: email, password: password);
 
   Authenticator.guest({
     super.id,
@@ -27,7 +25,7 @@ class Authenticator extends Auth {
     super.photo,
     super.username,
     super.extra,
-  }) : super(provider: AuthProviders.guest);
+  }) : super(provider: Provider.guest);
 
   Authenticator.oauth({
     super.id,
@@ -66,7 +64,7 @@ class Authenticator extends Auth {
     super.photo,
     super.username,
     super.extra,
-  }) : super(provider: AuthProviders.phone, phone: phone);
+  }) : super(provider: Provider.phone, phone: phone);
 
   Authenticator.username({
     required String username,
@@ -79,7 +77,7 @@ class Authenticator extends Auth {
     super.photo,
     super.extra,
   }) : super(
-          provider: AuthProviders.username,
+          provider: Provider.username,
           username: username,
           password: password,
         );
@@ -164,13 +162,6 @@ class OtpAuthenticator extends Authenticator {
   String get token => super.idToken ?? "";
 
   String get smsCode => super.accessToken ?? "";
-
-  AuthCredential get credential {
-    return PhoneAuthProvider.credential(
-      verificationId: token,
-      smsCode: smsCode,
-    );
-  }
 }
 
 class PhoneAuthenticator extends Authenticator {

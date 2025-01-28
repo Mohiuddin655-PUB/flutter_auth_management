@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/authorizer.dart';
-import '../core/extensions.dart';
+import '../core/helper.dart';
 import '../core/typedefs.dart';
 import '../models/auth.dart';
 import '../models/auth_changes.dart';

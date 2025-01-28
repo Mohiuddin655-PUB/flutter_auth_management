@@ -1,27 +1,13 @@
-import 'package:auth_management/core.dart';
+part of '../core/authorizer.dart';
 
-class BackupRepository<T extends Auth> {
-  final BackupDataSource<T> source;
+class _BackupRepository<T extends Auth> {
+  final BackupDelegate<T> delegate;
 
-  const BackupRepository(this.source);
-
-  factory BackupRepository.create({
-    String key = AuthKeys.key,
-    required BackupReader reader,
-    required BackupWriter writer,
-    BackupDelegate<T>? delegate,
-  }) {
-    return BackupRepository(BackupDataSource(
-      key: key,
-      reader: reader,
-      writer: writer,
-      delegate: delegate,
-    ));
-  }
+  const _BackupRepository(this.delegate);
 
   Future<T?> get cache async {
     try {
-      return source.cache;
+      return delegate.cache;
     } catch (error) {
       return null;
     }
@@ -31,7 +17,7 @@ class BackupRepository<T extends Auth> {
     return cache.then((value) {
       if (value == null || !value.isLoggedIn) return null;
       if (!remotely) return value;
-      return source.onFetchUser(value.id);
+      return delegate.onFetchUser(value.id);
     });
   }
 
@@ -42,7 +28,7 @@ class BackupRepository<T extends Auth> {
 
   Future<bool> setAsLocal(T? data) {
     return cache.then((value) {
-      return source.set(data ?? value).onError((_, __) => false);
+      return delegate.set(data ?? value).onError((_, __) => false);
     });
   }
 
@@ -64,40 +50,40 @@ class BackupRepository<T extends Auth> {
     bool cacheUpdateMode = false,
   }) async {
     if (id.isEmpty) return false;
-    if (cacheUpdateMode) return source.update(updates);
+    if (cacheUpdateMode) return delegate.update(updates);
     final remote = await onFetchUser(id);
     if (remote == null || !remote.isAuthenticated) {
       final user = build(initials);
       await onCreateUser(user);
-      return source.set(user);
+      return delegate.set(user);
     }
     await onUpdateUser(id, updates);
     Map<String, dynamic> current = Map.from(remote.filtered);
     current.addAll(updates);
-    return source.set(build(current));
+    return delegate.set(build(current));
   }
 
   Future<bool> clear() async {
     try {
-      return source.clear();
+      return delegate.clear();
     } catch (error) {
       return false;
     }
   }
 
-  Future<T?> onFetchUser(String id) => source.onFetchUser(id);
+  Future<T?> onFetchUser(String id) => delegate.onFetchUser(id);
 
   Future<void> onCreateUser(T data) {
-    return source.onCreateUser(data);
+    return delegate.onCreateUser(data);
   }
 
   Future<void> onUpdateUser(String id, Map<String, dynamic> data) {
-    return source.onUpdateUser(id, data);
+    return delegate.onUpdateUser(id, data);
   }
 
   Future<void> onDeleteUser(String id) {
-    return source.onDeleteUser(id);
+    return delegate.onDeleteUser(id);
   }
 
-  T build(Map<String, dynamic> source) => this.source.build(source);
+  T build(Map<String, dynamic> source) => this.delegate.build(source);
 }

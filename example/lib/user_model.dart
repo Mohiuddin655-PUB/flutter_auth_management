@@ -88,7 +88,7 @@ class UserModel extends Auth<UserKeys> {
     String? password,
     String? phone,
     String? photo,
-    AuthProviders? provider,
+    Provider? provider,
     String? username,
     bool? verified,
     Address? address,

@@ -2,23 +2,20 @@ import 'dart:convert';
 import 'dart:core';
 
 import '../models/auth.dart';
-import 'delegate_backup.dart';
 
 typedef Backup = Map<String, dynamic>;
 typedef BackupReader = Future<String?> Function(String key);
 typedef BackupWriter = Future<bool> Function(String key, String? value);
 
-class BackupDataSource<T extends Auth> {
+abstract class BackupDelegate<T extends Auth> {
   final String key;
-  final BackupDelegate<T>? delegate;
   final BackupReader reader;
   final BackupWriter writer;
 
-  const BackupDataSource({
+  const BackupDelegate({
     this.key = AuthKeys.key,
     required this.reader,
     required this.writer,
-    this.delegate,
   });
 
   Future<T?> get cache {
@@ -72,43 +69,13 @@ class BackupDataSource<T extends Auth> {
 
   Future<bool> clear() => writer(key, null);
 
-  Future<T?> onFetchUser(String id) {
-    if (delegate != null) {
-      return delegate!.get(id);
-    } else {
-      return Future.value(null);
-    }
-  }
+  Future<T?> onFetchUser(String id);
 
-  Future<void> onCreateUser(T data) {
-    if (delegate != null) {
-      return delegate!.create(data);
-    } else {
-      return Future.value(null);
-    }
-  }
+  Future<void> onCreateUser(T data);
 
-  Future<void> onDeleteUser(String id) {
-    if (delegate != null) {
-      return delegate!.delete(id);
-    } else {
-      return Future.value(null);
-    }
-  }
+  Future<void> onDeleteUser(String id);
 
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data) {
-    if (delegate != null) {
-      return delegate!.update(id, data);
-    } else {
-      return Future.value(null);
-    }
-  }
+  Future<void> onUpdateUser(String id, Map<String, dynamic> data);
 
-  T build(Map<String, dynamic> source) {
-    if (delegate != null) {
-      return delegate!.build(source);
-    } else {
-      return Auth.from(source) as T;
-    }
-  }
+  T build(Map<String, dynamic> source);
 }

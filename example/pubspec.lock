@@ -26,12 +26,13 @@ packages:
     source: hosted
     version: "2.11.0"
   auth_management:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      path: ".."
-      relative: true
-    source: path
-    version: "2.0.3"
+      name: auth_management
+      sha256: f8e8b96c872a1c3367de05d260991c48c3ad4d0466ee763d5ceef0e8eaff043e
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   auth_management_apple_delegate:
     dependency: "direct main"
     description:
@@ -61,6 +62,13 @@ packages:
       relative: true
     source: path
     version: "1.0.3"
+  auth_management_firebase_delegate:
+    dependency: "direct main"
+    description:
+      path: "../auth_management_firebase_delegate"
+      relative: true
+    source: path
+    version: "1.0.1"
   auth_management_google_delegate:
     dependency: "direct main"
     description:
