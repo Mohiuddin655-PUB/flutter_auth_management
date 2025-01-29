@@ -1,5 +1,4 @@
-import '../models/auth.dart';
-import '../models/provider.dart';
+import 'package:auth_management_delegates/core.dart';
 
 class Authenticator extends Auth {
   Authenticator.empty() : super();

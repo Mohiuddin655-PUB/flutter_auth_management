@@ -1,4 +1,4 @@
-import 'package:auth_management/auth_management.dart';
+import 'package:auth_management_delegates/auth_management_delegates.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 String? _toMail(String prefix, String suffix, [String type = "com"]) {

@@ -1,5 +1,4 @@
-import 'auth.dart';
-import 'auth_status.dart';
+import 'package:auth_management_delegates/core.dart';
 
 final class AuthChanges<T extends Auth> {
   final Object? args;

@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  auth_management:
+    path: ../
   auth_management_firebase_delegate:
     path: ../auth_management_firebase_delegate
   auth_management_apple_delegate:

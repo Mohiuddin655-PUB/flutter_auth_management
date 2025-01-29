@@ -1,3 +1,7 @@
+## 3.0.1
+
+* Remove all unnecessary external libraries
+
 ## 3.0.0
 
 * Firebase external library remove and add auth delegate system

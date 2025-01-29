@@ -1,3 +1,4 @@
+import 'package:auth_management/auth_management.dart';
 import 'package:auth_management_firebase_delegate/auth_management_firebase_delegate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';

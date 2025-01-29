@@ -1,4 +1,9 @@
-import 'package:auth_management/auth_management.dart';
+import 'package:flutter_entity/entity.dart';
+
+import 'biometric_config.dart';
+import 'credential.dart';
+import 'exception.dart';
+import 'provider.dart';
 
 abstract class AuthDelegate {
   const AuthDelegate();

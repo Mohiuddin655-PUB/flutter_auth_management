@@ -1,14 +1,8 @@
 import 'dart:async';
 
+import 'package:auth_management_delegates/auth_management_delegates.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_entity/flutter_entity.dart';
 
-import '../models/auth.dart';
-import '../models/auth_status.dart';
-import '../models/biometric_config.dart';
-import '../models/credential.dart';
-import '../models/exception.dart';
-import '../models/provider.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/auth_response.dart';
 import '../utils/authenticator.dart';

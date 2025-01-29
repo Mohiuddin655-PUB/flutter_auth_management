@@ -1,11 +1,9 @@
 import 'dart:async';
 
+import 'package:auth_management_delegates/core.dart';
 import 'package:flutter/material.dart';
 
-import '../models/auth.dart';
-import '../models/auth_changes.dart';
-import '../models/auth_status.dart';
-import '../models/biometric_status.dart';
+import '../utils/auth_changes.dart';
 
 typedef OnAuthMode = void Function(BuildContext context);
 typedef OnAuthError = void Function(BuildContext context, String error);

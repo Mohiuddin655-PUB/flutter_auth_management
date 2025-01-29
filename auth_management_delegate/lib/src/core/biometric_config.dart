@@ -1,4 +1,4 @@
-import 'package:auth_management_delegates/auth_management_delegates.dart';
+import '../biometric/delegate.dart';
 
 class BiometricConfig {
   final String deviceException;

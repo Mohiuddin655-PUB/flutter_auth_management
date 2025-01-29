@@ -1,5 +1,4 @@
-import 'package:auth_management/core.dart';
-import 'package:flutter_entity/flutter_entity.dart';
+import 'package:auth_management/auth_management.dart';
 
 class UserKeys extends AuthKeys {
   final address = "address";

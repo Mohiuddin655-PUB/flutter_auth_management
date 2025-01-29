@@ -1,7 +1,6 @@
-import '../models/auth.dart';
-import '../models/auth_status.dart';
-import '../models/auth_type.dart';
-import '../models/provider.dart';
+import 'package:auth_management_delegates/core.dart';
+
+import 'auth_type.dart';
 
 class AuthResponse<T extends Auth> {
   final bool? _initial;
