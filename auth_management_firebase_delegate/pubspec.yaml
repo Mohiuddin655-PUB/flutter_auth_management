@@ -1,6 +1,6 @@
 name: auth_management_firebase_delegate
 description: "Auth management delegate simplifies login with support for OAuth and biometric methods, ensuring secure access and seamless user experience."
-version: 1.0.2
+version: 1.0.3
 repository: https://github.com/P-YMR/flutter_auth_management.git
 
 environment:
@@ -12,7 +12,7 @@ dependencies:
     sdk: flutter
 
   auth_management_delegates: ^1.0.4
-  firebase_auth: ^5.3.4
+  firebase_auth: ^5.5.1
 
 dev_dependencies:
   flutter_test:

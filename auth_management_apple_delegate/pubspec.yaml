@@ -1,6 +1,6 @@
 name: auth_management_apple_delegate
 description: "Facilitates seamless authentication via Apple's authentication services, ensuring secure access to digital platforms."
-version: 1.0.3
+version: 1.0.4
 repository: https://github.com/P-YMR/flutter_auth_management.git
 
 environment:
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  sign_in_with_apple: ^6.1.1
+  sign_in_with_apple: ^6.1.4
   auth_management_delegates: ^1.0.2
 #  auth_management_delegates:
 #    path: ../auth_management_delegate
