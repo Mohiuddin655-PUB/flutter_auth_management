@@ -291,9 +291,7 @@ class Authorizer<T extends Auth> {
   }
 
   void _emitStatus(AuthResponse<T> data) {
-    if (data.isState && _statusNotifier.value != data.status) {
-      _statusNotifier.value = data.status;
-    }
+    _statusNotifier.notifiable = data.status;
   }
 
   T? _emitUser(T? data) {

@@ -1,3 +1,7 @@
+## 3.0.2
+
+* Auth status bug fixed
+
 ## 3.0.1
 
 * Remove all unnecessary external libraries
