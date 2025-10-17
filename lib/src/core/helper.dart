@@ -1,11 +1,16 @@
 import 'dart:async';
 
-import 'package:auth_management_delegates/auth_management_delegates.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_entity/entity.dart';
 
-import '../utils/auth_notifier.dart';
+import '../enums/auth_status.dart';
+import '../enums/provider.dart';
+import '../models/auth.dart';
+import '../models/credential.dart';
+import '../models/exception.dart';
 import '../utils/auth_response.dart';
 import '../utils/authenticator.dart';
+import '../utils/biometric_config.dart';
 import '../utils/errors.dart';
 import '../widgets/provider.dart';
 import 'authorizer.dart';
@@ -61,23 +66,23 @@ extension AuthHelper on BuildContext {
     return _i<T>("isLoggedIn").isLoggedIn;
   }
 
-  AuthNotifier<String> liveError<T extends Auth>() {
+  ValueNotifier<String> liveError<T extends Auth>() {
     return _i<T>("liveError").liveError;
   }
 
-  AuthNotifier<bool> liveLoading<T extends Auth>() {
+  ValueNotifier<bool> liveLoading<T extends Auth>() {
     return _i<T>("liveLoading").liveLoading;
   }
 
-  AuthNotifier<String> liveMessage<T extends Auth>() {
+  ValueNotifier<String> liveMessage<T extends Auth>() {
     return _i<T>("liveMessage").liveMessage;
   }
 
-  AuthNotifier<AuthStatus> liveStatus<T extends Auth>() {
+  ValueNotifier<AuthStatus> liveStatus<T extends Auth>() {
     return _i<T>("liveStatus").liveStatus;
   }
 
-  AuthNotifier<T?> liveUser<T extends Auth>() {
+  ValueNotifier<T?> liveUser<T extends Auth>() {
     return _i<T>("liveUser").liveUser;
   }
 

@@ -1,5 +1,3 @@
-library;
-
 export 'src/widgets/auth_button.dart';
 export 'src/widgets/biometric_button.dart';
 export 'src/widgets/builder.dart';

@@ -1,26 +1,35 @@
 import 'dart:async';
 
-import 'package:auth_management_delegates/auth_management_delegates.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_entity/entity.dart';
 
-import '../utils/auth_notifier.dart';
+import '../delegates/auth.dart';
+import '../delegates/backup.dart';
+import '../enums/auth_status.dart';
+import '../enums/auth_type.dart';
+import '../enums/biometric_status.dart';
+import '../enums/provider.dart';
+import '../models/auth.dart';
+import '../models/credential.dart';
+import '../models/exception.dart';
+import '../models/messages.dart';
 import '../utils/auth_response.dart';
-import '../utils/auth_type.dart';
 import '../utils/authenticator.dart';
-import 'messages.dart';
+import '../utils/biometric_config.dart';
 import 'typedefs.dart';
 
-part '../repositories/backup.dart';
+part 'backup.dart';
 
 class Authorizer<T extends Auth> {
   final AuthMessages _msg;
   final AuthDelegate _delegate;
   final _BackupRepository<T> _backup;
 
-  final _errorNotifier = AuthNotifier("");
-  final _loadingNotifier = AuthNotifier(false);
-  final _messageNotifier = AuthNotifier("");
-  final _userNotifier = AuthNotifier<T?>(null);
-  final _statusNotifier = AuthNotifier(AuthStatus.unauthenticated);
+  final _errorNotifier = ValueNotifier("");
+  final _loadingNotifier = ValueNotifier(false);
+  final _messageNotifier = ValueNotifier("");
+  final _userNotifier = ValueNotifier<T?>(null);
+  final _statusNotifier = ValueNotifier(AuthStatus.unauthenticated);
 
   Object? _args;
 
@@ -34,7 +43,7 @@ class Authorizer<T extends Auth> {
 
   Authorizer({
     required AuthDelegate delegate,
-    required BackupDelegate<T> backup,
+    required AuthBackupDelegate<T> backup,
     AuthMessages msg = const AuthMessages(),
   })  : _msg = msg,
         _delegate = delegate,
@@ -67,15 +76,15 @@ class Authorizer<T extends Auth> {
     return value != null && value.isLoggedIn;
   }
 
-  AuthNotifier<String> get liveError => _errorNotifier;
+  ValueNotifier<String> get liveError => _errorNotifier;
 
-  AuthNotifier<bool> get liveLoading => _loadingNotifier;
+  ValueNotifier<bool> get liveLoading => _loadingNotifier;
 
-  AuthNotifier<String> get liveMessage => _messageNotifier;
+  ValueNotifier<String> get liveMessage => _messageNotifier;
 
-  AuthNotifier<AuthStatus> get liveStatus => _statusNotifier;
+  ValueNotifier<AuthStatus> get liveStatus => _statusNotifier;
 
-  AuthNotifier<T?> get liveUser => _userNotifier;
+  ValueNotifier<T?> get liveUser => _userNotifier;
 
   bool get loading => _loadingNotifier.value;
 
@@ -274,7 +283,7 @@ class Authorizer<T extends Auth> {
 
   void _emitError(AuthResponse<T> data) {
     if (data.isError) {
-      _errorNotifier.notifiable = data.error;
+      _errorNotifier.value = data.error;
     }
   }
 
@@ -286,12 +295,12 @@ class Authorizer<T extends Auth> {
 
   void _emitMessage(AuthResponse<T> data) {
     if (data.isMessage) {
-      _errorNotifier.notifiable = data.error;
+      _errorNotifier.value = data.error;
     }
   }
 
   void _emitStatus(AuthResponse<T> data) {
-    _statusNotifier.notifiable = data.status;
+    _statusNotifier.value = data.status;
   }
 
   T? _emitUser(T? data) {

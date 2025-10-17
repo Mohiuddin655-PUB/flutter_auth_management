@@ -1,8 +1,8 @@
-import 'package:auth_management_delegates/core.dart';
 import 'package:flutter/material.dart';
 
 import '../core/authorizer.dart';
 import '../core/helper.dart';
+import '../models/auth.dart';
 import '../utils/errors.dart';
 import 'provider.dart';
 
