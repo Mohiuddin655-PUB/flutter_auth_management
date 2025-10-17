@@ -1,7 +1,8 @@
-import 'package:auth_management_delegates/core.dart';
 import 'package:flutter/material.dart';
 
 import '../core/helper.dart';
+import '../enums/auth_status.dart';
+import '../models/auth.dart';
 
 class AuthRouter<T extends Auth> extends StatelessWidget {
   final String initialRoute;

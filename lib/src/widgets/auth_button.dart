@@ -1,8 +1,8 @@
-import 'package:auth_management_delegates/core.dart';
 import 'package:flutter/material.dart';
 
 import '../core/helper.dart';
 import '../core/typedefs.dart';
+import '../models/auth.dart';
 import '../utils/authenticator.dart';
 
 typedef AuthButtonCallback = void Function(BuildContext context);

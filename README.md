@@ -162,56 +162,210 @@ class Contact extends Entity {
 }
 ```
 
+### Create auth delegate
+```dart
+class MyAuthDelegate extends AuthDelegate {
+  @override
+  Future<bool> isSignIn([Provider? provider]) {
+    // implement isSignIn
+    return super.isSignIn(provider);
+  }
+
+  @override
+  Future<Response<void>> delete() {
+    // implement delete
+    return super.delete();
+  }
+
+  @override
+  Object credential(Provider provider, Credential credential) {
+    // implement credential
+    return super.credential(provider, credential);
+  }
+
+  @override
+  Future<Response<Credential>> signInAnonymously() {
+    // implement signInAnonymously
+    return super.signInAnonymously();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithApple() {
+    // implement signInWithApple
+    return super.signInWithApple();
+  }
+
+  @override
+  Future<Response<void>> signInWithBiometric([BiometricConfig? config]) {
+    // implement signInWithBiometric
+    return super.signInWithBiometric(config);
+  }
+
+  @override
+  Future<Response<Credential>> signInWithCredential(Object credential) {
+    // implement signInWithCredential
+    return super.signInWithCredential(credential);
+  }
+
+  @override
+  Future<Response<Credential>> signInWithEmailNPassword(
+      String email, String password) {
+    // implement signInWithEmailNPassword
+    return super.signInWithEmailNPassword(email, password);
+  }
+
+  @override
+  Future<Response<Credential>> signInWithFacebook() {
+    // implement signInWithFacebook
+    return super.signInWithFacebook();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithGameCenter() {
+    // implement signInWithGameCenter
+    return super.signInWithGameCenter();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithGithub() {
+    // implement signInWithGithub
+    return super.signInWithGithub();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithGoogle() {
+    // implement signInWithGoogle
+    return super.signInWithGoogle();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithMicrosoft() {
+    // implement signInWithMicrosoft
+    return super.signInWithMicrosoft();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithPlayGames() {
+    // implement signInWithPlayGames
+    return super.signInWithPlayGames();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithSAML() {
+    // implement signInWithSAML
+    return super.signInWithSAML();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithTwitter() {
+    // implement signInWithTwitter
+    return super.signInWithTwitter();
+  }
+
+  @override
+  Future<Response<Credential>> signInWithUsernameNPassword(
+    String username,
+    String password,
+  ) {
+    // implement signInWithUsernameNPassword
+    return super.signInWithUsernameNPassword(username, password);
+  }
+
+  @override
+  Future<Response<Credential>> signInWithYahoo() {
+    // implement signInWithYahoo
+    return super.signInWithYahoo();
+  }
+
+  @override
+  Future<Response<void>> signOut([Provider? provider]) {
+    // implement signOut
+    return super.signOut(provider);
+  }
+
+  @override
+  Future<Response<Credential>> signUpWithEmailNPassword(
+    String email,
+    String password,
+  ) {
+    // implement signUpWithEmailNPassword
+    return super.signUpWithEmailNPassword(email, password);
+  }
+
+  @override
+  Future<Response<Credential>> signUpWithUsernameNPassword(
+    String username,
+    String password,
+  ) {
+    // implement signUpWithUsernameNPassword
+    return super.signUpWithUsernameNPassword(username, password);
+  }
+
+  @override
+  Future<void> verifyPhoneNumber({
+    String? phoneNumber,
+    int? forceResendingToken,
+    Object? multiFactorInfo,
+    Object? multiFactorSession,
+    Duration timeout = const Duration(seconds: 30),
+    required void Function(Credential credential) onComplete,
+    required void Function(AuthException exception) onFailed,
+    required void Function(String verId, int? forceResendingToken) onCodeSent,
+    required void Function(String verId) onCodeAutoRetrievalTimeout,
+  }) {
+    // implement verifyPhoneNumber
+    return super.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      forceResendingToken: forceResendingToken,
+      multiFactorInfo: multiFactorInfo,
+      multiFactorSession: multiFactorSession,
+      timeout: timeout,
+      onComplete: onComplete,
+      onFailed: onFailed,
+      onCodeSent: onCodeSent,
+      onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+    );
+  }
+}
+```
+
 ### Create authorized user backup delegate
 
 ```dart
-class UserBackupDelegate extends BackupDelegate<UserModel> {
+class MyAuthBackupDelegate extends BackupDelegate<UserModel> {
+  const MyAuthBackupDelegate({
+    super.key,
+    required super.reader,
+    required super.writer,
+  });
+
   @override
-  Future<UserModel?> get(String id) async {
+  UserModel build(Map<String, dynamic> source) => UserModel.from(source);
+
+  @override
+  Future<void> onCreateUser(UserModel data) async {
+    // Store authorized user data in remote server
+    log("Authorized user data : $data");
+  }
+
+  @override
+  Future<void> onDeleteUser(String id) async {
+    // Clear unauthorized user data from remote server
+    log("Unauthorized user id : $id");
+  }
+
+  @override
+  Future<UserModel?> onFetchUser(String id) async {
     // fetch authorized user data from remote server
     log("Authorized user id : $id");
     return null;
   }
 
   @override
-  Future<void> create(UserModel data) async {
-    // Store authorized user data in remote server
-    log("Authorized user data : $data");
-  }
-
-  @override
-  Future<void> update(String id, Map<String, dynamic> data) async {
+  Future<void> onUpdateUser(String id, Map<String, dynamic> data) async {
     // Update authorized user data in remote server
     log("Authorized user data : $data");
   }
-
-  @override
-  Future<void> delete(String id) async {
-    // Clear unauthorized user data from remote server
-    log("Unauthorized user id : $id");
-  }
-
-  @override
-  UserModel build(Map<String, dynamic> source) => UserModel.from(source);
-}
-```
-
-### Create external auth delegates (apple, biometric, facebook, google etc)
-
-```dart
-import 'package:auth_management/auth_management.dart';
-import 'package:auth_management_apple_delegate/auth_management_apple_delegate.dart';
-import 'package:auth_management_biometric_delegate/auth_management_biometric_delegate.dart';
-import 'package:auth_management_facebook_delegate/auth_management_facebook_delegate.dart';
-import 'package:auth_management_google_delegate/auth_management_google_delegate.dart';
-
-OAuthDelegates get oauthDelegates {
-  return OAuthDelegates(
-    appleAuthDelegate: AppleAuthDelegate(),
-    biometricAuthDelegate: BiometricAuthDelegate(),
-    facebookAuthDelegate: FacebookAuthDelegate(),
-    googleAuthDelegate: GoogleAuthDelegate(),
-  );
 }
 ```
 
@@ -226,7 +380,6 @@ Future<void> main() async {
   runApp(const Application());
 }
 ```
-
 ### Add auth provider in root level
 
 ```dart
@@ -244,34 +397,25 @@ class Application extends StatelessWidget {
     return AuthProvider<UserModel>(
       initialCheck: true,
       authorizer: Authorizer(
-        authRepository: AuthRepository.create(
-          // appleAuthDelegate: AppleAuthDelegate(),
-          biometricAuthDelegate: BiometricAuthDelegate(),
-          // facebookAuthDelegate: FacebookAuthDelegate(),
-          googleAuthDelegate: GoogleAuthDelegate(
-            googleSignIn: GoogleSignIn(scopes: [
-              'email',
-            ]),
+          delegate: MyAuthDelegate(),
+          backup: MyAuthBackupDelegate(
+            key: "_local_user_key_",
+            reader: (key) async {
+              final db = await SharedPreferences.getInstance();
+              // get from any local db [Hive, SharedPreferences, etc]
+              return db.getString(key);
+            },
+            writer: (key, value) async {
+              final db = await SharedPreferences.getInstance();
+              if (value == null) {
+                // remove from any local db [Hive, SharedPreferences, etc]
+                return db.remove(key);
+              }
+              // save to any local db [Hive, SharedPreferences, etc]
+              return db.setString(key, value);
+            },
           ),
-        ),
-        backupRepository: BackupRepository.create(
-          key: "_local_user_key_",
-          delegate: UserBackupDelegate(),
-          reader: (key) async {
-            final db = await SharedPreferences.getInstance();
-            // get from any local db [Hive, SharedPreferences, etc]
-            return db.getString(key);
-          },
-          writer: (key, value) async {
-            final db = await SharedPreferences.getInstance();
-            if (value == null) {
-              // remove from any local db [Hive, SharedPreferences, etc]
-              return db.remove(key);
-            }
-            // save to any local db [Hive, SharedPreferences, etc]
-            return db.setString(key, value);
-          },
-        ),
+          msg: const AuthMessages()
       ),
       child: MaterialApp(),
     );
@@ -279,7 +423,7 @@ class Application extends StatelessWidget {
 }
 ```
 
-### Create Startup screen
+### Apply on  Startup screen
 
 ```dart
 import 'package:auth_management/core.dart';
@@ -352,7 +496,7 @@ class _StartupPageState extends State<StartupPage> {
 }
 ```
 
-### Create Login/Register screen
+### Apply on Login/Register screen
 
 ```dart
 import 'package:auth_management/core.dart';
@@ -598,7 +742,7 @@ class _LoginPageState extends State<LoginPage> {
 }
 ```
 
-### Create Home screen
+### Apply on  Home screen
 
 ```dart
 import 'package:auth_management/core.dart';

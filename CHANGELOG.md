@@ -1,3 +1,7 @@
+## 3.0.3
+
+* Authorizer update function improved
+
 ## 3.0.2
 
 * Auth status bug fixed
