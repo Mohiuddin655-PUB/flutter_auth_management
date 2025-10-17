@@ -12,7 +12,6 @@ export 'src/models/auth_changes.dart';
 export 'src/models/credential.dart';
 export 'src/models/exception.dart';
 export 'src/models/messages.dart';
-export 'src/utils/auth_notifier.dart';
 export 'src/utils/auth_response.dart';
 export 'src/utils/authenticator.dart';
 export 'src/utils/biometric_config.dart';
