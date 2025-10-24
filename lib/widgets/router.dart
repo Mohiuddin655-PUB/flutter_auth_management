@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../core/helper.dart';
-import '../enums/auth_status.dart';
-import '../models/auth.dart';
+import '../core/auth.dart';
+import '../core/auth_response.dart';
+import '../core/auth_status.dart';
+import '../core/authorizer.dart';
 
 class AuthRouter<T extends Auth> extends StatelessWidget {
   final String initialRoute;
@@ -18,10 +19,18 @@ class AuthRouter<T extends Auth> extends StatelessWidget {
     required this.unauthenticatedRoute,
   });
 
+  Future<AuthResponse<T>> isAuthenticated(BuildContext context) async {
+    try {
+      return Authorizer<T>.of(context).isSignIn();
+    } catch (_) {
+      return AuthResponse.unauthenticated();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: context.isSignIn<T>(),
+      future: isAuthenticated(context),
       builder: (context, snapshot) {
         final state = snapshot.data?.status ?? AuthStatus.unauthorized;
         if (state.isAuthenticated) {

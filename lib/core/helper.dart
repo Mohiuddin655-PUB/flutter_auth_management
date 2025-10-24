@@ -3,18 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_entity/entity.dart';
 
-import '../enums/auth_status.dart';
-import '../enums/provider.dart';
-import '../models/auth.dart';
-import '../models/credential.dart';
-import '../models/exception.dart';
-import '../utils/auth_response.dart';
-import '../utils/authenticator.dart';
-import '../utils/biometric_config.dart';
-import '../utils/errors.dart';
-import '../widgets/provider.dart';
+import 'auth.dart';
+import 'auth_provider.dart';
+import 'auth_response.dart';
+import 'auth_status.dart';
+import 'authenticator.dart';
 import 'authorizer.dart';
-import 'typedefs.dart';
+import 'credential.dart';
+import 'exception.dart';
+import 'provider.dart';
 
 extension AuthHelper on BuildContext {
   Authorizer<T> _i<T extends Auth>(
@@ -94,16 +91,6 @@ extension AuthHelper on BuildContext {
 
   T? user<T extends Auth>() => _i<T>("user").user;
 
-  Future<Response<void>> addBiometric<T extends Auth>({
-    SignByBiometricCallback? callback,
-    BiometricConfig? config,
-  }) {
-    return _i<T>("addBiometric").addBiometric(
-      callback: callback,
-      config: config,
-    );
-  }
-
   Future<Response<void>> biometricEnable<T extends Auth>(bool enabled) {
     return _i<T>("biometricEnable").biometricEnable(enabled);
   }
@@ -163,13 +150,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInByBiometric<T extends Auth>({
-    BiometricConfig? config,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByBiometric").signInByBiometric(
-      config: config,
       args: args,
       id: id,
       notifiable: notifiable,

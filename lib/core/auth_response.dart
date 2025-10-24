@@ -1,7 +1,7 @@
-import '../enums/auth_status.dart';
-import '../enums/auth_type.dart';
-import '../enums/provider.dart';
-import '../models/auth.dart';
+import 'auth.dart';
+import 'auth_status.dart';
+import 'auth_type.dart';
+import 'provider.dart';
 
 class AuthResponse<T extends Auth> {
   final bool? _initial;

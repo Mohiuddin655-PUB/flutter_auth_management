@@ -1,9 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../core/auth.dart';
+import '../core/auth_response.dart';
 import '../core/authorizer.dart';
-import '../models/auth.dart';
-import '../utils/auth_response.dart';
-import '../utils/errors.dart';
+
+class AuthProviderException {
+  final String exception;
+
+  const AuthProviderException(this.exception);
+
+  bool get isInitialized => AuthProvider.type != null;
+
+  String get message {
+    if (isInitialized) {
+      return exception;
+    } else {
+      return "AuthProvider not initialization.";
+    }
+  }
+
+  @override
+  String toString() => message;
+}
 
 class AuthProvider<T extends Auth> extends InheritedWidget {
   final bool initialCheck;
@@ -15,7 +33,7 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
     required this.authorizer,
     required Widget child,
   }) : super(
-          child: _Support<T>(
+          child: _Internal<T>(
             authorizer: authorizer,
             initialCheck: initialCheck,
             child: child,
@@ -32,7 +50,7 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
       return x;
     } else {
       throw AuthProviderException(
-        "You should call like of<${AuthProvider.type}>();",
+        "You should call like of${AuthProvider.type}();",
       );
     }
   }
@@ -42,7 +60,7 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
       return of<T>(context).authorizer;
     } catch (_) {
       throw AuthProviderException(
-        "You should call like authorizerOf<${AuthProvider.type}>();",
+        "You should call like authorizerOf${AuthProvider.type}();",
       );
     }
   }
@@ -55,22 +73,22 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
   void notify(AuthResponse<T> value) => authorizer.emit(value);
 }
 
-class _Support<T extends Auth> extends StatefulWidget {
+class _Internal<T extends Auth> extends StatefulWidget {
   final bool initialCheck;
   final Authorizer<T> authorizer;
   final Widget child;
 
-  const _Support({
+  const _Internal({
     this.initialCheck = false,
     required this.child,
     required this.authorizer,
   });
 
   @override
-  State<_Support<T>> createState() => _SupportState<T>();
+  State<_Internal<T>> createState() => _InternalState<T>();
 }
 
-class _SupportState<T extends Auth> extends State<_Support<T>> {
+class _InternalState<T extends Auth> extends State<_Internal<T>> {
   @override
   void initState() {
     widget.authorizer.initialize(widget.initialCheck);

@@ -1,9 +1,8 @@
 import 'package:flutter_entity/entity.dart';
 
-import '../enums/provider.dart';
-import '../models/credential.dart';
-import '../models/exception.dart';
-import '../utils/biometric_config.dart';
+import 'credential.dart';
+import 'exception.dart';
+import 'provider.dart';
 
 abstract class AuthDelegate {
   const AuthDelegate();
@@ -37,7 +36,7 @@ abstract class AuthDelegate {
   }
 
   /// Signs in the user using biometric authentication.
-  Future<Response<void>> signInWithBiometric([BiometricConfig? config]) {
+  Future<Response<void>> signInWithBiometric() {
     throw UnimplementedError(
       "Method signInWithBiometric() is not yet implemented.",
     );

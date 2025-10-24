@@ -1,5 +1,5 @@
-import '../enums/provider.dart';
-import '../models/auth.dart';
+import 'auth.dart';
+import 'provider.dart';
 
 class Authenticator extends Auth {
   Authenticator.empty() : super();

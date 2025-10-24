@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:core';
 
-import '../models/auth.dart';
+import 'auth.dart';
 
 typedef Backup = Map<String, dynamic>;
 typedef BackupReader = Future<String?> Function(String key);
@@ -77,5 +77,9 @@ abstract class AuthBackupDelegate<T extends Auth> {
 
   Future<void> onUpdateUser(String id, Map<String, dynamic> data);
 
-  T build(Map<String, dynamic> source);
+  Object? nonEncodableObjectParser(Object? current, Object? old) {
+    return old;
+  }
+
+  T build(Map source);
 }

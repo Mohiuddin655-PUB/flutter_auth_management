@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../core/auth.dart';
+import '../core/auth_provider.dart';
 import '../core/authorizer.dart';
-import '../core/helper.dart';
-import '../models/auth.dart';
-import '../utils/errors.dart';
-import 'provider.dart';
 
 typedef OnAuthUserBuilder<T extends Auth> = Widget Function(
   BuildContext context,
@@ -25,7 +23,7 @@ class AuthConsumer<T extends Auth> extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       return _Support<T>(
-        authorizer: context.findAuthorizer<T>(),
+        authorizer: AuthProvider.authorizerOf<T>(context),
         initial: initial,
         builder: builder,
       );
@@ -56,6 +54,10 @@ class _Support<T extends Auth> extends StatefulWidget {
 class _SupportState<T extends Auth> extends State<_Support<T>> {
   T? _data;
 
+  void _change([T? data]) {
+    setState(() => _data = data ?? widget.authorizer.liveUser.value);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -77,10 +79,6 @@ class _SupportState<T extends Auth> extends State<_Support<T>> {
   void dispose() {
     widget.authorizer.liveUser.removeListener(_change);
     super.dispose();
-  }
-
-  void _change([T? data]) {
-    setState(() => _data = data ?? widget.authorizer.liveUser.value);
   }
 
   @override
