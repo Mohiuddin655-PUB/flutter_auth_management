@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../core/auth.dart';
+import '../core/auth_changes.dart';
+import '../core/auth_provider.dart';
 import '../core/authorizer.dart';
-import '../core/helper.dart';
-import '../core/typedefs.dart';
-import '../models/auth.dart';
-import '../models/auth_changes.dart';
-import '../utils/errors.dart';
-import '../widgets/provider.dart';
 
 typedef OnAuthBuilder<T extends Auth> = Widget Function(
   BuildContext context,
@@ -39,7 +36,7 @@ class AuthBuilder<T extends Auth> extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       return _Child<T>(
-        authorizer: context.findAuthorizer<T>(),
+        authorizer: AuthProvider.authorizerOf<T>(context),
         initial: initial,
         ids: ids,
         onChanges: onChanges,

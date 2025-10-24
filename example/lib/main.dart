@@ -1,8 +1,9 @@
 import 'dart:developer';
 
-import 'package:auth_management/auth_management.dart';
+import 'package:auth_management/core.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_entity/entity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'home_page.dart';
@@ -50,9 +51,9 @@ class MyAuthDelegate extends AuthDelegate {
   }
 
   @override
-  Future<Response<void>> signInWithBiometric([BiometricConfig? config]) {
+  Future<Response<void>> signInWithBiometric() {
     // implement signInWithBiometric
-    return super.signInWithBiometric(config);
+    return super.signInWithBiometric();
   }
 
   @override
@@ -190,7 +191,12 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   });
 
   @override
-  UserModel build(Map<String, dynamic> source) => UserModel.from(source);
+  Object? nonEncodableObjectParser(Object? current, Object? old) {
+    return old;
+  }
+
+  @override
+  UserModel build(Map source) => UserModel.from(source);
 
   @override
   Future<void> onCreateUser(UserModel data) async {
@@ -226,26 +232,25 @@ class Application extends StatelessWidget {
     return AuthProvider<UserModel>(
       initialCheck: true,
       authorizer: Authorizer(
-        delegate: MyAuthDelegate(),
-        backup: MyAuthBackupDelegate(
-          key: "_local_user_key_",
-          reader: (key) async {
-            final db = await SharedPreferences.getInstance();
-            // get from any local db [Hive, SharedPreferences, etc]
-            return db.getString(key);
-          },
-          writer: (key, value) async {
-            final db = await SharedPreferences.getInstance();
-            if (value == null) {
-              // remove from any local db [Hive, SharedPreferences, etc]
-              return db.remove(key);
-            }
-            // save to any local db [Hive, SharedPreferences, etc]
-            return db.setString(key, value);
-          },
-        ),
-        msg: const AuthMessages()
-      ),
+          delegate: MyAuthDelegate(),
+          backup: MyAuthBackupDelegate(
+            key: "_local_user_key_",
+            reader: (key) async {
+              final db = await SharedPreferences.getInstance();
+              // get from any local db [Hive, SharedPreferences, etc]
+              return db.getString(key);
+            },
+            writer: (key, value) async {
+              final db = await SharedPreferences.getInstance();
+              if (value == null) {
+                // remove from any local db [Hive, SharedPreferences, etc]
+                return db.remove(key);
+              }
+              // save to any local db [Hive, SharedPreferences, etc]
+              return db.setString(key, value);
+            },
+          ),
+          msg: const AuthMessages()),
       child: MaterialApp(
         title: 'Auth Management',
         theme: ThemeData(

@@ -1,6 +1,7 @@
 import 'dart:developer';
 
-import 'package:auth_management/auth_management.dart';
+import 'package:auth_management/core.dart';
+import 'package:auth_management/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_andomie/core.dart';
 
@@ -27,47 +28,6 @@ class _HomePageState extends State<HomePage> {
   void _biometricEnable(bool? value) {
     context.biometricEnable<UserModel>(value ?? false).then((value) {
       log("Biometric enable status : ${value.error}");
-    });
-  }
-
-  void _biometricChange(BuildContext context) {
-    context
-        .addBiometric<UserModel>(
-      config: const BiometricConfig(
-        signInTitle: "Biometric",
-        localizedReason: "Scan your face or fingerprint",
-      ),
-      callback: (value) => showDialog<BiometricStatus?>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text("Biometric permission from user!"),
-            actions: [
-              ElevatedButton(
-                child: const Text("Cancel"),
-                onPressed: () {
-                  Navigator.pop(context, BiometricStatus.initial);
-                },
-              ),
-              ElevatedButton(
-                child: const Text("Inactivate"),
-                onPressed: () {
-                  Navigator.pop(context, BiometricStatus.deactivated);
-                },
-              ),
-              ElevatedButton(
-                child: const Text("Activate"),
-                onPressed: () {
-                  Navigator.pop(context, BiometricStatus.activated);
-                },
-              ),
-            ],
-          );
-        },
-      ),
-    )
-        .then((value) {
-      log("Add biometric status : ${value.error}");
     });
   }
 
@@ -140,9 +100,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 12),
                     Opacity(
-                      opacity: value?.biometric.isInitial ?? false ? 0.5 : 1,
+                      opacity: value?.biometric ?? false ? 1 : 0.5,
                       child: SwitchListTile.adaptive(
-                        value: value?.isBiometric ?? false,
+                        value: value?.biometric ?? false,
                         onChanged: _biometricEnable,
                         title: const Text("Biometric mode"),
                         contentPadding: const EdgeInsets.only(
@@ -157,14 +117,6 @@ class _HomePageState extends State<HomePage> {
                       child: ElevatedButton(
                         onPressed: _updateUser,
                         child: const Text("Update"),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _biometricChange(context),
-                        child: const Text("Add biometric"),
                       ),
                     ),
                     const SizedBox(height: 8),

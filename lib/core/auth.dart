@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_entity/flutter_entity.dart';
 
-import '../enums/biometric_status.dart';
-import '../enums/provider.dart';
+import 'provider.dart';
 
 /// ## Create an authorized key class for User:
 ///
@@ -208,7 +207,7 @@ class AuthKeys extends EntityKey {
 /// ```
 class Auth<Key extends AuthKeys> extends Entity<Key> {
   final String? accessToken;
-  final BiometricStatus? _biometric;
+  final bool? _biometric;
   final String? idToken;
   final String? email;
   final Map<String, dynamic>? extra;
@@ -223,9 +222,11 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   final String? username;
   final bool? verified;
 
-  BiometricStatus get biometric => _biometric ?? BiometricStatus.initial;
+  bool get biometric => _biometric ?? false;
 
   Provider? get provider => _provider;
+
+  bool get isAuthenticated => true;
 
   bool get isLoggedIn => loggedIn ?? false;
 
@@ -247,10 +248,6 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     return DateTime.now().difference(lastLoggedOutDate);
   }
 
-  bool get isBiometric => biometric.isActivated;
-
-  bool get isAuthenticated => true;
-
   Auth({
     super.id = "",
     super.timeMills,
@@ -267,7 +264,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     this.photo,
     this.username,
     this.verified,
-    BiometricStatus? biometric,
+    bool? biometric,
     Provider? provider,
   })  : _biometric = biometric,
         _provider = provider;
@@ -276,7 +273,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     String? id,
     int? timeMills,
     String? accessToken,
-    BiometricStatus? biometric,
+    bool? biometric,
     String? email,
     Map<String, dynamic>? extra,
     String? idToken,
@@ -295,7 +292,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       id: id ?? this.id,
       timeMills: timeMills ?? this.timeMills,
       accessToken: accessToken ?? this.accessToken,
-      biometric: biometric ?? this._biometric,
+      biometric: biometric ?? _biometric,
       email: email ?? this.email,
       extra: extra ?? this.extra,
       idToken: idToken ?? this.idToken,
@@ -318,10 +315,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
       id: source.entityValue(key.id),
       timeMills: source.entityValue(key.timeMills),
       accessToken: source.entityValue(key.accessToken),
-      biometric: source.entityValue<BiometricStatus?>(
-        key.biometric,
-        BiometricStatus.from,
-      ),
+      biometric: source.entityValue(key.biometric),
       loggedIn: source.entityValue(key.loggedIn),
       loggedInTime: source.entityValue(key.loggedInTime),
       loggedOutTime: source.entityValue(key.loggedOutTime),
@@ -356,7 +350,7 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     return {
       ...super.source,
       AuthKeys.i.accessToken: accessToken,
-      AuthKeys.i.biometric: _biometric?.id,
+      AuthKeys.i.biometric: _biometric,
       AuthKeys.i.email: email,
       AuthKeys.i.extra: extra,
       AuthKeys.i.idToken: idToken,

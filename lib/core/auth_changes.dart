@@ -1,5 +1,5 @@
-import '../enums/auth_status.dart';
 import 'auth.dart';
+import 'auth_status.dart';
 
 final class AuthChanges<T extends Auth> {
   final Object? args;

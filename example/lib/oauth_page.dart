@@ -1,4 +1,4 @@
-import 'package:auth_management/auth_management.dart';
+import 'package:auth_management/widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'user_model.dart';
@@ -29,16 +29,17 @@ class OAuthPage extends StatelessWidget {
             type: OauthButtonType.apple,
             builder: (context, callback) {
               return ElevatedButton(
-                onPressed: () => callback(context),
+                onPressed: callback,
                 child: const Text("Continue with Apple"),
               );
             },
           ),
           const SizedBox(height: 12),
-          BiometricButton<UserModel>(
+          OauthButton<UserModel>(
+            type: OauthButtonType.biometric,
             builder: (context, callback) {
               return ElevatedButton(
-                onPressed: () => callback(context),
+                onPressed: callback,
                 child: const Text("Continue with Biometric"),
               );
             },
@@ -48,7 +49,7 @@ class OAuthPage extends StatelessWidget {
             type: OauthButtonType.facebook,
             builder: (context, callback) {
               return ElevatedButton(
-                onPressed: () => callback(context),
+                onPressed: callback,
                 child: const Text("Continue with Facebook"),
               );
             },
@@ -58,7 +59,7 @@ class OAuthPage extends StatelessWidget {
             type: OauthButtonType.github,
             builder: (context, callback) {
               return ElevatedButton(
-                onPressed: () => callback(context),
+                onPressed: callback,
                 child: const Text("Continue with Github"),
               );
             },
@@ -68,7 +69,7 @@ class OAuthPage extends StatelessWidget {
             type: OauthButtonType.google,
             builder: (context, callback) {
               return ElevatedButton(
-                onPressed: () => callback(context),
+                onPressed: callback,
                 child: const Text("Continue with Google"),
               );
             },

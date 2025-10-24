@@ -1,4 +1,4 @@
-import 'package:auth_management/auth_management.dart';
+import 'package:auth_management/core.dart';
 import 'package:flutter/material.dart';
 
 import 'user_model.dart';

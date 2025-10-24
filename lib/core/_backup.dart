@@ -1,9 +1,9 @@
 part of 'authorizer.dart';
 
-class _BackupRepository<T extends Auth> {
+class _<T extends Auth> {
   final AuthBackupDelegate<T> delegate;
 
-  const _BackupRepository(this.delegate);
+  const _(this.delegate);
 
   Future<T?> get cache async {
     try {
@@ -37,9 +37,13 @@ class _BackupRepository<T extends Auth> {
     return cache.then((local) {
       if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
       onUpdateUser(local.id, data);
-      final x = local.filtered..addAll(data);
-      final y = build(x);
-      return setAsLocal(y);
+      final merged = ObjectModifier.mergeMap(
+        data,
+        local.source,
+        delegate.nonEncodableObjectParser,
+      );
+      final mergedObject = build(merged);
+      return setAsLocal(mergedObject);
     });
   }
 
@@ -85,5 +89,5 @@ class _BackupRepository<T extends Auth> {
     return delegate.onDeleteUser(id);
   }
 
-  T build(Map<String, dynamic> source) => delegate.build(source);
+  T build(Map source) => delegate.build(source);
 }

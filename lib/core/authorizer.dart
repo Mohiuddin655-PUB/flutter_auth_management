@@ -2,28 +2,42 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_entity/entity.dart';
+import 'package:object_modifier/object_modifier.dart';
 
-import '../delegates/auth.dart';
-import '../delegates/backup.dart';
-import '../enums/auth_status.dart';
-import '../enums/auth_type.dart';
-import '../enums/biometric_status.dart';
-import '../enums/provider.dart';
-import '../models/auth.dart';
-import '../models/credential.dart';
-import '../models/exception.dart';
-import '../models/messages.dart';
-import '../utils/auth_response.dart';
-import '../utils/authenticator.dart';
-import '../utils/biometric_config.dart';
-import 'typedefs.dart';
+import 'auth.dart';
+import 'auth_changes.dart';
+import 'auth_provider.dart';
+import 'auth_response.dart';
+import 'auth_status.dart';
+import 'auth_type.dart';
+import 'authenticator.dart';
+import 'backup.dart';
+import 'credential.dart';
+import 'delegate.dart';
+import 'exception.dart';
+import 'messages.dart';
+import 'provider.dart';
 
-part 'backup.dart';
+part '_backup.dart';
+
+typedef OnAuthMode = void Function(BuildContext context);
+typedef OnAuthError = void Function(BuildContext context, String error);
+typedef OnAuthMessage = void Function(BuildContext context, String message);
+typedef OnAuthLoading = void Function(BuildContext context, bool loading);
+typedef OnAuthStatus = void Function(BuildContext context, AuthStatus status);
+typedef IdentityBuilder = String Function(String uid);
+typedef SignByBiometricCallback = Future<bool?>? Function(bool? status);
+typedef SignOutCallback = Future Function(Auth authorizer);
+typedef UndoAccountCallback = Future<bool> Function(Auth authorizer);
+typedef OnAuthChanges<T extends Auth> = void Function(
+  BuildContext context,
+  AuthChanges<T> changes,
+);
 
 class Authorizer<T extends Auth> {
-  final AuthMessages _msg;
-  final AuthDelegate _delegate;
-  final _BackupRepository<T> _backup;
+  final AuthMessages msg;
+  final AuthDelegate delegate;
+  final _<T> _backup;
 
   final _errorNotifier = ValueNotifier("");
   final _loadingNotifier = ValueNotifier(false);
@@ -42,12 +56,20 @@ class Authorizer<T extends Auth> {
   Future<T?> get _auth => _backup.cache;
 
   Authorizer({
-    required AuthDelegate delegate,
+    required this.delegate,
+    this.msg = const AuthMessages(),
     required AuthBackupDelegate<T> backup,
-    AuthMessages msg = const AuthMessages(),
-  })  : _msg = msg,
-        _delegate = delegate,
-        _backup = _BackupRepository<T>(backup);
+  }) : _backup = _<T>(backup);
+
+  factory Authorizer.of(BuildContext context) {
+    try {
+      return AuthProvider.authorizerOf<T>(context);
+    } catch (e) {
+      throw AuthProviderException(
+        "You should call like Authorizer.of${AuthProvider.type}(context);",
+      );
+    }
+  }
 
   Future<T?> get auth async {
     try {
@@ -64,7 +86,7 @@ class Authorizer<T extends Auth> {
   Future<bool> get isBiometricEnabled async {
     try {
       final value = await _auth;
-      return value != null && value.isBiometric;
+      return value != null && value.biometric;
     } catch (error) {
       _errorNotifier.value = error.toString();
       return false;
@@ -94,10 +116,7 @@ class Authorizer<T extends Auth> {
 
   T? get user => _userNotifier.value;
 
-  Future<Response<T>> addBiometric({
-    SignByBiometricCallback? callback,
-    BiometricConfig? config,
-  }) async {
+  Future<Response<T>> biometricEnable(bool enabled) async {
     try {
       final auth = await _auth;
       final provider = Provider.from(auth?.provider);
@@ -108,54 +127,17 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final response = await _delegate.signInWithBiometric(config);
-      if (!response.isSuccessful) {
-        return Response(status: response.status, error: response.error);
+      if (enabled) {
+        final response = await delegate.signInWithBiometric();
+        if (!response.isSuccessful) {
+          return Response(status: response.status, error: response.error);
+        }
       }
 
-      final biometric = callback != null
-          ? await callback(auth.biometric)
-          : BiometricStatus.activated;
       final value = await _update(
         id: auth.id,
         updateMode: true,
-        updates: {
-          AuthKeys.i.biometric: biometric?.name,
-        },
-      );
-
-      return Response(status: Status.ok, data: value);
-    } catch (error) {
-      return Response(
-        status: Status.failure,
-        error: error.toString(),
-      );
-    }
-  }
-
-  Future<Response<T>> biometricEnable(bool enabled) async {
-    final auth = await _auth;
-    final provider = Provider.from(auth?.provider);
-    final permission = auth != null &&
-        auth.isLoggedIn &&
-        !auth.biometric.isInitial &&
-        provider.isAllowBiometric;
-
-    if (!permission) {
-      return Response(
-        status: Status.undefined,
-        error: "Biometric not initialized yet!",
-      );
-    }
-
-    try {
-      final activated = BiometricStatus.value(enabled);
-      final value = await _update(
-        id: auth.id,
-        updateMode: true,
-        updates: {
-          AuthKeys.i.biometric: activated.name,
-        },
+        updates: {AuthKeys.i.biometric: enabled},
       );
 
       return Response(status: Status.ok, data: value);
@@ -183,7 +165,7 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.rollback(
           data,
-          msg: _msg.loggedIn.failure,
+          msg: msg.loggedIn.failure,
           provider: Provider.none,
           type: AuthType.delete,
         ),
@@ -194,7 +176,7 @@ class Authorizer<T extends Auth> {
     }
 
     try {
-      final response = await _delegate.delete();
+      final response = await delegate.delete();
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.rollback(
@@ -214,7 +196,7 @@ class Authorizer<T extends Auth> {
 
       return emit(
         AuthResponse.unauthenticated(
-          msg: _msg.delete.done,
+          msg: msg.delete.done,
           provider: Provider.none,
           type: AuthType.delete,
         ),
@@ -226,7 +208,7 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.rollback(
           data,
-          msg: _msg.delete.failure ?? error,
+          msg: msg.delete.failure ?? error,
           provider: Provider.none,
           type: AuthType.delete,
         ),
@@ -326,10 +308,10 @@ class Authorizer<T extends Auth> {
     Provider? provider,
   }) async {
     try {
-      final signedIn = await _delegate.isSignIn(provider);
+      final signedIn = await delegate.isSignIn(provider);
       final data = signedIn ? await auth : null;
       if (data == null) {
-        if (signedIn) await _delegate.signOut(provider);
+        if (signedIn) await delegate.signOut(provider);
         return AuthResponse.unauthenticated(
           provider: provider,
           type: AuthType.signedIn,
@@ -343,7 +325,7 @@ class Authorizer<T extends Auth> {
       );
     } catch (error) {
       return AuthResponse.failure(
-        _msg.loggedIn.failure ?? error,
+        msg.loggedIn.failure ?? error,
         provider: provider,
         type: AuthType.signedIn,
       );
@@ -364,7 +346,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
       );
 
-      final response = await _delegate.signInAnonymously();
+      final response = await delegate.signInAnonymously();
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
@@ -382,7 +364,7 @@ class Authorizer<T extends Auth> {
       if (result == null) {
         return emit(
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.guest,
             type: AuthType.none,
           ),
@@ -413,7 +395,7 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithEmail.done,
+          msg: msg.signInWithEmail.done,
           provider: Provider.guest,
           type: AuthType.none,
         ),
@@ -424,7 +406,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          _msg.signInWithEmail.failure ?? error,
+          msg.signInWithEmail.failure ?? error,
           provider: Provider.guest,
           type: AuthType.none,
         ),
@@ -436,7 +418,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInByBiometric({
-    BiometricConfig? config,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -453,10 +434,10 @@ class Authorizer<T extends Auth> {
 
     try {
       final user = await _auth;
-      if (user == null || !user.isBiometric) {
+      if (user == null || !user.biometric) {
         return emit(
           AuthResponse.unauthorized(
-            msg: _msg.signInWithBiometric.failure ?? errorText,
+            msg: msg.signInWithBiometric.failure ?? errorText,
             provider: Provider.biometric,
             type: AuthType.biometric,
           ),
@@ -466,7 +447,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final response = await _delegate.signInWithBiometric(config);
+      final response = await delegate.signInWithBiometric();
       if (!response.isSuccessful) {
         return emit(
           AuthResponse.failure(
@@ -486,18 +467,18 @@ class Authorizer<T extends Auth> {
       if ((user.email ?? user.username ?? "").isNotEmpty &&
           (user.password ?? '').isNotEmpty) {
         if (provider.isEmail) {
-          current = await _delegate.signInWithEmailNPassword(
+          current = await delegate.signInWithEmailNPassword(
             user.email ?? "",
             user.password ?? "",
           );
         } else if (provider.isUsername) {
-          current = await _delegate.signInWithUsernameNPassword(
+          current = await delegate.signInWithUsernameNPassword(
             user.username ?? "",
             user.password ?? "",
           );
         }
       } else if ((token ?? user.idToken ?? "").isNotEmpty) {
-        current = await _delegate.signInWithCredential(Credential(
+        current = await delegate.signInWithCredential(Credential(
           uid: user.id,
           providerId: provider.id,
           idToken: user.idToken,
@@ -525,7 +506,7 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithBiometric.done,
+          msg: msg.signInWithBiometric.done,
           provider: Provider.biometric,
           type: AuthType.biometric,
         ),
@@ -536,7 +517,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          _msg.signInWithBiometric.failure ?? error,
+          msg.signInWithBiometric.failure ?? error,
           provider: Provider.biometric,
           type: AuthType.biometric,
         ),
@@ -562,7 +543,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithEmailNPassword(
+      final response = await delegate.signInWithEmailNPassword(
         authenticator.email,
         authenticator.password,
       );
@@ -583,7 +564,7 @@ class Authorizer<T extends Auth> {
       if (result == null) {
         return emit(
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.email,
             type: AuthType.login,
           ),
@@ -604,7 +585,7 @@ class Authorizer<T extends Auth> {
         loggedInTime: Entity.generateTimeMills,
       );
 
-      BiometricStatus? biometric;
+      bool? biometric;
       if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
@@ -613,7 +594,7 @@ class Authorizer<T extends Auth> {
             (biometric != null ? user.copy(biometric: biometric) : user).source,
         updates: {
           ...user.extra ?? {},
-          if (biometric != null) AuthKeys.i.biometric: biometric.id,
+          if (biometric != null) AuthKeys.i.biometric: biometric,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: Entity.generateTimeMills,
         },
@@ -622,7 +603,7 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithEmail.done,
+          msg: msg.signInWithEmail.done,
           provider: Provider.email,
           type: AuthType.login,
         ),
@@ -633,7 +614,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          _msg.signInWithEmail.failure ?? error,
+          msg.signInWithEmail.failure ?? error,
           provider: Provider.email,
           type: AuthType.login,
         ),
@@ -658,7 +639,7 @@ class Authorizer<T extends Auth> {
     bool notifiable = true,
   }) async {
     try {
-      _delegate.verifyPhoneNumber(
+      delegate.verifyPhoneNumber(
         phoneNumber: authenticator.phone,
         forceResendingToken: int.tryParse(authenticator.accessToken ?? ""),
         multiFactorInfo: multiFactorInfo,
@@ -755,7 +736,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          _msg.signOut.failure ?? error,
+          msg.signOut.failure ?? error,
           provider: Provider.phone,
           type: AuthType.otp,
         ),
@@ -781,7 +762,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final credential = _delegate.credential(
+      final credential = delegate.credential(
         Provider.phone,
         Credential(
           smsCode: authenticator.smsCode,
@@ -789,7 +770,7 @@ class Authorizer<T extends Auth> {
         ),
       );
 
-      final response = await _delegate.signInWithCredential(credential);
+      final response = await delegate.signInWithCredential(credential);
 
       if (!response.isSuccessful) {
         return emit(
@@ -808,7 +789,7 @@ class Authorizer<T extends Auth> {
       if (result == null) {
         return emit(
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.phone,
             type: AuthType.phone,
           ),
@@ -845,7 +826,7 @@ class Authorizer<T extends Auth> {
       return emit(
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithPhone.done,
+          msg: msg.signInWithPhone.done,
           provider: Provider.phone,
           type: AuthType.phone,
         ),
@@ -856,7 +837,7 @@ class Authorizer<T extends Auth> {
     } catch (error) {
       return emit(
         AuthResponse.failure(
-          _msg.signInWithPhone.failure ?? error,
+          msg.signInWithPhone.failure ?? error,
           provider: Provider.phone,
           type: AuthType.phone,
         ),
@@ -869,9 +850,9 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse<T>> signInByUsername(
     UsernameAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
     Object? args,
     String? id,
+    SignByBiometricCallback? onBiometric,
     bool notifiable = true,
   }) async {
     emit(
@@ -882,7 +863,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithUsernameNPassword(
+      final response = await delegate.signInWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
       );
@@ -924,8 +905,10 @@ class Authorizer<T extends Auth> {
         loggedInTime: Entity.generateTimeMills,
       );
 
-      BiometricStatus? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.biometric);
+      bool? biometric;
+      if (onBiometric != null) {
+        biometric = await onBiometric(user.biometric);
+      }
 
       final value = await _update(
         id: user.id,
@@ -933,7 +916,7 @@ class Authorizer<T extends Auth> {
             (biometric != null ? user.copy(biometric: biometric) : user).source,
         updates: {
           ...user.extra ?? {},
-          if (biometric != null) AuthKeys.i.biometric: biometric.id,
+          if (biometric != null) AuthKeys.i.biometric: biometric,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: Entity.generateTimeMills,
         },
@@ -944,7 +927,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithUsername.done,
+          msg: msg.signInWithUsername.done,
           provider: Provider.username,
           type: AuthType.login,
         ),
@@ -955,7 +938,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithUsername.failure ?? error,
+          msg.signInWithUsername.failure ?? error,
           provider: Provider.username,
           type: AuthType.login,
         ),
@@ -977,7 +960,7 @@ class Authorizer<T extends Auth> {
       const AuthResponse.loading(Provider.email, AuthType.register),
     );
     try {
-      final response = await _delegate.signUpWithEmailNPassword(
+      final response = await delegate.signUpWithEmailNPassword(
         authenticator.email,
         authenticator.password,
       );
@@ -1001,7 +984,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.email,
             type: AuthType.register,
           ),
@@ -1021,7 +1004,7 @@ class Authorizer<T extends Auth> {
         timeMills: creationTime,
       );
 
-      BiometricStatus? biometric;
+      bool? biometric;
       if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
@@ -1036,7 +1019,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signUpWithEmail.done,
+          msg: msg.signUpWithEmail.done,
           provider: Provider.email,
           type: AuthType.register,
         ),
@@ -1047,7 +1030,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signUpWithEmail.failure ?? error,
+          msg.signUpWithEmail.failure ?? error,
           provider: Provider.email,
           type: AuthType.register,
         ),
@@ -1070,7 +1053,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signUpWithUsernameNPassword(
+      final response = await delegate.signUpWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
       );
@@ -1094,7 +1077,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.username,
             type: AuthType.register,
           ),
@@ -1114,7 +1097,7 @@ class Authorizer<T extends Auth> {
         timeMills: creationTime,
       );
 
-      BiometricStatus? biometric;
+      bool? biometric;
       if (onBiometric != null) biometric = await onBiometric(user.biometric);
 
       final value = await _update(
@@ -1129,7 +1112,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signUpWithUsername.done,
+          msg: msg.signUpWithUsername.done,
           provider: Provider.username,
           type: AuthType.register,
         ),
@@ -1140,7 +1123,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signUpWithUsername.failure ?? error,
+          msg.signUpWithUsername.failure ?? error,
           provider: Provider.username,
           type: AuthType.register,
         ),
@@ -1162,7 +1145,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.loading(provider, AuthType.logout),
       );
-      final response = await _delegate.signOut(provider);
+      final response = await delegate.signOut(provider);
       if (!response.isSuccessful) {
         return emit(
           args: args,
@@ -1183,7 +1166,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.unauthenticated(
-            msg: _msg.signOut.done,
+            msg: msg.signOut.done,
             provider: provider,
             type: AuthType.logout,
           ),
@@ -1195,7 +1178,7 @@ class Authorizer<T extends Auth> {
         AuthKeys.i.loggedOutTime: Entity.generateTimeMills,
       });
 
-      if (data.isBiometric) {
+      if (data.biometric) {
         await _update(
           id: data.id,
           updates: {
@@ -1213,7 +1196,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.unauthenticated(
-          msg: _msg.signOut.done,
+          msg: msg.signOut.done,
           provider: provider,
           type: AuthType.logout,
         ),
@@ -1224,7 +1207,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signOut.failure ?? error,
+          msg.signOut.failure ?? error,
           provider: provider,
           type: AuthType.logout,
         ),
@@ -1272,7 +1255,7 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse> verifyPhoneByOtp(OtpAuthenticator authenticator) async {
     try {
-      final credential = _delegate.credential(
+      final credential = delegate.credential(
         Provider.phone,
         Credential(
           smsCode: authenticator.smsCode,
@@ -1280,7 +1263,7 @@ class Authorizer<T extends Auth> {
         ),
       );
 
-      final response = await _delegate.signInWithCredential(credential);
+      final response = await delegate.signInWithCredential(credential);
       if (!response.isSuccessful) {
         return AuthResponse.failure(
           response.error,
@@ -1292,7 +1275,7 @@ class Authorizer<T extends Auth> {
       final result = response.data;
       if (result == null) {
         return AuthResponse.failure(
-          _msg.authorization,
+          msg.authorization,
           provider: Provider.phone,
           type: AuthType.phone,
         );
@@ -1314,13 +1297,13 @@ class Authorizer<T extends Auth> {
 
       return AuthResponse.authenticated(
         user,
-        msg: _msg.signInWithPhone.done,
+        msg: msg.signInWithPhone.done,
         provider: Provider.phone,
         type: AuthType.phone,
       );
     } catch (error) {
       return AuthResponse.failure(
-        _msg.signInWithPhone.failure ?? error,
+        msg.signInWithPhone.failure ?? error,
         provider: Provider.phone,
         type: AuthType.phone,
       );
@@ -1342,7 +1325,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithApple();
+      final response = await delegate.signInWithApple();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1357,7 +1340,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
 
       if (!current.isSuccessful) {
         return emit(
@@ -1379,7 +1362,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.apple,
             type: AuthType.oauth,
           ),
@@ -1415,7 +1398,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithApple.done,
+          msg: msg.signInWithApple.done,
           provider: Provider.apple,
           type: AuthType.oauth,
         ),
@@ -1426,7 +1409,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithApple.failure ?? error,
+          msg.signInWithApple.failure ?? error,
           provider: Provider.apple,
           type: AuthType.oauth,
         ),
@@ -1449,7 +1432,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithFacebook();
+      final response = await delegate.signInWithFacebook();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1464,7 +1447,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
 
       if (!current.isSuccessful) {
         return emit(
@@ -1486,7 +1469,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.facebook,
             type: AuthType.oauth,
           ),
@@ -1522,7 +1505,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithFacebook.done,
+          msg: msg.signInWithFacebook.done,
           provider: Provider.facebook,
           type: AuthType.oauth,
         ),
@@ -1533,7 +1516,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithFacebook.failure ?? error,
+          msg.signInWithFacebook.failure ?? error,
           provider: Provider.facebook,
           type: AuthType.oauth,
         ),
@@ -1559,7 +1542,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithGameCenter();
+      final response = await delegate.signInWithGameCenter();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1574,7 +1557,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
 
       if (!current.isSuccessful) {
         return emit(
@@ -1596,7 +1579,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.gameCenter,
             type: AuthType.oauth,
           ),
@@ -1632,7 +1615,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.gameCenter,
           type: AuthType.oauth,
         ),
@@ -1643,7 +1626,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.gameCenter,
           type: AuthType.oauth,
         ),
@@ -1666,7 +1649,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithGithub();
+      final response = await delegate.signInWithGithub();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1681,7 +1664,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -1702,7 +1685,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.github,
             type: AuthType.oauth,
           ),
@@ -1738,7 +1721,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.github,
           type: AuthType.oauth,
         ),
@@ -1749,7 +1732,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.github,
           type: AuthType.oauth,
         ),
@@ -1772,7 +1755,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithGoogle();
+      final response = await delegate.signInWithGoogle();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1787,7 +1770,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -1808,7 +1791,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.google,
             type: AuthType.oauth,
           ),
@@ -1844,7 +1827,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGoogle.done,
+          msg: msg.signInWithGoogle.done,
           provider: Provider.google,
           type: AuthType.oauth,
         ),
@@ -1855,7 +1838,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGoogle.failure ?? error,
+          msg.signInWithGoogle.failure ?? error,
           provider: Provider.google,
           type: AuthType.oauth,
         ),
@@ -1878,7 +1861,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithMicrosoft();
+      final response = await delegate.signInWithMicrosoft();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1893,7 +1876,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -1914,7 +1897,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.microsoft,
             type: AuthType.oauth,
           ),
@@ -1950,7 +1933,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.microsoft,
           type: AuthType.oauth,
         ),
@@ -1961,7 +1944,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.microsoft,
           type: AuthType.oauth,
         ),
@@ -1984,7 +1967,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithPlayGames();
+      final response = await delegate.signInWithPlayGames();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -1999,7 +1982,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2020,7 +2003,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.playGames,
             type: AuthType.oauth,
           ),
@@ -2057,7 +2040,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.playGames,
           type: AuthType.oauth,
         ),
@@ -2068,7 +2051,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.playGames,
           type: AuthType.oauth,
         ),
@@ -2091,7 +2074,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithSAML();
+      final response = await delegate.signInWithSAML();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2106,7 +2089,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2127,7 +2110,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.saml,
             type: AuthType.oauth,
           ),
@@ -2164,7 +2147,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.saml,
           type: AuthType.oauth,
         ),
@@ -2175,7 +2158,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.saml,
           type: AuthType.oauth,
         ),
@@ -2198,7 +2181,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithTwitter();
+      final response = await delegate.signInWithTwitter();
       final raw = response.data;
 
       if (raw == null || raw.credential == null) {
@@ -2214,7 +2197,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2235,7 +2218,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.twitter,
             type: AuthType.oauth,
           ),
@@ -2272,7 +2255,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.twitter,
           type: AuthType.oauth,
         ),
@@ -2283,7 +2266,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.twitter,
           type: AuthType.oauth,
         ),
@@ -2306,7 +2289,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final response = await _delegate.signInWithYahoo();
+      final response = await delegate.signInWithYahoo();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return emit(
@@ -2321,7 +2304,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final current = await _delegate.signInWithCredential(raw.credential!);
+      final current = await delegate.signInWithCredential(raw.credential!);
       if (!current.isSuccessful) {
         return emit(
           args: args,
@@ -2342,7 +2325,7 @@ class Authorizer<T extends Auth> {
           id: id,
           notifiable: notifiable,
           AuthResponse.failure(
-            _msg.authorization,
+            msg.authorization,
             provider: Provider.yahoo,
             type: AuthType.oauth,
           ),
@@ -2378,7 +2361,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: _msg.signInWithGithub.done,
+          msg: msg.signInWithGithub.done,
           provider: Provider.yahoo,
           type: AuthType.oauth,
         ),
@@ -2389,7 +2372,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          _msg.signInWithGithub.failure ?? error,
+          msg.signInWithGithub.failure ?? error,
           provider: Provider.yahoo,
           type: AuthType.oauth,
         ),
