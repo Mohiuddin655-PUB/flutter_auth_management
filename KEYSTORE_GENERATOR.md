@@ -1,2 +1,0 @@
-STEP: 1 => keytool -genkey -keyalg RSA -alias selfsigned -keystore keystore.jks -storepass changeit -validity 360 -keysize 2048
-STEP: 1 (OR) => keytool -genkey -v -keystore KEYSTORE_NAME.jks -keyalg RSA -keysize 2048 -validity 10000 -alias key

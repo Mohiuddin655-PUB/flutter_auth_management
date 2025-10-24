@@ -1,4 +1,4 @@
-## 3.0.3
+## 3.1.0
 
 * Authorizer update function improved
 
