@@ -1,6 +1,7 @@
-## 3.1.1
+## 3.2.0
 
-* Authorizer delete account bug fixed
+* Authorizer anonymous account implemented
+* Improved auth model
 
 ## 3.1.0
 
