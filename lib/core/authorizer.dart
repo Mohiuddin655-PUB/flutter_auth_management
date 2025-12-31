@@ -86,7 +86,7 @@ class Authorizer<T extends Auth> {
   Future<bool> get isBiometricEnabled async {
     try {
       final value = await _auth;
-      return value != null && value.biometric;
+      return value != null && value.isBiometric;
     } catch (error) {
       _errorNotifier.value = error.toString();
       return false;
@@ -374,14 +374,14 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.guest()).copy(
-        id: result.uid,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+      final user = (authenticator ?? Authenticator.guest()).update(
+        id: Modifier(result.uid),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
       );
       final value = await _update(
         id: user.id,
@@ -389,7 +389,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
       return emit(
@@ -434,7 +434,7 @@ class Authorizer<T extends Auth> {
 
     try {
       final user = await _auth;
-      if (user == null || !user.biometric) {
+      if (user == null || !user.isBiometric) {
         return emit(
           AuthResponse.unauthorized(
             msg: msg.signInWithBiometric.failure ?? errorText,
@@ -500,7 +500,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(id: user.id, updates: {
         AuthKeys.i.loggedIn: true,
-        AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+        AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
       });
 
       return emit(
@@ -574,15 +574,15 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = authenticator.copy(
-        id: result.uid,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        provider: Provider.email,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+      final user = authenticator.update(
+        id: Modifier(result.uid),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.email),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
       );
 
       bool? biometric;
@@ -590,13 +590,15 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials:
-            (biometric != null ? user.copy(biometric: biometric) : user).source,
+        initials: (biometric != null
+                ? user.update(biometric: Modifier(biometric))
+                : user)
+            .source,
         updates: {
           ...user.extra ?? {},
           if (biometric != null) AuthKeys.i.biometric: biometric,
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -799,18 +801,19 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = authenticator.copy(
-        id: result.uid,
-        accessToken: storeToken ? result.accessToken : null,
-        idToken: storeToken ? result.idToken : null,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        provider: Provider.phone,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = authenticator.update(
+        id: Modifier(result.uid),
+        accessToken:
+            storeToken ? Modifier(result.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(result.idToken) : Modifier.nullable(),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.phone),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
 
       final value = await _update(
@@ -819,7 +822,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -894,15 +897,15 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = authenticator.copy(
-        id: result.uid,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        provider: Provider.username,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+      final user = authenticator.update(
+        id: Modifier(result.uid),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.username),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
       );
 
       bool? biometric;
@@ -912,13 +915,15 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials:
-            (biometric != null ? user.copy(biometric: biometric) : user).source,
+        initials: (biometric != null
+                ? user.update(biometric: Modifier(biometric))
+                : user)
+            .source,
         updates: {
           ...user.extra ?? {},
           if (biometric != null) AuthKeys.i.biometric: biometric,
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
       return emit(
@@ -991,17 +996,17 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final creationTime = Entity.generateTimeMills;
-      final user = authenticator.copy(
-        id: result.uid,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        provider: Provider.email,
-        loggedIn: true,
-        loggedInTime: creationTime,
-        timeMills: creationTime,
+      final creationTime = EntityHelper.generateTimeMills;
+      final user = authenticator.update(
+        id: Modifier(result.uid),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.email),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(creationTime),
+        timeMills: Modifier(creationTime),
       );
 
       bool? biometric;
@@ -1009,8 +1014,10 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials:
-            (biometric != null ? user.copy(biometric: biometric) : user).source,
+        initials: (biometric != null
+                ? user.update(biometric: Modifier(biometric))
+                : user)
+            .source,
       );
 
       return emit(
@@ -1084,17 +1091,17 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final creationTime = Entity.generateTimeMills;
-      final user = authenticator.copy(
-        id: result.uid,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        provider: Provider.username,
-        loggedIn: true,
-        loggedInTime: creationTime,
-        timeMills: creationTime,
+      final creationTime = EntityHelper.generateTimeMills;
+      final user = authenticator.update(
+        id: Modifier(result.uid),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.username),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(creationTime),
+        timeMills: Modifier(creationTime),
       );
 
       bool? biometric;
@@ -1102,8 +1109,10 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        initials:
-            (biometric != null ? user.copy(biometric: biometric) : user).source,
+        initials: (biometric != null
+                ? user.update(biometric: Modifier(biometric))
+                : user)
+            .source,
       );
 
       return emit(
@@ -1175,16 +1184,16 @@ class Authorizer<T extends Auth> {
 
       await update({
         AuthKeys.i.loggedIn: false,
-        AuthKeys.i.loggedOutTime: Entity.generateTimeMills,
+        AuthKeys.i.loggedOutTime: EntityHelper.generateTimeMills,
       });
 
-      if (data.biometric) {
+      if (data.isBiometric) {
         await _update(
           id: data.id,
           updates: {
             ...data.extra ?? {},
             AuthKeys.i.loggedIn: false,
-            AuthKeys.i.loggedOutTime: Entity.generateTimeMills,
+            AuthKeys.i.loggedOutTime: EntityHelper.generateTimeMills,
           },
         );
       } else {
@@ -1281,18 +1290,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = authenticator.copy(
-        id: result.uid,
-        accessToken: result.accessToken,
-        idToken: result.idToken,
-        email: result.email,
-        name: result.displayName,
-        phone: result.phoneNumber,
-        photo: result.photoURL,
-        provider: Provider.phone,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = authenticator.update(
+        id: Modifier(result.uid),
+        accessToken: Modifier(result.accessToken),
+        idToken: Modifier(result.idToken),
+        email: Modifier(result.email),
+        name: Modifier(result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.phone),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
 
       return AuthResponse.authenticated(
@@ -1369,18 +1378,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.apple,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.apple),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -1388,7 +1397,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1476,18 +1485,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.facebook,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.facebook),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -1495,7 +1504,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1586,18 +1595,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.gameCenter,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.gameCenter),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -1605,7 +1614,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1692,18 +1701,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.github,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.github),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -1711,7 +1720,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1798,18 +1807,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.google,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.google),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -1817,7 +1826,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1904,18 +1913,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.microsoft,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.microsoft),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -1923,7 +1932,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2010,18 +2019,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.playGames,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.playGames),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
 
       final value = await _update(
@@ -2030,7 +2039,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2117,18 +2126,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.saml,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.saml),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
 
       final value = await _update(
@@ -2137,7 +2146,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2225,18 +2234,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.twitter,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.twitter),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
 
       final value = await _update(
@@ -2245,7 +2254,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2332,18 +2341,18 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).copy(
-        id: result.uid,
-        accessToken: storeToken ? raw.accessToken : null,
-        idToken: storeToken ? raw.idToken : null,
-        email: raw.email ?? result.email,
-        name: raw.displayName ?? result.displayName,
-        phone: result.phoneNumber,
-        photo: raw.photoURL ?? result.photoURL,
-        provider: Provider.yahoo,
-        loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
-        verified: true,
+      final user = (authenticator ?? Authenticator.oauth()).update(
+        id: Modifier(result.uid),
+        accessToken: storeToken ? Modifier(raw.accessToken) : null,
+        idToken: storeToken ? Modifier(raw.idToken) : null,
+        email: Modifier(raw.email ?? result.email),
+        name: Modifier(raw.displayName ?? result.displayName),
+        phone: Modifier(result.phoneNumber),
+        photo: Modifier(raw.photoURL ?? result.photoURL),
+        provider: Modifier(Provider.yahoo),
+        loggedIn: Modifier(true),
+        loggedInTime: Modifier(EntityHelper.generateTimeMills),
+        verified: Modifier(true),
       );
       final value = await _update(
         id: user.id,
@@ -2351,7 +2360,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 

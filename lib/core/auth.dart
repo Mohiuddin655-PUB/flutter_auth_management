@@ -1,39 +1,65 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_entity/flutter_entity.dart';
 
 import 'provider.dart';
 
+String kPlatform = kIsWeb
+    ? 'web'
+    : Platform.isAndroid
+        ? 'android'
+        : Platform.isIOS
+            ? 'ios'
+            : Platform.isMacOS
+                ? 'macos'
+                : Platform.isFuchsia
+                    ? 'fuchsia'
+                    : Platform.isLinux
+                        ? 'linux'
+                        : Platform.isWindows
+                            ? 'windows'
+                            : 'unknown';
+
 /// ## Create an authorized key class for User:
 ///
 /// ```dart
-/// class AuthKeys extends AuthKeys {
+/// class UserKeys extends AuthKeys {
 ///   final address = "address";
 ///   final contact = "contact";
 ///
-///   const AuthKeys._();
+///   const UserKeys._();
 ///
-///   static AuthKeys? _i;
+///   static UserKeys? _i;
 ///
-///   static AuthKeys get i => _i ??= const AuthKeys._();
+///   static UserKeys get i => _i ??= const UserKeys._();
 /// }
 ///```
 class AuthKeys extends EntityKey {
   static const key = "__uid__";
 
   final accessToken = "access_token";
+  final age = "age";
+  final anonymous = "anonymous";
   final biometric = "biometric";
   final email = "email";
   final extra = "extra";
-  final idToken = "id_token";
+  final gender = "gender";
   final loggedIn = "logged_in";
   final loggedInTime = "logged_in_time";
   final loggedOutTime = "logged_out_time";
+  final idToken = "id_token";
   final name = "name";
+  final online = "online";
   final password = "password";
+  final path = "path";
   final phone = "phone";
   final photo = "photo";
+  final platform = "platform";
   final provider = "provider";
+  final random = "random";
+  final token = "token";
   final username = "username";
   final verified = "verified";
 
@@ -52,18 +78,24 @@ class AuthKeys extends EntityKey {
       id,
       timeMills,
       accessToken,
+      anonymous,
       biometric,
       email,
       extra,
+      gender,
       idToken,
       loggedIn,
       loggedInTime,
       loggedOutTime,
       name,
+      online,
       password,
+      path,
       phone,
       photo,
+      platform,
       provider,
+      token,
       username,
       verified,
     ];
@@ -73,18 +105,18 @@ class AuthKeys extends EntityKey {
 /// ## Create an authorized model class for User:
 ///
 /// ```dart
-/// class AuthKeys extends AuthKeys {
+/// class UserKeys extends AuthKeys {
 ///   final address = "address";
 ///   final contact = "contact";
 ///
-///   const AuthKeys._();
+///   const UserKeys._();
 ///
-///   static AuthKeys? _i;
+///   static UserKeys? _i;
 ///
-///   static AuthKeys get i => _i ??= const AuthKeys._();
+///   static UserKeys get i => _i ??= const UserKeys._();
 /// }
 ///
-/// class UserModel extends Auth<AuthKeys> {
+/// class UserModel extends Auth<UserKeys> {
 ///   final Address? _address;
 ///   final Contact? _contact;
 ///
@@ -96,97 +128,211 @@ class AuthKeys extends EntityKey {
 ///     super.id,
 ///     super.timeMills,
 ///     super.accessToken,
+///     super.age,
+///     super.anonymous,
 ///     super.biometric,
 ///     super.email,
 ///     super.extra,
+///     super.gender,
 ///     super.idToken,
 ///     super.loggedIn,
+///     super.loggedInTime,
+///     super.loggedOutTime,
 ///     super.name,
+///     super.online,
 ///     super.password,
+///     super.path,
 ///     super.phone,
 ///     super.photo,
+///     super.platform,
 ///     super.provider,
+///     super.random,
+///     super.token,
 ///     super.username,
+///     super.verified,
 ///     Address? address,
 ///     Contact? contact,
 ///   })  : _address = address,
 ///         _contact = contact;
 ///
 ///   factory UserModel.from(Object? source) {
-///     final key = AuthKeys.i;
+///     if (source is UserModel) return source;
+///     final key = UserKeys.i;
 ///     final root = Auth.from(source);
 ///     return UserModel(
 ///       // ROOT PROPERTIES
-///       id: root.id,
-///       timeMills: root.timeMills,
+///       id: root.idOrNull,
+///       timeMills: root.timeMillsOrNull,
 ///       accessToken: root.accessToken,
+///       age: root.age,
+///       anonymous: root.anonymous,
 ///       biometric: root.biometric,
 ///       email: root.email,
 ///       extra: root.extra,
+///       gender: root.gender,
 ///       idToken: root.idToken,
 ///       loggedIn: root.loggedIn,
+///       loggedInTime: root.loggedInTime,
+///       loggedOutTime: root.loggedOutTime,
 ///       name: root.name,
+///       online: root.online,
 ///       password: root.password,
+///       path: root.path,
 ///       phone: root.phone,
 ///       photo: root.photo,
+///       platform: root.platform,
 ///       provider: root.provider,
+///       random: root.random,
+///       token: root.token,
 ///       username: root.username,
+///       verified: root.verified,
 ///
 ///       // CHILD PROPERTIES
-///       address: source.entityObject(key.address, Address.from),
-///       contact: source.entityObject(key.address, Contact.from),
+///       address: source.entityValue(key.address, Address.from),
+///       contact: source.entityValue(key.contact, Contact.from),
 ///     );
 ///   }
 ///
-///   @override
 ///   UserModel copy({
 ///     String? id,
 ///     int? timeMills,
 ///     String? accessToken,
-///     String? biometric,
+///     int? age,
+///     bool? anonymous,
+///     bool? biometric,
 ///     String? email,
 ///     Map<String, dynamic>? extra,
+///     String? gender,
 ///     String? idToken,
 ///     bool? loggedIn,
+///     int? loggedInTime,
+///     int? loggedOutTime,
 ///     String? name,
+///     int? online,
 ///     String? password,
+///     String? path,
 ///     String? phone,
 ///     String? photo,
-///     String? provider,
+///     String? platform,
+///     Provider? provider,
+///     double? random,
+///     String? token,
 ///     String? username,
-///     Address? address,
-///     Contact? contact,
+///     bool? verified,
 ///   }) {
 ///     return UserModel(
-///       id: id ?? this.id,
-///       timeMills: timeMills ?? this.timeMills,
+///       id: id ?? idOrNull,
+///       timeMills: timeMills ?? timeMillsOrNull,
 ///       accessToken: accessToken ?? this.accessToken,
+///       age: age ?? this.age,
+///       anonymous: anonymous ?? this.anonymous,
 ///       biometric: biometric ?? this.biometric,
 ///       email: email ?? this.email,
 ///       extra: extra ?? this.extra,
+///       gender: gender ?? this.gender,
 ///       idToken: idToken ?? this.idToken,
 ///       loggedIn: loggedIn ?? this.loggedIn,
+///       loggedInTime: loggedInTime ?? this.loggedInTime,
+///       loggedOutTime: loggedOutTime ?? this.loggedOutTime,
 ///       name: name ?? this.name,
+///       online: online ?? this.online,
 ///       password: password ?? this.password,
+///       path: path ?? this.path,
 ///       phone: phone ?? this.phone,
 ///       photo: photo ?? this.photo,
+///       platform: platform ?? this.platform,
 ///       provider: provider ?? this.provider,
+///       random: random ?? this.random,
+///       token: token ?? this.token,
 ///       username: username ?? this.username,
-///       address: address ?? this.address,
-///       contact: contact ?? this.contact,
+///       verified: verified ?? this.verified,
 ///     );
 ///   }
 ///
 ///   @override
-///   AuthKeys makeKey() => AuthKeys.i;
+///   UserModel update({
+///     Modifier<String>? id,
+///     Modifier<int>? timeMills,
+///     Modifier<String>? accessToken,
+///     Modifier<int>? age,
+///     Modifier<bool>? anonymous,
+///     Modifier<bool>? biometric,
+///     Modifier<String>? email,
+///     Modifier<Map<String, dynamic>>? extra,
+///     Modifier<String>? gender,
+///     Modifier<String>? idToken,
+///     Modifier<bool>? loggedIn,
+///     Modifier<int>? loggedInTime,
+///     Modifier<int>? loggedOutTime,
+///     Modifier<String>? name,
+///     Modifier<int>? online,
+///     Modifier<String>? password,
+///     Modifier<String>? path,
+///     Modifier<String>? phone,
+///     Modifier<String>? photo,
+///     Modifier<String>? platform,
+///     Modifier<Provider>? provider,
+///     Modifier<double>? random,
+///     Modifier<String>? token,
+///     Modifier<String>? username,
+///     Modifier<bool>? verified,
+///     Modifier<Address>? address,
+///     Modifier<Contact>? contact,
+///   }) {
+///     return UserModel(
+///       id: modify(id, idOrNull),
+///       timeMills: modify(timeMills, timeMillsOrNull),
+///       accessToken: modify(accessToken, this.accessToken),
+///       age: modify(age, this.age),
+///       anonymous: modify(anonymous, this.anonymous),
+///       biometric: modify(biometric, this.biometric),
+///       email: modify(email, this.email),
+///       extra: modify(extra, this.extra),
+///       gender: modify(gender, this.gender),
+///       idToken: modify(idToken, this.idToken),
+///       loggedIn: modify(loggedIn, this.loggedIn),
+///       loggedInTime: modify(loggedInTime, this.loggedInTime),
+///       loggedOutTime: modify(loggedOutTime, this.loggedOutTime),
+///       name: modify(name, this.name),
+///       online: modify(online, this.online),
+///       password: modify(password, this.password),
+///       path: modify(path, this.path),
+///       phone: modify(phone, this.phone),
+///       photo: modify(photo, this.photo),
+///       platform: modify(platform, this.platform),
+///       provider: modify(provider, this.provider),
+///       random: modify(random, this.random),
+///       token: modify(token, this.token),
+///       username: modify(username, this.username),
+///       verified: modify(verified, this.verified),
+///       address: modify(address, _address),
+///       contact: modify(contact, _contact),
+///     );
+///   }
+///
+///   @override
+///   UserKeys makeKey() => UserKeys.i;
+///
+///   @override
+///   Iterable<Object?> get props {
+///     return [
+///       ...super.props,
+///       _address,
+///       _contact,
+///     ];
+///   }
 ///
 ///   @override
 ///   Map<String, dynamic> get source {
-///     return super.source.attach({
+///     return {
+///       ...super.source,
 ///       key.address: _address?.source,
 ///       key.contact: _contact?.source,
-///     });
+///     };
 ///   }
+///
+///   @override
+///   String toString() => "$UserModel#$hashCode($json)";
 /// }
 ///
 /// class Address extends Entity {
@@ -205,32 +351,57 @@ class AuthKeys extends EntityKey {
 ///   }
 /// }
 /// ```
-class Auth<Key extends AuthKeys> extends Entity<Key> {
+class Auth<K extends AuthKeys> extends Entity<K> {
   final String? accessToken;
-  final bool? _biometric;
-  final String? idToken;
+  final int? age;
+  final bool? anonymous;
+  final bool? biometric;
   final String? email;
   final Map<String, dynamic>? extra;
+  final String? gender;
+  final String? idToken;
   final bool? loggedIn;
   final int? loggedInTime;
   final int? loggedOutTime;
   final String? name;
+  final int? online;
   final String? password;
+  final String? path;
   final String? phone;
   final String? photo;
-  final Provider? _provider;
+  final String? platform;
+  final Provider? provider;
+  final double? random;
+  final String? token;
   final String? username;
   final bool? verified;
 
-  bool get biometric => _biometric ?? false;
-
-  Provider? get provider => _provider;
+  bool get isAnonymous => anonymous ?? false;
 
   bool get isAuthenticated => true;
+
+  bool get isBiometric => biometric ?? false;
 
   bool get isLoggedIn => loggedIn ?? false;
 
   bool get isVerified => verified ?? provider?.isVerified ?? false;
+
+  bool get isOnline {
+    final lastOnline = lastOnlineInDuration;
+    if (lastOnline == Duration.zero) return false;
+    return lastOnline.inSeconds < 60;
+  }
+
+  DateTime? get lastOnline {
+    if (online == null || online! <= 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(online!);
+  }
+
+  Duration get lastOnlineInDuration {
+    final lastOnline = this.lastOnline;
+    if (lastOnline == null) return Duration.zero;
+    return DateTime.now().difference(lastOnline);
+  }
 
   DateTime get lastLoggedInDate {
     return DateTime.fromMillisecondsSinceEpoch(loggedInTime ?? 0);
@@ -252,92 +423,180 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
     super.id = "",
     super.timeMills,
     this.accessToken,
+    this.age,
+    this.anonymous,
+    this.biometric,
     this.email,
     this.extra,
+    this.gender,
     this.idToken,
     this.loggedIn,
     this.loggedInTime,
     this.loggedOutTime,
     this.name,
+    this.online,
     this.password,
+    this.path,
     this.phone,
     this.photo,
+    String? platform,
+    this.provider,
+    this.random,
+    this.token,
     this.username,
     this.verified,
-    bool? biometric,
-    Provider? provider,
-  })  : _biometric = biometric,
-        _provider = provider;
+  }) : platform = platform ?? kPlatform;
 
   Auth copy({
     String? id,
     int? timeMills,
     String? accessToken,
+    int? age,
+    bool? anonymous,
     bool? biometric,
     String? email,
     Map<String, dynamic>? extra,
+    String? gender,
     String? idToken,
     bool? loggedIn,
     int? loggedInTime,
     int? loggedOutTime,
     String? name,
+    int? online,
     String? password,
+    String? path,
     String? phone,
     String? photo,
+    String? platform,
     Provider? provider,
+    double? random,
+    String? token,
     String? username,
     bool? verified,
   }) {
     return Auth(
-      id: id ?? this.id,
-      timeMills: timeMills ?? this.timeMills,
+      id: id ?? idOrNull,
+      timeMills: timeMills ?? timeMillsOrNull,
       accessToken: accessToken ?? this.accessToken,
-      biometric: biometric ?? _biometric,
+      age: age ?? this.age,
+      anonymous: anonymous ?? this.anonymous,
+      biometric: biometric ?? this.biometric,
       email: email ?? this.email,
       extra: extra ?? this.extra,
+      gender: gender ?? this.gender,
       idToken: idToken ?? this.idToken,
       loggedIn: loggedIn ?? this.loggedIn,
       loggedInTime: loggedInTime ?? this.loggedInTime,
       loggedOutTime: loggedOutTime ?? this.loggedOutTime,
       name: name ?? this.name,
+      online: online ?? this.online,
       password: password ?? this.password,
+      path: path ?? this.path,
       phone: phone ?? this.phone,
       photo: photo ?? this.photo,
+      platform: platform ?? this.platform,
       provider: provider ?? this.provider,
+      random: random ?? this.random,
+      token: token ?? this.token,
       username: username ?? this.username,
       verified: verified ?? this.verified,
     );
   }
 
+  Auth update({
+    Modifier<String>? id,
+    Modifier<int>? timeMills,
+    Modifier<String>? accessToken,
+    Modifier<int>? age,
+    Modifier<bool>? anonymous,
+    Modifier<bool>? biometric,
+    Modifier<String>? email,
+    Modifier<Map<String, dynamic>>? extra,
+    Modifier<String>? gender,
+    Modifier<String>? idToken,
+    Modifier<bool>? loggedIn,
+    Modifier<int>? loggedInTime,
+    Modifier<int>? loggedOutTime,
+    Modifier<String>? name,
+    Modifier<int>? online,
+    Modifier<String>? password,
+    Modifier<String>? path,
+    Modifier<String>? phone,
+    Modifier<String>? photo,
+    Modifier<String>? platform,
+    Modifier<Provider>? provider,
+    Modifier<double>? random,
+    Modifier<String>? token,
+    Modifier<String>? username,
+    Modifier<bool>? verified,
+  }) {
+    return Auth(
+      id: modify(id, idOrNull),
+      timeMills: modify(timeMills, timeMillsOrNull),
+      accessToken: modify(accessToken, this.accessToken),
+      age: modify(age, this.age),
+      anonymous: modify(anonymous, this.anonymous),
+      biometric: modify(biometric, this.biometric),
+      email: modify(email, this.email),
+      extra: modify(extra, this.extra),
+      gender: modify(gender, this.gender),
+      idToken: modify(idToken, this.idToken),
+      loggedIn: modify(loggedIn, this.loggedIn),
+      loggedInTime: modify(loggedInTime, this.loggedInTime),
+      loggedOutTime: modify(loggedOutTime, this.loggedOutTime),
+      name: modify(name, this.name),
+      online: modify(online, this.online),
+      password: modify(password, this.password),
+      path: modify(path, this.path),
+      phone: modify(phone, this.phone),
+      photo: modify(photo, this.photo),
+      platform: modify(platform, this.platform),
+      provider: modify(provider, this.provider),
+      random: modify(random, this.random),
+      token: modify(token, this.token),
+      username: modify(username, this.username),
+      verified: modify(verified, this.verified),
+    );
+  }
+
   factory Auth.from(Object? source) {
+    if (source is Auth<K>) return source;
     final key = AuthKeys.i;
     return Auth(
       id: source.entityValue(key.id),
       timeMills: source.entityValue(key.timeMills),
       accessToken: source.entityValue(key.accessToken),
+      age: source.entityValue(key.age),
+      anonymous: source.entityValue(key.anonymous),
       biometric: source.entityValue(key.biometric),
-      loggedIn: source.entityValue(key.loggedIn),
-      loggedInTime: source.entityValue(key.loggedInTime),
-      loggedOutTime: source.entityValue(key.loggedOutTime),
-      idToken: source.entityValue(key.idToken),
       email: source.entityValue(key.email),
-      name: source.entityValue(key.name),
-      password: source.entityValue(key.password),
-      phone: source.entityValue(key.phone),
-      photo: source.entityValue(key.photo),
-      provider: source.entityValue(key.provider),
-      username: source.entityValue(key.username),
-      verified: source.entityValue(key.verified),
       extra: source.entityValue(key.extra, (value) {
         return value is Map<String, dynamic> ? value : {};
       }),
+      gender: source.entityValue(key.gender),
+      idToken: source.entityValue(key.idToken),
+      loggedIn: source.entityValue(key.loggedIn),
+      loggedInTime: source.entityValue(key.loggedInTime),
+      loggedOutTime: source.entityValue(key.loggedOutTime),
+      name: source.entityValue(key.name),
+      online: source.entityValue(key.online),
+      password: source.entityValue(key.password),
+      path: source.entityValue(key.path),
+      phone: source.entityValue(key.phone),
+      photo: source.entityValue(key.photo),
+      platform: source.entityValue(key.platform),
+      provider: source.entityValue(key.provider),
+      random: source.entityValue(key.random),
+      token: source.entityValue(key.token),
+      username: source.entityValue(key.username),
+      verified: source.entityValue(key.verified),
     );
   }
 
   @override
-  Key makeKey() {
+  K makeKey() {
     try {
-      return const AuthKeys() as Key;
+      return const AuthKeys() as K;
     } catch (_) {
       return throw UnimplementedError(
         "You must override makeKey() and return the current key from sub-entity class.",
@@ -349,21 +608,29 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   Map<String, dynamic> get source {
     return {
       ...super.source,
-      AuthKeys.i.accessToken: accessToken,
-      AuthKeys.i.biometric: _biometric,
-      AuthKeys.i.email: email,
-      AuthKeys.i.extra: extra,
-      AuthKeys.i.idToken: idToken,
-      AuthKeys.i.loggedIn: loggedIn,
-      AuthKeys.i.loggedInTime: loggedInTime,
-      AuthKeys.i.loggedOutTime: loggedOutTime,
-      AuthKeys.i.name: name,
-      AuthKeys.i.password: password,
-      AuthKeys.i.phone: phone,
-      AuthKeys.i.photo: photo,
-      AuthKeys.i.provider: _provider?.id,
-      AuthKeys.i.username: username,
-      AuthKeys.i.verified: verified,
+      key.accessToken: accessToken,
+      key.age: age,
+      key.anonymous: anonymous,
+      key.biometric: biometric,
+      key.email: email,
+      key.extra: extra,
+      key.gender: gender,
+      key.idToken: idToken,
+      key.loggedIn: loggedIn,
+      key.loggedInTime: loggedInTime,
+      key.loggedOutTime: loggedOutTime,
+      key.name: name,
+      key.online: online,
+      key.password: password,
+      key.path: path,
+      key.phone: phone,
+      key.photo: photo,
+      key.platform: platform,
+      key.provider: provider?.id,
+      key.random: random,
+      key.token: token,
+      key.username: username,
+      key.verified: verified,
     };
   }
 
@@ -371,5 +638,35 @@ class Auth<Key extends AuthKeys> extends Entity<Key> {
   String get json => jsonEncode(source);
 
   @override
-  String toString() => "$Auth($json)";
+  Iterable<Object?> get props {
+    return [
+      ...super.props,
+      accessToken,
+      age,
+      anonymous,
+      biometric,
+      email,
+      extra,
+      gender,
+      idToken,
+      loggedIn,
+      loggedInTime,
+      loggedOutTime,
+      name,
+      online,
+      password,
+      path,
+      phone,
+      photo,
+      platform,
+      provider,
+      random,
+      token,
+      username,
+      verified,
+    ];
+  }
+
+  @override
+  String toString() => "$Auth#$hashCode($json)";
 }

@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
 
   void _updateUser() {
     context.updateAccount<UserModel>({
-      UserKeys.i.name: "Omie ${RandomProvider.getInt(max: 50)}",
+      UserKeys.i.name: "Omie ${RandomProvider.integer(max: 50)}",
     });
   }
 
@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     Text(
                       "Account created at ".join(
-                        DateConverter.toRealtime(value?.timeMills ?? 0),
+                        DateHelper.toRealtime(value?.timeMills ?? 0),
                       ),
                       style: Theme.of(context)
                           .textTheme
