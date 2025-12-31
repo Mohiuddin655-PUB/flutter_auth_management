@@ -49,16 +49,22 @@ class _<T extends Auth> {
 
   Future<bool> save({
     required String id,
+    required bool hasAnonymous,
     Map<String, dynamic> initials = const {},
     Map<String, dynamic> updates = const {},
     bool cacheUpdateMode = false,
   }) async {
     if (id.isEmpty) return false;
+    if (hasAnonymous) {
+      final user = build(initials);
+      await onCreateUser(user, true);
+      return delegate.set(user);
+    }
     if (cacheUpdateMode) return delegate.update(updates);
     final remote = await onFetchUser(id);
     if (remote == null || !remote.isAuthenticated) {
       final user = build(initials);
-      await onCreateUser(user);
+      await onCreateUser(user, false);
       return delegate.set(user);
     }
     await onUpdateUser(id, updates);
@@ -77,8 +83,8 @@ class _<T extends Auth> {
 
   Future<T?> onFetchUser(String id) => delegate.onFetchUser(id);
 
-  Future<void> onCreateUser(T data) {
-    return delegate.onCreateUser(data);
+  Future<void> onCreateUser(T data, bool hasAnonymous) {
+    return delegate.onCreateUser(data, hasAnonymous);
   }
 
   Future<void> onUpdateUser(String id, Map<String, dynamic> data) {
