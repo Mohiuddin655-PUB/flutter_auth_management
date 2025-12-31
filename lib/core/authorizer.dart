@@ -55,6 +55,15 @@ class Authorizer<T extends Auth> {
 
   Future<T?> get _auth => _backup.cache;
 
+  Future<bool> get hasAnonymous {
+    return _auth.then((v) {
+      if (v == null) return false;
+      if (!v.isLoggedIn) return false;
+      if (!v.isAnonymous) return false;
+      return true;
+    });
+  }
+
   Authorizer({
     required this.delegate,
     this.msg = const AuthMessages(),
@@ -137,6 +146,7 @@ class Authorizer<T extends Auth> {
       final value = await _update(
         id: auth.id,
         updateMode: true,
+        hasAnonymous: false,
         updates: {AuthKeys.i.biometric: enabled},
       );
 
@@ -385,6 +395,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: false,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -498,7 +509,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final value = await _update(id: user.id, updates: {
+      final value = await _update(id: user.id, hasAnonymous: false, updates: {
         AuthKeys.i.loggedIn: true,
         AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
       });
@@ -543,6 +554,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithEmailNPassword(
         authenticator.email,
         authenticator.password,
@@ -590,6 +602,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: (biometric != null
                 ? user.update(biometric: Modifier(biometric))
                 : user)
@@ -764,6 +777,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final credential = delegate.credential(
         Provider.phone,
         Credential(
@@ -818,6 +832,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -866,6 +881,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
@@ -915,6 +931,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: (biometric != null
                 ? user.update(biometric: Modifier(biometric))
                 : user)
@@ -965,6 +982,7 @@ class Authorizer<T extends Auth> {
       const AuthResponse.loading(Provider.email, AuthType.register),
     );
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signUpWithEmailNPassword(
         authenticator.email,
         authenticator.password,
@@ -1014,6 +1032,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: (biometric != null
                 ? user.update(biometric: Modifier(biometric))
                 : user)
@@ -1060,6 +1079,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signUpWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
@@ -1109,6 +1129,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: (biometric != null
                 ? user.update(biometric: Modifier(biometric))
                 : user)
@@ -1189,6 +1210,7 @@ class Authorizer<T extends Auth> {
 
       if (data.isBiometric) {
         await _update(
+          hasAnonymous: false,
           id: data.id,
           updates: {
             ...data.extra ?? {},
@@ -1245,6 +1267,7 @@ class Authorizer<T extends Auth> {
     Map<String, dynamic> initials = const {},
     Map<String, dynamic> updates = const {},
     bool updateMode = false,
+    required bool hasAnonymous,
   }) async {
     try {
       await _backup.save(
@@ -1252,6 +1275,7 @@ class Authorizer<T extends Auth> {
         initials: initials,
         cacheUpdateMode: updateMode,
         updates: updates,
+        hasAnonymous: hasAnonymous,
       );
       final updated = await _auth;
       _emitUser(updated);
@@ -1334,6 +1358,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithApple();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1393,6 +1418,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -1441,6 +1467,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithFacebook();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1500,6 +1527,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -1551,6 +1579,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithGameCenter();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1610,6 +1639,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -1658,6 +1688,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithGithub();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1716,6 +1747,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -1764,6 +1796,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithGoogle();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1822,6 +1855,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -1870,6 +1904,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithMicrosoft();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1928,6 +1963,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -1976,6 +2012,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithPlayGames();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -2035,6 +2072,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -2083,6 +2121,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithSAML();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -2142,6 +2181,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -2190,6 +2230,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithTwitter();
       final raw = response.data;
 
@@ -2250,6 +2291,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},
@@ -2298,6 +2340,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
+      final hasAnonymous = await this.hasAnonymous;
       final response = await delegate.signInWithYahoo();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -2356,6 +2399,7 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
+        hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
           ...user.extra ?? {},

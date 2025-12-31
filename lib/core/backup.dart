@@ -71,7 +71,7 @@ abstract class AuthBackupDelegate<T extends Auth> {
 
   Future<T?> onFetchUser(String id);
 
-  Future<void> onCreateUser(T data);
+  Future<void> onCreateUser(T data, bool hasAnonymous);
 
   Future<void> onDeleteUser(String id);
 

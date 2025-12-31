@@ -59,6 +59,10 @@ extension AuthHelper on BuildContext {
     return _i<T>("isBiometricEnabled").isBiometricEnabled;
   }
 
+  Future<bool> isAnonymousAccount<T extends Auth>() {
+    return _i<T>("isAnonymousAccount").hasAnonymous;
+  }
+
   Future<bool> isLoggedIn<T extends Auth>() {
     return _i<T>("isLoggedIn").isLoggedIn;
   }

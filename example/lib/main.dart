@@ -199,7 +199,7 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   UserModel build(Map source) => UserModel.from(source);
 
   @override
-  Future<void> onCreateUser(UserModel data) async {
+  Future<void> onCreateUser(UserModel data, bool hasAnonymous) async {
     // Store authorized user data in remote server
     log("Authorized user data : $data");
   }
