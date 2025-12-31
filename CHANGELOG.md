@@ -1,3 +1,8 @@
+## 3.2.0
+
+* Authorizer anonymous account implemented
+* Improved auth model
+
 ## 3.1.0
 
 * Authorizer update function improved
