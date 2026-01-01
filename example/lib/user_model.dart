@@ -10,6 +10,9 @@ class UserKeys extends AuthKeys {
   static UserKeys? _i;
 
   static UserKeys get i => _i ??= const UserKeys._();
+
+  @override
+  Iterable<String> get keys => {...super.keys, address, contact};
 }
 
 class UserModel extends Auth<UserKeys> {
