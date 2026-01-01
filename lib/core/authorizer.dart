@@ -66,8 +66,8 @@ class Authorizer<T extends Auth> {
 
   Authorizer({
     required this.delegate,
-    this.msg = const AuthMessages(),
     required AuthBackupDelegate<T> backup,
+    this.msg = const AuthMessages(),
   }) : _backup = _<T>(backup);
 
   factory Authorizer.of(BuildContext context) {
@@ -75,9 +75,39 @@ class Authorizer<T extends Auth> {
       return AuthProvider.authorizerOf<T>(context);
     } catch (e) {
       throw AuthProviderException(
-        "You should call like Authorizer.of${AuthProvider.type}(context);",
+        "You should call like Authorizer.of<${AuthProvider.type}>(context);",
       );
     }
+  }
+
+  static Type? type;
+
+  static Authorizer? _i;
+
+  static Authorizer<T> instanceOf<T extends Auth>() {
+    if (_i == null) {
+      throw AuthProviderException(
+        "You should initialize Authorizer before calling Authorizer.instanceOf<$T>();",
+      );
+    }
+    if (_i is! Authorizer<T>) {
+      throw AuthProviderException(
+        "You should call like Authorizer.instanceOf<${Authorizer.type}>();",
+      );
+    }
+    return _i as Authorizer<T>;
+  }
+
+  static Future<void> init<T extends Auth>({
+    required AuthDelegate delegate,
+    required AuthBackupDelegate<T> backup,
+    AuthMessages msg = const AuthMessages(),
+    bool initialCheck = true,
+  }) async {
+    type = T;
+    final auth = Authorizer<T>(delegate: delegate, backup: backup, msg: msg);
+    _i = auth;
+    await auth.initialize(initialCheck);
   }
 
   Future<T?> get auth async {
