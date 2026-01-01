@@ -1,3 +1,7 @@
+## 3.2.2
+
+- refactor: rename backup class and update related references; improve color opacity handling
+
 ## 3.2.1
 
 - refactor: improve Authorizer initialization and error handling

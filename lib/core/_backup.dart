@@ -1,9 +1,9 @@
 part of 'authorizer.dart';
 
-class _<T extends Auth> {
+class _Backup<T extends Auth> {
   final AuthBackupDelegate<T> delegate;
 
-  const _(this.delegate);
+  const _Backup(this.delegate);
 
   Future<T?> get cache async {
     try {

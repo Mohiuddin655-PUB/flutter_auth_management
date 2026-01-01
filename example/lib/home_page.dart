@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                       ),
                       child: value?.photo == null
                           ? null
