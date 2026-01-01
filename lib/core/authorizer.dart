@@ -37,7 +37,7 @@ typedef OnAuthChanges<T extends Auth> = void Function(
 class Authorizer<T extends Auth> {
   final AuthMessages msg;
   final AuthDelegate delegate;
-  final _<T> _backup;
+  final _Backup<T> _backup;
 
   final _errorNotifier = ValueNotifier("");
   final _loadingNotifier = ValueNotifier(false);
@@ -68,7 +68,7 @@ class Authorizer<T extends Auth> {
     required this.delegate,
     required AuthBackupDelegate<T> backup,
     this.msg = const AuthMessages(),
-  }) : _backup = _<T>(backup);
+  }) : _backup = _Backup<T>(backup);
 
   factory Authorizer.of(BuildContext context) {
     try {
@@ -812,7 +812,7 @@ class Authorizer<T extends Auth> {
         Provider.phone,
         Credential(
           smsCode: authenticator.smsCode,
-          verificationId: authenticator.token,
+          verificationId: authenticator.verificationId,
         ),
       );
 
@@ -1322,7 +1322,7 @@ class Authorizer<T extends Auth> {
         Provider.phone,
         Credential(
           smsCode: authenticator.smsCode,
-          verificationId: authenticator.token,
+          verificationId: authenticator.verificationId,
         ),
       );
 
