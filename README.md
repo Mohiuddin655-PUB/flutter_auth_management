@@ -8,9 +8,12 @@
 import 'package:auth_management/core.dart';
 ```
 
-### Create authorized user key (OPTIONAL)
+### Create authorized user model (OPTIONAL)
 
 ```dart
+import 'package:auth_management/core.dart';
+import 'package:flutter_entity/entity.dart';
+
 class UserKeys extends AuthKeys {
   final address = "address";
   final contact = "contact";
@@ -20,12 +23,11 @@ class UserKeys extends AuthKeys {
   static UserKeys? _i;
 
   static UserKeys get i => _i ??= const UserKeys._();
+
+  @override
+  Iterable<String> get keys => {...super.keys, address, contact};
 }
-```
 
-### Create authorized user model (OPTIONAL)
-
-```dart
 class UserModel extends Auth<UserKeys> {
   final Address? _address;
   final Contact? _contact;
@@ -38,52 +40,68 @@ class UserModel extends Auth<UserKeys> {
     super.id,
     super.timeMills,
     super.accessToken,
+    super.age,
+    super.anonymous,
     super.biometric,
     super.email,
     super.extra,
+    super.gender,
     super.idToken,
     super.loggedIn,
     super.loggedInTime,
     super.loggedOutTime,
     super.name,
+    super.online,
     super.password,
+    super.path,
     super.phone,
     super.photo,
+    super.platform,
     super.provider,
+    super.random,
+    super.token,
     super.username,
     super.verified,
     Address? address,
     Contact? contact,
-  })
-      : _address = address,
+  })  : _address = address,
         _contact = contact;
 
   factory UserModel.from(Object? source) {
+    if (source is UserModel) return source;
     final key = UserKeys.i;
     final root = Auth.from(source);
     return UserModel(
       // ROOT PROPERTIES
-      id: root.id,
-      timeMills: root.timeMills,
+      id: root.idOrNull,
+      timeMills: root.timeMillsOrNull,
       accessToken: root.accessToken,
+      age: root.age,
+      anonymous: root.anonymous,
       biometric: root.biometric,
       email: root.email,
       extra: root.extra,
+      gender: root.gender,
       idToken: root.idToken,
       loggedIn: root.loggedIn,
       loggedInTime: root.loggedInTime,
       loggedOutTime: root.loggedOutTime,
       name: root.name,
+      online: root.online,
       password: root.password,
+      path: root.path,
       phone: root.phone,
       photo: root.photo,
+      platform: root.platform,
       provider: root.provider,
+      random: root.random,
+      token: root.token,
       username: root.username,
       verified: root.verified,
 
       // CHILD PROPERTIES
-      address: source.entityObject(key.address, Address.from),
-      contact: source.entityObject(key.address, Contact.from),
+      address: source.entityValue(key.address, Address.from),
+      contact: source.entityValue(key.contact, Contact.from),
     );
   }
 
@@ -92,43 +110,116 @@ class UserModel extends Auth<UserKeys> {
     String? id,
     int? timeMills,
     String? accessToken,
-    String? biometric,
+    int? age,
+    bool? anonymous,
+    bool? biometric,
     String? email,
     Map<String, dynamic>? extra,
+    String? gender,
     String? idToken,
     bool? loggedIn,
     int? loggedInTime,
     int? loggedOutTime,
     String? name,
+    int? online,
     String? password,
+    String? path,
     String? phone,
     String? photo,
-    String? provider,
+    String? platform,
+    Provider? provider,
+    double? random,
+    String? token,
     String? username,
     bool? verified,
-    Address? address,
-    Contact? contact,
   }) {
     return UserModel(
-      id: id ?? this.id,
-      timeMills: timeMills ?? this.timeMills,
+      id: id ?? idOrNull,
+      timeMills: timeMills ?? timeMillsOrNull,
       accessToken: accessToken ?? this.accessToken,
+      age: age ?? this.age,
+      anonymous: anonymous ?? this.anonymous,
       biometric: biometric ?? this.biometric,
       email: email ?? this.email,
       extra: extra ?? this.extra,
+      gender: gender ?? this.gender,
       idToken: idToken ?? this.idToken,
       loggedIn: loggedIn ?? this.loggedIn,
       loggedInTime: loggedInTime ?? this.loggedInTime,
       loggedOutTime: loggedOutTime ?? this.loggedOutTime,
       name: name ?? this.name,
+      online: online ?? this.online,
       password: password ?? this.password,
+      path: path ?? this.path,
       phone: phone ?? this.phone,
       photo: photo ?? this.photo,
+      platform: platform ?? this.platform,
       provider: provider ?? this.provider,
+      random: random ?? this.random,
+      token: token ?? this.token,
       username: username ?? this.username,
       verified: verified ?? this.verified,
-      address: address ?? this.address,
-      contact: contact ?? this.contact,
+    );
+  }
+
+  @override
+  UserModel update({
+    Modifier<String>? id,
+    Modifier<int>? timeMills,
+    Modifier<String>? accessToken,
+    Modifier<int>? age,
+    Modifier<bool>? anonymous,
+    Modifier<bool>? biometric,
+    Modifier<String>? email,
+    Modifier<Map<String, dynamic>>? extra,
+    Modifier<String>? gender,
+    Modifier<String>? idToken,
+    Modifier<bool>? loggedIn,
+    Modifier<int>? loggedInTime,
+    Modifier<int>? loggedOutTime,
+    Modifier<String>? name,
+    Modifier<int>? online,
+    Modifier<String>? password,
+    Modifier<String>? path,
+    Modifier<String>? phone,
+    Modifier<String>? photo,
+    Modifier<String>? platform,
+    Modifier<Provider>? provider,
+    Modifier<double>? random,
+    Modifier<String>? token,
+    Modifier<String>? username,
+    Modifier<bool>? verified,
+    Modifier<Address>? address,
+    Modifier<Contact>? contact,
+  }) {
+    return UserModel(
+      id: modify(id, idOrNull),
+      timeMills: modify(timeMills, timeMillsOrNull),
+      accessToken: modify(accessToken, this.accessToken),
+      age: modify(age, this.age),
+      anonymous: modify(anonymous, this.anonymous),
+      biometric: modify(biometric, this.biometric),
+      email: modify(email, this.email),
+      extra: modify(extra, this.extra),
+      gender: modify(gender, this.gender),
+      idToken: modify(idToken, this.idToken),
+      loggedIn: modify(loggedIn, this.loggedIn),
+      loggedInTime: modify(loggedInTime, this.loggedInTime),
+      loggedOutTime: modify(loggedOutTime, this.loggedOutTime),
+      name: modify(name, this.name),
+      online: modify(online, this.online),
+      password: modify(password, this.password),
+      path: modify(path, this.path),
+      phone: modify(phone, this.phone),
+      photo: modify(photo, this.photo),
+      platform: modify(platform, this.platform),
+      provider: modify(provider, this.provider),
+      random: modify(random, this.random),
+      token: modify(token, this.token),
+      username: modify(username, this.username),
+      verified: modify(verified, this.verified),
+      address: modify(address, _address),
+      contact: modify(contact, _contact),
     );
   }
 
@@ -136,13 +227,25 @@ class UserModel extends Auth<UserKeys> {
   UserKeys makeKey() => UserKeys.i;
 
   @override
-  Map<String, dynamic> get source {
-    return super.source
-      ..addAll({
-        key.address: _address?.source,
-        key.contact: _contact?.source,
-      });
+  Iterable<Object?> get props {
+    return [
+      ...super.props,
+      _address,
+      _contact,
+    ];
   }
+
+  @override
+  Map<String, dynamic> get source {
+    return {
+      ...super.source,
+      key.address: _address?.source,
+      key.contact: _contact?.source,
+    };
+  }
+
+  @override
+  String toString() => "$UserModel#$hashCode($json)";
 }
 
 class Address extends Entity {
@@ -163,6 +266,7 @@ class Contact extends Entity {
 ```
 
 ### Create auth delegate
+
 ```dart
 class MyAuthDelegate extends AuthDelegate {
   @override
@@ -196,9 +300,9 @@ class MyAuthDelegate extends AuthDelegate {
   }
 
   @override
-  Future<Response<void>> signInWithBiometric([BiometricConfig? config]) {
+  Future<Response<void>> signInWithBiometric() {
     // implement signInWithBiometric
-    return super.signInWithBiometric(config);
+    return super.signInWithBiometric();
   }
 
   @override
@@ -332,7 +436,7 @@ class MyAuthDelegate extends AuthDelegate {
 ### Create authorized user backup delegate
 
 ```dart
-class MyAuthBackupDelegate extends BackupDelegate<UserModel> {
+class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   const MyAuthBackupDelegate({
     super.key,
     required super.reader,
@@ -340,7 +444,12 @@ class MyAuthBackupDelegate extends BackupDelegate<UserModel> {
   });
 
   @override
-  UserModel build(Map<String, dynamic> source) => UserModel.from(source);
+  Object? nonEncodableObjectParser(Object? current, Object? old) {
+    return old;
+  }
+
+  @override
+  UserModel build(Map source) => UserModel.from(source);
 
   @override
   Future<void> onCreateUser(UserModel data) async {
@@ -362,7 +471,11 @@ class MyAuthBackupDelegate extends BackupDelegate<UserModel> {
   }
 
   @override
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data) async {
+  Future<void> onUpdateUser(
+    String id,
+    Map<String, dynamic> data,
+    bool hasAnonymous,
+  ) async {
     // Update authorized user data in remote server
     log("Authorized user data : $data");
   }
@@ -380,15 +493,10 @@ Future<void> main() async {
   runApp(const Application());
 }
 ```
+
 ### Add auth provider in root level
 
 ```dart
-import 'package:auth_management/core.dart';
-import 'package:auth_management_biometric_delegate/auth_management_biometric_delegate.dart';
-import 'package:auth_management_google_delegate/auth_management_google_delegate.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 class Application extends StatelessWidget {
   const Application({super.key});
 
@@ -415,7 +523,7 @@ class Application extends StatelessWidget {
               return db.setString(key, value);
             },
           ),
-          msg: const AuthMessages()
+          msg: const AuthMessages(),
       ),
       child: MaterialApp(),
     );
@@ -423,10 +531,16 @@ class Application extends StatelessWidget {
 }
 ```
 
-### Apply on  Startup screen
+### Apply on Startup screen
 
 ```dart
+import 'dart:developer';
+
 import 'package:auth_management/core.dart';
+import 'package:auth_management/widgets.dart';
+import 'package:flutter/material.dart';
+
+import 'user_model.dart';
 
 class StartupPage extends StatefulWidget {
   const StartupPage({super.key});
@@ -454,9 +568,12 @@ class _StartupPageState extends State<StartupPage> {
     );
   }
 
-  void _status(BuildContext context, AuthState state, UserModel? user) {
-    log("AUTH STATUS : $state");
-    if (state.isAuthenticated) {
+  void _changes(
+    BuildContext context,
+    AuthChanges<UserModel> changes,
+  ) {
+    log("AUTH STATUS : $changes");
+    if (changes.status.isAuthenticated) {
       Navigator.pushNamedAndRemoveUntil(context, "home", (route) => false);
     }
   }
@@ -467,7 +584,7 @@ class _StartupPageState extends State<StartupPage> {
       onError: _showError,
       onMessage: _showMessage,
       onLoading: _showLoading,
-      onStatus: _status,
+      onChanges: _changes,
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -483,9 +600,41 @@ class _StartupPageState extends State<StartupPage> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, "login");
+                  Navigator.pushNamed(context, "register");
                 },
                 child: const Text("Register"),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, "oauth");
+                },
+                child: const Text("OAuth"),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.signInAnonymously<UserModel>(
+                    authenticator: GuestAuthenticator(
+                      name: "Omie talukdar",
+                    ),
+                  );
+                },
+                child: const Text("Guest"),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.signOut<UserModel>();
+                },
+                child: const Text("Sign out"),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.updateAccount<UserModel>({AuthKeys.i.name: "XYZ"});
+                },
+                child: const Text("Update account"),
               ),
             ],
           ),
@@ -496,10 +645,15 @@ class _StartupPageState extends State<StartupPage> {
 }
 ```
 
-### Apply on Login/Register screen
+### Apply on Login screen
 
 ```dart
+import 'dart:developer';
+
 import 'package:auth_management/core.dart';
+import 'package:flutter/material.dart';
+
+import 'user_model.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -509,30 +663,20 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final etName = TextEditingController();
-  final etEmail = TextEditingController();
-  final etPhone = TextEditingController();
-  final etPassword = TextEditingController();
+  final etName = TextEditingController(text: "Mr. Abc");
+  final etEmail = TextEditingController(text: "abc@gmail.com");
+  final etPhone = TextEditingController(text: "");
+  final etPassword = TextEditingController(text: "123456");
   final etOTP = TextEditingController();
   String? token;
 
   void signInByEmail() async {
+    log("AUTH : login");
     final email = etEmail.text;
     final password = etPassword.text;
     context.signInByEmail<UserModel>(EmailAuthenticator(
       email: email,
       password: password,
-    ));
-  }
-
-  void signUpByEmail() async {
-    final name = etName.text;
-    final email = etEmail.text;
-    final password = etPassword.text;
-    context.signUpByEmail<UserModel>(EmailAuthenticator(
-      email: email,
-      password: password,
-      name: name, // Optional
     ));
   }
 
@@ -545,16 +689,6 @@ class _LoginPageState extends State<LoginPage> {
     ));
   }
 
-  void signUpByUsername() {
-    final name = etName.text;
-    final password = etPassword.text;
-    context.signUpByUsername<UserModel>(UsernameAuthenticator(
-      username: name,
-      password: password,
-      name: name, // Optional
-    ));
-  }
-
   void signInByPhone() async {
     final name = etName.text;
     final phone = etPhone.text;
@@ -562,6 +696,7 @@ class _LoginPageState extends State<LoginPage> {
       PhoneAuthenticator(phone: phone, name: name),
       onCodeSent: (verId, refreshTokenId) {
         token = verId;
+        log(verId);
       },
     );
   }
@@ -570,32 +705,13 @@ class _LoginPageState extends State<LoginPage> {
     final name = etName.text;
     final phone = etPhone.text;
     final code = etOTP.text;
+    final token = this.token;
     context.signInByOtp<UserModel>(OtpAuthenticator(
       token: token ?? "",
       smsCode: code,
       name: name,
       phone: phone,
     ));
-  }
-
-  void signInByApple() {
-    context.signInByApple<UserModel>();
-  }
-
-  void signInByBiometric() {
-    context.signInByBiometric<UserModel>();
-  }
-
-  void signInByFacebook() {
-    context.signInByFacebook<UserModel>();
-  }
-
-  void signInByGithub() {
-    context.signInByGithub<UserModel>();
-  }
-
-  void signInByGoogle() {
-    context.signInByGoogle<UserModel>();
   }
 
   @override
@@ -659,15 +775,7 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: signInByEmail,
-              child: const Text("Login (Email)"),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: signUpByEmail,
-              child: const Text("Sign Up (Email)"),
+              child: const Text("Login with Email"),
             ),
           ),
           const SizedBox(height: 12),
@@ -675,15 +783,7 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: signInByUsername,
-              child: const Text("Login (Username)"),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: signUpByUsername,
-              child: const Text("Sign Up (Username)"),
+              child: const Text("Login with Username"),
             ),
           ),
           const SizedBox(height: 12),
@@ -691,7 +791,7 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: signInByPhone,
-              child: const Text("Phone"),
+              child: const Text("Login with Phone number"),
             ),
           ),
           const SizedBox(height: 12),
@@ -699,53 +799,217 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: signInByOtp,
-              child: const Text("OTP"),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              runAlignment: WrapAlignment.center,
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                ElevatedButton(
-                  onPressed: signInByApple,
-                  child: const Text("Apple"),
-                ),
-                ElevatedButton(
-                  onPressed: signInByBiometric,
-                  child: const Text("Biometric"),
-                ),
-                ElevatedButton(
-                  onPressed: signInByFacebook,
-                  child: const Text("Facebook"),
-                ),
-                ElevatedButton(
-                  onPressed: signInByGithub,
-                  child: const Text("Github"),
-                ),
-                ElevatedButton(
-                  onPressed: signInByGoogle,
-                  child: const Text("Google"),
-                ),
-              ],
+              child: const Text("Verify OTP"),
             ),
           ),
         ],
       ),
     );
   }
-
 }
 ```
 
-### Apply on  Home screen
+### Apply on Register screen
 
 ```dart
 import 'package:auth_management/core.dart';
+import 'package:flutter/material.dart';
+
+import 'user_model.dart';
+
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final etName = TextEditingController();
+  final etEmail = TextEditingController();
+  final etPassword = TextEditingController();
+
+  void signUpByEmail() async {
+    final name = etName.text;
+    final email = etEmail.text;
+    final password = etPassword.text;
+    context.signUpByEmail<UserModel>(EmailAuthenticator(
+      email: email,
+      password: password,
+      name: name, // Optional
+    ));
+  }
+
+  void signUpByUsername() {
+    final name = etName.text;
+    final password = etPassword.text;
+    context.signUpByUsername<UserModel>(UsernameAuthenticator(
+      username: name,
+      password: password,
+      name: name, // Optional
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "REGISTER",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(32),
+        children: [
+          TextField(
+            controller: etEmail,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              hintText: "Email",
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: etName,
+            keyboardType: TextInputType.name,
+            decoration: const InputDecoration(
+              hintText: "Name",
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: etPassword,
+            keyboardType: TextInputType.visiblePassword,
+            obscureText: true,
+            decoration: const InputDecoration(
+              hintText: "Password",
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: signUpByEmail,
+              child: const Text("Register with Email"),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: signUpByUsername,
+              child: const Text("Register with Username"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### Apply on Oauth screen
+
+```dart
+import 'package:auth_management/widgets.dart';
+import 'package:flutter/material.dart';
+
+import 'user_model.dart';
+
+class OAuthPage extends StatelessWidget {
+  const OAuthPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "OAuth",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 50,
+          vertical: 50,
+        ),
+        children: [
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithApple,
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: callback,
+                child: const Text("Continue with Apple"),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          AuthButton<UserModel>(
+            type: AuthButtonType.biometricEnable,
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: callback,
+                child: const Text("Continue with Biometric"),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithFacebook,
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: callback,
+                child: const Text("Continue with Facebook"),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithGithub,
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: callback,
+                child: const Text("Continue with Github"),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithGoogle,
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: callback,
+                child: const Text("Continue with Google"),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### Apply on Home screen
+
+```dart
+import 'dart:developer';
+
+import 'package:auth_management/core.dart';
+import 'package:auth_management/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_andomie/core.dart';
+
+import 'user_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -761,53 +1025,13 @@ class _HomePageState extends State<HomePage> {
 
   void _updateUser() {
     context.updateAccount<UserModel>({
-      UserKeys.i.name: "Updated name",
+      UserKeys.i.name: "Omie ${RandomProvider.integer(max: 50)}",
     });
   }
 
   void _biometricEnable(bool? value) {
     context.biometricEnable<UserModel>(value ?? false).then((value) {
-      log("Biometric enable status : ${value.exception}");
-    });
-  }
-
-  void _biometricChange(BuildContext context) {
-    context.addBiometric<UserModel>(
-      config: const BiometricConfig(
-        signInTitle: "Biometric",
-        localizedReason: "Scan your face or fingerprint",
-      ),
-      callback: (value) =>
-          showDialog<BiometricStatus>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text("Biometric permission from user!"),
-                actions: [
-                  ElevatedButton(
-                    child: const Text("Cancel"),
-                    onPressed: () {
-                      Navigator.pop(context, BiometricStatus.initial);
-                    },
-                  ),
-                  ElevatedButton(
-                    child: const Text("Inactivate"),
-                    onPressed: () {
-                      Navigator.pop(context, BiometricStatus.inactivated);
-                    },
-                  ),
-                  ElevatedButton(
-                    child: const Text("Activate"),
-                    onPressed: () {
-                      Navigator.pop(context, BiometricStatus.activated);
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-    ).then((value) {
-      log("Add biometric status : ${value.exception}");
+      log("Biometric enable status : ${value.error}");
     });
   }
 
@@ -819,9 +1043,9 @@ class _HomePageState extends State<HomePage> {
 
   void _showLoading(BuildContext context, bool loading) {}
 
-  void _status(BuildContext context, AuthState state, UserModel? user) {
-    if (state.isUnauthenticated) {
-      Navigator.pushNamedAndRemoveUntil(context, "login", (route) => false);
+  void _status(BuildContext context, AuthStatus status) {
+    if (status.isUnauthenticated) {
+      Navigator.pushNamedAndRemoveUntil(context, "startup", (route) => false);
     }
   }
 
@@ -848,46 +1072,41 @@ class _HomePageState extends State<HomePage> {
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                       ),
                       child: value?.photo == null
                           ? null
                           : Image.network(
-                        value?.photo ?? "",
-                        fit: BoxFit.cover,
-                      ),
+                              value?.photo ?? "",
+                              fit: BoxFit.cover,
+                            ),
                     ),
                     const SizedBox(height: 24),
                     Text(
                       value?.name ?? "",
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       value?.email ?? "",
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
                       "Account created at ".join(
-                        DateProvider.toRealtime(value?.timeMills ?? 0),
+                        DateHelper.toRealtime(value?.timeMills ?? 0),
                       ),
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .titleSmall
                           ?.copyWith(fontWeight: FontWeight.normal),
                     ),
                     const SizedBox(height: 12),
                     Opacity(
-                      opacity: value?.mBiometric.isInitial ?? false ? 0.5 : 1,
+                      opacity: value?.biometric ?? false ? 1 : 0.5,
                       child: SwitchListTile.adaptive(
-                        value: value?.isBiometric ?? false,
+                        value: value?.biometric ?? false,
                         onChanged: _biometricEnable,
                         title: const Text("Biometric mode"),
                         contentPadding: const EdgeInsets.only(
@@ -902,14 +1121,6 @@ class _HomePageState extends State<HomePage> {
                       child: ElevatedButton(
                         onPressed: _updateUser,
                         child: const Text("Update"),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _biometricChange(context),
-                        child: const Text("Add biometric"),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -961,7 +1172,7 @@ public class MainActivity extends FlutterFragmentActivity {
 
 ```groovy
 android {
-    //... 
+    //...
     defaultConfig {
         //...
         minSdkVersion 23

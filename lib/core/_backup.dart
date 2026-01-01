@@ -13,7 +13,7 @@ class _Backup<T extends Auth> {
     }
   }
 
-  Future<E?> encryptor<E extends Object?>(String key, E? value) {
+  E? encryptor<E extends Object?>(String key, E? value) {
     return delegate.encryptor(key, value);
   }
 

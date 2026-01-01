@@ -1,3 +1,7 @@
+## 3.2.4
+
+- refactor: simplify encryptor method return type in backup classes
+
 ## 3.2.3
 
 - feat: Refactor authorizer and backup classes for improved biometric support and user management
