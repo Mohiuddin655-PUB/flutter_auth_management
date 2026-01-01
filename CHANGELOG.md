@@ -1,3 +1,16 @@
+## 3.2.3
+
+- feat: Refactor authorizer and backup classes for improved biometric support and user management
+- Updated `SignByBiometricCallback` to accept a generic `Auth` type.
+- Simplified `hasAnonymous` property in `Authorizer` class.
+- Added `canUseBiometric` method to check biometric capabilities.
+- Enhanced user update methods to include biometric data and additional user information.
+- Removed deprecated `oauth_button.dart` and integrated its functionality into `auth_button.dart`.
+- Updated `AuthButton` to handle various authentication methods including biometric sign-in.
+- Added new methods in `AuthDelegate` for checking user authentication status.
+- Updated `AuthHelper` extension methods for better usability.
+- Incremented version number in `pubspec.yaml` to 3.2.3.
+
 ## 3.2.2
 
 - refactor: rename backup class and update related references; improve color opacity handling

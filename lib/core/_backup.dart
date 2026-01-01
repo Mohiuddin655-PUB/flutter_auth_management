@@ -13,6 +13,10 @@ class _Backup<T extends Auth> {
     }
   }
 
+  Future<E?> encryptor<E extends Object?>(String key, E? value) {
+    return delegate.encryptor(key, value);
+  }
+
   Future<T?> get([bool remotely = false]) {
     return cache.then((value) {
       if (value == null || !value.isLoggedIn) return null;
@@ -36,7 +40,7 @@ class _Backup<T extends Auth> {
     if (data.isEmpty) return false;
     return cache.then((local) {
       if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
-      onUpdateUser(local.id, data);
+      onUpdateUser(local.id, data, false);
       final merged = ObjectModifier.mergeMap(
         data,
         local.source,
@@ -55,19 +59,14 @@ class _Backup<T extends Auth> {
     bool cacheUpdateMode = false,
   }) async {
     if (id.isEmpty) return false;
-    if (hasAnonymous) {
-      final user = build(initials);
-      await onCreateUser(user, true);
-      return delegate.set(user);
-    }
     if (cacheUpdateMode) return delegate.update(updates);
     final remote = await onFetchUser(id);
     if (remote == null || !remote.isAuthenticated) {
       final user = build(initials);
-      await onCreateUser(user, false);
+      await onCreateUser(user);
       return delegate.set(user);
     }
-    await onUpdateUser(id, updates);
+    await onUpdateUser(id, updates, hasAnonymous);
     Map<String, dynamic> current = Map.from(remote.filtered);
     current.addAll(updates);
     return delegate.set(build(current));
@@ -83,12 +82,14 @@ class _Backup<T extends Auth> {
 
   Future<T?> onFetchUser(String id) => delegate.onFetchUser(id);
 
-  Future<void> onCreateUser(T data, bool hasAnonymous) {
-    return delegate.onCreateUser(data, hasAnonymous);
-  }
+  Future<void> onCreateUser(T data) => delegate.onCreateUser(data);
 
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data) {
-    return delegate.onUpdateUser(id, data);
+  Future<void> onUpdateUser(
+    String id,
+    Map<String, dynamic> data,
+    bool hasAnonymous,
+  ) {
+    return delegate.onUpdateUser(id, data, hasAnonymous);
   }
 
   Future<void> onDeleteUser(String id) {

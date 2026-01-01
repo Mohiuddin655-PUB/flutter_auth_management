@@ -15,7 +15,7 @@ class AuthProviderException {
     if (isInitialized) {
       return exception;
     } else {
-      return "AuthProvider not initialization.";
+      return "$AuthProvider<${AuthProvider.type}> not initialization.";
     }
   }
 
@@ -25,17 +25,20 @@ class AuthProviderException {
 
 class AuthProvider<T extends Auth> extends InheritedWidget {
   final bool initialCheck;
+  final bool crateInstance;
   final Authorizer<T> authorizer;
 
   AuthProvider({
     super.key,
     this.initialCheck = false,
+    this.crateInstance = false,
     required this.authorizer,
     required Widget child,
   }) : super(
           child: _Internal<T>(
             authorizer: authorizer,
             initialCheck: initialCheck,
+            createInstance: crateInstance,
             child: child,
           ),
         ) {
@@ -75,11 +78,13 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
 
 class _Internal<T extends Auth> extends StatefulWidget {
   final bool initialCheck;
+  final bool createInstance;
   final Authorizer<T> authorizer;
   final Widget child;
 
   const _Internal({
     this.initialCheck = false,
+    this.createInstance = false,
     required this.child,
     required this.authorizer,
   });
@@ -91,6 +96,7 @@ class _Internal<T extends Auth> extends StatefulWidget {
 class _InternalState<T extends Auth> extends State<_Internal<T>> {
   @override
   void initState() {
+    if (widget.createInstance) Authorizer.attach<T>(widget.authorizer);
     widget.authorizer.initialize(widget.initialCheck);
     super.initState();
   }
@@ -98,6 +104,7 @@ class _InternalState<T extends Auth> extends State<_Internal<T>> {
   @override
   void dispose() {
     widget.authorizer.dispose();
+    if (widget.createInstance) Authorizer.dettach<T>();
     super.dispose();
   }
 
