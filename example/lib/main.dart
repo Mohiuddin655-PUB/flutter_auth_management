@@ -199,7 +199,7 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   UserModel build(Map source) => UserModel.from(source);
 
   @override
-  Future<void> onCreateUser(UserModel data, bool hasAnonymous) async {
+  Future<void> onCreateUser(UserModel data) async {
     // Store authorized user data in remote server
     log("Authorized user data : $data");
   }
@@ -218,7 +218,11 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   }
 
   @override
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data) async {
+  Future<void> onUpdateUser(
+    String id,
+    Map<String, dynamic> data,
+    bool hasAnonymous,
+  ) async {
     // Update authorized user data in remote server
     log("Authorized user data : $data");
   }

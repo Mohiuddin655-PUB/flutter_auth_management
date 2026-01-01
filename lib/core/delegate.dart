@@ -7,6 +7,18 @@ import 'provider.dart';
 abstract class AuthDelegate {
   const AuthDelegate();
 
+  bool get isAnonymous {
+    throw UnimplementedError(
+      "Getter isAnonymous is not yet implemented.",
+    );
+  }
+
+  bool get isAuthenticated {
+    throw UnimplementedError(
+      "Getter isAuthenticated is not yet implemented.",
+    );
+  }
+
   /// Create the auth credential using a provided credential info.
   Object credential(Provider provider, Credential credential) {
     throw UnimplementedError(

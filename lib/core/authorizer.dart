@@ -26,7 +26,9 @@ typedef OnAuthMessage = void Function(BuildContext context, String message);
 typedef OnAuthLoading = void Function(BuildContext context, bool loading);
 typedef OnAuthStatus = void Function(BuildContext context, AuthStatus status);
 typedef IdentityBuilder = String Function(String uid);
-typedef SignByBiometricCallback = Future<bool?>? Function(bool? status);
+typedef SignByBiometricCallback<T extends Auth> = Future<bool?>? Function(
+  T? auth,
+);
 typedef SignOutCallback = Future Function(Auth authorizer);
 typedef UndoAccountCallback = Future<bool> Function(Auth authorizer);
 typedef OnAuthChanges<T extends Auth> = void Function(
@@ -55,14 +57,7 @@ class Authorizer<T extends Auth> {
 
   Future<T?> get _auth => _backup.cache;
 
-  Future<bool> get hasAnonymous {
-    return _auth.then((v) {
-      if (v == null) return false;
-      if (!v.isLoggedIn) return false;
-      if (!v.isAnonymous) return false;
-      return true;
-    });
-  }
+  bool get hasAnonymous => delegate.isAnonymous;
 
   Authorizer({
     required this.delegate,
@@ -110,6 +105,18 @@ class Authorizer<T extends Auth> {
     await auth.initialize(initialCheck);
   }
 
+  static void attach<T extends Auth>(Authorizer<T> authorizer) {
+    type = T;
+    _i = authorizer;
+  }
+
+  static void dettach<T extends Auth>() {
+    try {
+      _i?.dispose();
+      _i = null;
+    } catch (_) {}
+  }
+
   Future<T?> get auth async {
     try {
       final value = await _auth;
@@ -155,6 +162,22 @@ class Authorizer<T extends Auth> {
 
   T? get user => _userNotifier.value;
 
+  Future<Response<T>> get canUseBiometric async {
+    try {
+      final auth = await _auth;
+      final provider = Provider.from(auth?.provider);
+      if (auth == null || !auth.isLoggedIn || !provider.isAllowBiometric) {
+        return Response(
+          status: Status.notSupported,
+          error: "User not logged in with email or username!",
+        );
+      }
+      return Response(status: Status.ok, data: auth);
+    } catch (error) {
+      return Response(status: Status.failure, error: error.toString());
+    }
+  }
+
   Future<Response<T>> biometricEnable(bool enabled) async {
     try {
       final auth = await _auth;
@@ -176,7 +199,6 @@ class Authorizer<T extends Auth> {
       final value = await _update(
         id: auth.id,
         updateMode: true,
-        hasAnonymous: false,
         updates: {AuthKeys.i.biometric: enabled},
       );
 
@@ -425,12 +447,20 @@ class Authorizer<T extends Auth> {
       );
       final value = await _update(
         id: user.id,
-        hasAnonymous: false,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          if (authenticator?.extra != null) ...authenticator!.extra!,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.guest.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
       return emit(
@@ -539,7 +569,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final value = await _update(id: user.id, hasAnonymous: false, updates: {
+      final value = await _update(id: user.id, updates: {
         AuthKeys.i.loggedIn: true,
         AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
       });
@@ -571,7 +601,7 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse<T>> signInByEmail(
     EmailAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
+    SignByBiometricCallback<T>? onBiometric,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -584,7 +614,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithEmailNPassword(
         authenticator.email,
         authenticator.password,
@@ -627,21 +657,24 @@ class Authorizer<T extends Auth> {
         loggedInTime: Modifier(EntityHelper.generateTimeMills),
       );
 
-      bool? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.biometric);
-
       final value = await _update(
         id: user.id,
         hasAnonymous: hasAnonymous,
-        initials: (biometric != null
-                ? user.update(biometric: Modifier(biometric))
-                : user)
-            .source,
+        onBiometric: onBiometric,
+        initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
-          if (biometric != null) AuthKeys.i.biometric: biometric,
+          if (authenticator.extra != null) ...authenticator.extra!,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.email.id,
+          AuthKeys.i.username: authenticator.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -807,7 +840,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final credential = delegate.credential(
         Provider.phone,
         Credential(
@@ -865,9 +898,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          if (authenticator.extra != null) ...authenticator.extra!,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.phone.id,
+          AuthKeys.i.username: authenticator.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -900,7 +942,7 @@ class Authorizer<T extends Auth> {
     UsernameAuthenticator authenticator, {
     Object? args,
     String? id,
-    SignByBiometricCallback? onBiometric,
+    SignByBiometricCallback<T>? onBiometric,
     bool notifiable = true,
   }) async {
     emit(
@@ -911,7 +953,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
@@ -954,23 +996,24 @@ class Authorizer<T extends Auth> {
         loggedInTime: Modifier(EntityHelper.generateTimeMills),
       );
 
-      bool? biometric;
-      if (onBiometric != null) {
-        biometric = await onBiometric(user.biometric);
-      }
-
       final value = await _update(
         id: user.id,
         hasAnonymous: hasAnonymous,
-        initials: (biometric != null
-                ? user.update(biometric: Modifier(biometric))
-                : user)
-            .source,
+        onBiometric: onBiometric,
+        initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
-          if (biometric != null) AuthKeys.i.biometric: biometric,
+          if (authenticator.extra != null) ...authenticator.extra!,
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.username.id,
+          AuthKeys.i.username: authenticator.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
       return emit(
@@ -1000,7 +1043,7 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse<T>> signUpByEmail(
     EmailAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
+    SignByBiometricCallback<T>? onBiometric,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1012,7 +1055,7 @@ class Authorizer<T extends Auth> {
       const AuthResponse.loading(Provider.email, AuthType.register),
     );
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signUpWithEmailNPassword(
         authenticator.email,
         authenticator.password,
@@ -1057,16 +1100,25 @@ class Authorizer<T extends Auth> {
         timeMills: Modifier(creationTime),
       );
 
-      bool? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.biometric);
-
       final value = await _update(
         id: user.id,
         hasAnonymous: hasAnonymous,
-        initials: (biometric != null
-                ? user.update(biometric: Modifier(biometric))
-                : user)
-            .source,
+        onBiometric: onBiometric,
+        initials: user.filtered,
+        updates: {
+          if (authenticator.extra != null) ...authenticator.extra!,
+          AuthKeys.i.loggedIn: true,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.email.id,
+          AuthKeys.i.username: authenticator.username,
+          AuthKeys.i.verified: result.emailVerified,
+        },
       );
 
       return emit(
@@ -1096,7 +1148,7 @@ class Authorizer<T extends Auth> {
 
   Future<AuthResponse<T>> signUpByUsername(
     UsernameAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
+    SignByBiometricCallback<T>? onBiometric,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1109,7 +1161,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signUpWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
@@ -1154,16 +1206,25 @@ class Authorizer<T extends Auth> {
         timeMills: Modifier(creationTime),
       );
 
-      bool? biometric;
-      if (onBiometric != null) biometric = await onBiometric(user.biometric);
-
       final value = await _update(
         id: user.id,
         hasAnonymous: hasAnonymous,
-        initials: (biometric != null
-                ? user.update(biometric: Modifier(biometric))
-                : user)
-            .source,
+        onBiometric: onBiometric,
+        initials: user.filtered,
+        updates: {
+          if (authenticator.extra != null) ...authenticator.extra!,
+          AuthKeys.i.loggedIn: true,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.username.id,
+          AuthKeys.i.username: authenticator.username,
+          AuthKeys.i.verified: result.emailVerified,
+        },
       );
 
       return emit(
@@ -1297,14 +1358,22 @@ class Authorizer<T extends Auth> {
     Map<String, dynamic> initials = const {},
     Map<String, dynamic> updates = const {},
     bool updateMode = false,
-    required bool hasAnonymous,
+    bool hasAnonymous = false,
+    SignByBiometricCallback<T>? onBiometric,
   }) async {
     try {
+      if (onBiometric != null) {
+        final biometric = await onBiometric(
+          _backup.build({...user?.source ?? {}, ...initials, ...updates}),
+        );
+        initials = {...initials, AuthKeys.i.biometric: biometric};
+        updates = {...updates, AuthKeys.i.biometric: biometric};
+      }
       await _backup.save(
         id: id,
-        initials: initials,
+        initials: initials.map((k, v) => MapEntry(k, _backup.encryptor(k, v))),
         cacheUpdateMode: updateMode,
-        updates: updates,
+        updates: updates.map((k, v) => MapEntry(k, _backup.encryptor(k, v))),
         hasAnonymous: hasAnonymous,
       );
       final updated = await _auth;
@@ -1388,7 +1457,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithApple();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1435,8 +1504,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -1451,9 +1521,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.apple.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -1497,7 +1576,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithFacebook();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1544,8 +1623,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -1560,9 +1640,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.facebook.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -1609,7 +1698,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithGameCenter();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1656,8 +1745,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -1672,9 +1762,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.gameCenter.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -1718,7 +1817,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithGithub();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1764,8 +1863,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -1780,9 +1880,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.github.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -1826,7 +1935,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithGoogle();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1872,8 +1981,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -1888,9 +1998,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.google.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -1934,7 +2053,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithMicrosoft();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -1980,8 +2099,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -1996,9 +2116,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.microsoft.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -2042,7 +2171,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithPlayGames();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -2088,8 +2217,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -2105,9 +2235,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.playGames.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -2151,7 +2290,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithSAML();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -2197,8 +2336,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -2214,9 +2354,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.saml.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -2260,7 +2409,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithTwitter();
       final raw = response.data;
 
@@ -2307,8 +2456,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -2324,9 +2474,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.twitter.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
@@ -2370,7 +2529,7 @@ class Authorizer<T extends Auth> {
     );
 
     try {
-      final hasAnonymous = await this.hasAnonymous;
+      final hasAnonymous = this.hasAnonymous;
       final response = await delegate.signInWithYahoo();
       final raw = response.data;
       if (raw == null || raw.credential == null) {
@@ -2416,8 +2575,9 @@ class Authorizer<T extends Auth> {
 
       final user = (authenticator ?? Authenticator.oauth()).update(
         id: Modifier(result.uid),
-        accessToken: storeToken ? Modifier(raw.accessToken) : null,
-        idToken: storeToken ? Modifier(raw.idToken) : null,
+        accessToken:
+            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
+        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
         email: Modifier(raw.email ?? result.email),
         name: Modifier(raw.displayName ?? result.displayName),
         phone: Modifier(result.phoneNumber),
@@ -2432,9 +2592,18 @@ class Authorizer<T extends Auth> {
         hasAnonymous: hasAnonymous,
         initials: user.filtered,
         updates: {
-          ...user.extra ?? {},
+          ...authenticator?.extra ?? {},
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.anonymous: result.isAnonymous,
+          AuthKeys.i.email: result.email,
+          AuthKeys.i.name: result.displayName,
+          AuthKeys.i.password: authenticator?.password,
+          AuthKeys.i.phone: result.phoneNumber,
+          AuthKeys.i.photo: result.photoURL,
+          AuthKeys.i.provider: Provider.yahoo.id,
+          AuthKeys.i.username: authenticator?.username,
+          AuthKeys.i.verified: result.emailVerified,
         },
       );
 
