@@ -1,3 +1,7 @@
+## 3.2.5
+
+- chore: bump version to 3.2.5
+
 ## 3.2.4
 
 - refactor: simplify encryptor method return type in backup classes
