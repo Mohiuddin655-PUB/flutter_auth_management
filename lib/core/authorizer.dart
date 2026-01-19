@@ -37,7 +37,6 @@ typedef OnAuthChanges<T extends Auth> = void Function(
 );
 
 class Authorizer<T extends Auth> {
-  bool realtime = false;
   final AuthMessages msg;
   final AuthDelegate delegate;
   final _Backup<T> _backup;
@@ -61,57 +60,10 @@ class Authorizer<T extends Auth> {
   bool get hasAnonymous => delegate.isAnonymous;
 
   Authorizer({
-    this.realtime = false,
     required this.delegate,
     required AuthBackupDelegate<T> backup,
     this.msg = const AuthMessages(),
   }) : _backup = _Backup<T>(backup);
-
-  Future<T?> initialize([bool initialCheck = true]) async {
-    final value = await auth;
-    if (value == null) return null;
-    if (initialCheck) {
-      if (value.isLoggedIn) {
-        _statusNotifier.value = AuthStatus.authenticated;
-      }
-    }
-    final remote = await _backup.onFetchUser(value.id);
-    _userNotifier.value = remote;
-    await _backup.setAsLocal(remote ?? value);
-    _listen();
-    return remote ?? value;
-  }
-
-  void setRealtimeMode(bool mode) {
-    realtime = mode;
-    if (realtime) {
-      _listen();
-    } else {
-      _sub?.cancel();
-    }
-  }
-
-  void setConnection(bool status) {
-    if (status) {
-      initialize();
-      _listen();
-    } else {
-      _sub?.cancel();
-    }
-  }
-
-  StreamSubscription? _sub;
-
-  void _listen() async {
-    _sub?.cancel();
-    if (!realtime) return;
-    final value = await auth;
-    if (value == null) return null;
-    _sub = _backup.onListenUser(value.id).listen((remote) {
-      _userNotifier.value = remote;
-      _backup.setAsLocal(remote ?? value);
-    });
-  }
 
   factory Authorizer.of(BuildContext context) {
     try {
@@ -151,7 +103,6 @@ class Authorizer<T extends Auth> {
     final auth = Authorizer<T>(delegate: delegate, backup: backup, msg: msg);
     _i = auth;
     await auth.initialize(initialCheck);
-    auth._listen();
   }
 
   static void attach<T extends Auth>(Authorizer<T> authorizer) {
@@ -342,7 +293,6 @@ class Authorizer<T extends Auth> {
   }
 
   void dispose() {
-    _sub?.cancel();
     _errorNotifier.dispose();
     _loadingNotifier.dispose();
     _messageNotifier.dispose();
@@ -399,8 +349,21 @@ class Authorizer<T extends Auth> {
 
   T? _emitUser(T? data) {
     if (data != null) _userNotifier.value = data;
-    _listen();
     return _userNotifier.value;
+  }
+
+  Future<T?> initialize([bool initialCheck = true]) async {
+    final value = await auth;
+    if (value == null) return null;
+    if (initialCheck) {
+      if (value.isLoggedIn) {
+        _statusNotifier.value = AuthStatus.authenticated;
+      }
+    }
+    final remote = await _backup.onFetchUser(value.id);
+    _userNotifier.value = remote;
+    await _backup.setAsLocal(remote ?? value);
+    return remote ?? value;
   }
 
   Future<AuthResponse<T>> isSignIn({

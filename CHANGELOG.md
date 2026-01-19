@@ -1,3 +1,7 @@
+## 3.2.8
+
+- rollback to 3.2.5 stable version
+
 ## 3.2.7
 
 - feat: add user listening functionality in authorizer and bump version to 3.2.7

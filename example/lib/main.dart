@@ -218,13 +218,6 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   }
 
   @override
-  Stream<UserModel?> onListenUser(String id) {
-    // listen authorized user data from remote server
-    log("Authorized user id : $id");
-    return Stream.value(null);
-  }
-
-  @override
   Future<void> onUpdateUser(
     String id,
     Map<String, dynamic> data,
@@ -243,7 +236,6 @@ class Application extends StatelessWidget {
     return AuthProvider<UserModel>(
       initialCheck: true,
       authorizer: Authorizer(
-          realtime: true,
           delegate: MyAuthDelegate(),
           backup: MyAuthBackupDelegate(
             key: "_local_user_key_",
