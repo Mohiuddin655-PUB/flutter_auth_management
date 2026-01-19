@@ -78,6 +78,7 @@ class Authorizer<T extends Auth> {
     final remote = await _backup.onFetchUser(value.id);
     _userNotifier.value = remote;
     await _backup.setAsLocal(remote ?? value);
+    _listen();
     return remote ?? value;
   }
 

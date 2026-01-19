@@ -1,3 +1,7 @@
+## 3.2.7
+
+- feat: add user listening functionality in authorizer and bump version to 3.2.7
+
 ## 3.2.6
 
 - feat: add real-time user listening and update backup delegate for user management
