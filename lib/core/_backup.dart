@@ -82,6 +82,8 @@ class _Backup<T extends Auth> {
 
   Future<T?> onFetchUser(String id) => delegate.onFetchUser(id);
 
+  Stream<T?> onListenUser(String id) => delegate.onListenUser(id);
+
   Future<void> onCreateUser(T data) => delegate.onCreateUser(data);
 
   Future<void> onUpdateUser(

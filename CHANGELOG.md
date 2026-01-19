@@ -1,3 +1,7 @@
+## 3.2.6
+
+- feat: add real-time user listening and update backup delegate for user management
+
 ## 3.2.5
 
 - chore: bump version to 3.2.5
