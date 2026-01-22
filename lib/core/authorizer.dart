@@ -443,6 +443,7 @@ class Authorizer<T extends Auth> {
         name: Modifier(result.displayName),
         phone: Modifier(result.phoneNumber),
         photo: Modifier(result.photoURL),
+        provider: Modifier(Provider.guest),
         loggedIn: Modifier(true),
         loggedInTime: Modifier(EntityHelper.generateTimeMills),
       );
