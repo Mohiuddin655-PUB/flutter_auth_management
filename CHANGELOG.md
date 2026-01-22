@@ -1,3 +1,4 @@
+## 3.2.11
 ## 3.2.10
 
 - Enhanced object modifier to merge updating props
