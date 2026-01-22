@@ -1,3 +1,7 @@
+## 3.2.9
+
+- Enhanced modifier modify function to ignore null value
+
 ## 3.2.8
 
 - rollback to 3.2.5 stable version
