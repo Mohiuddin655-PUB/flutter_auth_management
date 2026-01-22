@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_entity/entity.dart';
-import 'package:object_modifier/object_modifier.dart';
 
 import 'auth.dart';
 import 'auth_changes.dart';

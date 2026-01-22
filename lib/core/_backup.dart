@@ -41,12 +41,29 @@ class _Backup<T extends Auth> {
     return cache.then((local) {
       if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
       onUpdateUser(local.id, data, false);
-      final merged = ObjectModifier.mergeMap(
-        data,
-        local.source,
-        delegate.nonEncodableObjectParser,
-      );
-      final mergedObject = build(merged);
+      final old = local.filtered;
+      final parsed = data.map((key, value) {
+        if (value == null ||
+            value is num ||
+            value is bool ||
+            value is String ||
+            value is List ||
+            value is Map) {
+          return MapEntry(key, value);
+        }
+        return MapEntry(
+          key,
+          delegate.nonEncodableObjectParser(value, old[key]),
+        );
+      });
+      final merged = {...old};
+      for (final entry in parsed.entries) {
+        merged[entry.key] = entry.value;
+      }
+      final updated = Map.fromEntries(merged.entries.where((e) {
+        return e.value != null;
+      }));
+      final mergedObject = build(updated);
       return setAsLocal(mergedObject);
     });
   }
