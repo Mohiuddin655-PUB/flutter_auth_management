@@ -1,3 +1,7 @@
+## 3.2.10
+
+- Enhanced object modifier to merge updating props
+
 ## 3.2.9
 
 - Enhanced modifier modify function to ignore null value
