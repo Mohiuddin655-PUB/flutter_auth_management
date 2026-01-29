@@ -52,6 +52,7 @@ class AuthKeys extends EntityKey {
   final idToken = "id_token";
   final name = "name";
   final online = "online";
+  final lastOnline = "last_online";
   final password = "password";
   final path = "path";
   final phone = "phone";
@@ -98,6 +99,7 @@ class AuthKeys extends EntityKey {
       token,
       username,
       verified,
+      lastOnline,
     ];
   }
 }
@@ -140,6 +142,7 @@ class AuthKeys extends EntityKey {
 ///     super.loggedOutTime,
 ///     super.name,
 ///     super.online,
+///     super.lastOnline,
 ///     super.password,
 ///     super.path,
 ///     super.phone,
@@ -176,6 +179,7 @@ class AuthKeys extends EntityKey {
 ///       loggedOutTime: root.loggedOutTime,
 ///       name: root.name,
 ///       online: root.online,
+///       lastOnline: root.lastOnline,
 ///       password: root.password,
 ///       path: root.path,
 ///       phone: root.phone,
@@ -208,7 +212,8 @@ class AuthKeys extends EntityKey {
 ///     int? loggedInTime,
 ///     int? loggedOutTime,
 ///     String? name,
-///     int? online,
+///     bool? online,
+///     int? lastOnline,
 ///     String? password,
 ///     String? path,
 ///     String? phone,
@@ -236,6 +241,7 @@ class AuthKeys extends EntityKey {
 ///       loggedOutTime: loggedOutTime ?? this.loggedOutTime,
 ///       name: name ?? this.name,
 ///       online: online ?? this.online,
+///       lastOnline: lastOnline ?? this.lastOnline,
 ///       password: password ?? this.password,
 ///       path: path ?? this.path,
 ///       phone: phone ?? this.phone,
@@ -265,7 +271,8 @@ class AuthKeys extends EntityKey {
 ///     Modifier<int>? loggedInTime,
 ///     Modifier<int>? loggedOutTime,
 ///     Modifier<String>? name,
-///     Modifier<int>? online,
+///     Modifier<bool>? online,
+///     Modifier<int>? lastOnline,
 ///     Modifier<String>? password,
 ///     Modifier<String>? path,
 ///     Modifier<String>? phone,
@@ -295,6 +302,7 @@ class AuthKeys extends EntityKey {
 ///       loggedOutTime: modify(loggedOutTime, this.loggedOutTime),
 ///       name: modify(name, this.name),
 ///       online: modify(online, this.online),
+///       lastOnline: modify(lastOnline, this.lastOnline),
 ///       password: modify(password, this.password),
 ///       path: modify(path, this.path),
 ///       phone: modify(phone, this.phone),
@@ -364,7 +372,8 @@ class Auth<K extends AuthKeys> extends Entity<K> {
   final int? loggedInTime;
   final int? loggedOutTime;
   final String? name;
-  final int? online;
+  final bool? online;
+  final int? _lastOnline;
   final String? password;
   final String? path;
   final String? phone;
@@ -384,17 +393,13 @@ class Auth<K extends AuthKeys> extends Entity<K> {
 
   bool get isLoggedIn => loggedIn ?? false;
 
+  bool get isOnline => online ?? false;
+
   bool get isVerified => verified ?? provider?.isVerified ?? false;
 
-  bool get isOnline {
-    final lastOnline = lastOnlineInDuration;
-    if (lastOnline == Duration.zero) return false;
-    return lastOnline.inSeconds < 60;
-  }
-
   DateTime? get lastOnline {
-    if (online == null || online! <= 0) return null;
-    return DateTime.fromMillisecondsSinceEpoch(online!);
+    if (_lastOnline == null || _lastOnline! <= 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(_lastOnline!);
   }
 
   Duration get lastOnlineInDuration {
@@ -435,6 +440,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     this.loggedOutTime,
     this.name,
     this.online,
+    int? lastOnline,
     this.password,
     this.path,
     this.phone,
@@ -445,7 +451,8 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     this.token,
     this.username,
     this.verified,
-  }) : platform = platform ?? kPlatform;
+  })  : platform = platform ?? kPlatform,
+        _lastOnline = lastOnline;
 
   Auth copy({
     String? id,
@@ -461,8 +468,9 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     bool? loggedIn,
     int? loggedInTime,
     int? loggedOutTime,
+    int? lastOnline,
     String? name,
-    int? online,
+    bool? online,
     String? password,
     String? path,
     String? phone,
@@ -488,6 +496,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       loggedIn: loggedIn ?? this.loggedIn,
       loggedInTime: loggedInTime ?? this.loggedInTime,
       loggedOutTime: loggedOutTime ?? this.loggedOutTime,
+      lastOnline: lastOnline ?? _lastOnline,
       name: name ?? this.name,
       online: online ?? this.online,
       password: password ?? this.password,
@@ -517,8 +526,9 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     Modifier<bool>? loggedIn,
     Modifier<int>? loggedInTime,
     Modifier<int>? loggedOutTime,
+    Modifier<int>? lastOnline,
     Modifier<String>? name,
-    Modifier<int>? online,
+    Modifier<bool>? online,
     Modifier<String>? password,
     Modifier<String>? path,
     Modifier<String>? phone,
@@ -544,6 +554,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       loggedIn: modify(loggedIn, this.loggedIn),
       loggedInTime: modify(loggedInTime, this.loggedInTime),
       loggedOutTime: modify(loggedOutTime, this.loggedOutTime),
+      lastOnline: modify(lastOnline, _lastOnline),
       name: modify(name, this.name),
       online: modify(online, this.online),
       password: modify(password, this.password),
@@ -578,6 +589,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       loggedIn: source.entityValue(key.loggedIn),
       loggedInTime: source.entityValue(key.loggedInTime),
       loggedOutTime: source.entityValue(key.loggedOutTime),
+      lastOnline: source.entityValue(key.lastOnline),
       name: source.entityValue(key.name),
       online: source.entityValue(key.online),
       password: source.entityValue(key.password),
@@ -619,6 +631,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       key.loggedIn: loggedIn,
       key.loggedInTime: loggedInTime,
       key.loggedOutTime: loggedOutTime,
+      key.lastOnline: lastOnline,
       key.name: name,
       key.online: online,
       key.password: password,
@@ -652,6 +665,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       loggedIn,
       loggedInTime,
       loggedOutTime,
+      lastOnline,
       name,
       online,
       password,
