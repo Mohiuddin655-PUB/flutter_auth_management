@@ -54,6 +54,8 @@ abstract class AuthBackupDelegate<T extends Auth> {
     }
   }
 
+  E? encryptor<E extends Object?>(String key, E? value) => value;
+
   Future<bool> set(T? data) => _w(key, data?.source);
 
   Future<bool> update(Map<String, dynamic> data) {
@@ -75,7 +77,11 @@ abstract class AuthBackupDelegate<T extends Auth> {
 
   Future<void> onDeleteUser(String id);
 
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data);
+  Future<void> onUpdateUser(
+    String id,
+    Map<String, dynamic> data,
+    bool hasAnonymous,
+  );
 
   Object? nonEncodableObjectParser(Object? current, Object? old) {
     return old;

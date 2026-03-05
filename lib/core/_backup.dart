@@ -1,9 +1,9 @@
 part of 'authorizer.dart';
 
-class _<T extends Auth> {
+class _Backup<T extends Auth> {
   final AuthBackupDelegate<T> delegate;
 
-  const _(this.delegate);
+  const _Backup(this.delegate);
 
   Future<T?> get cache async {
     try {
@@ -11,6 +11,10 @@ class _<T extends Auth> {
     } catch (error) {
       return null;
     }
+  }
+
+  E? encryptor<E extends Object?>(String key, E? value) {
+    return delegate.encryptor(key, value);
   }
 
   Future<T?> get([bool remotely = false]) {
@@ -36,19 +40,37 @@ class _<T extends Auth> {
     if (data.isEmpty) return false;
     return cache.then((local) {
       if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
-      onUpdateUser(local.id, data);
-      final merged = ObjectModifier.mergeMap(
-        data,
-        local.source,
-        delegate.nonEncodableObjectParser,
-      );
-      final mergedObject = build(merged);
+      onUpdateUser(local.id, data, false);
+      final old = local.filtered;
+      final parsed = data.map((key, value) {
+        if (value == null ||
+            value is num ||
+            value is bool ||
+            value is String ||
+            value is List ||
+            value is Map) {
+          return MapEntry(key, value);
+        }
+        return MapEntry(
+          key,
+          delegate.nonEncodableObjectParser(value, old[key]),
+        );
+      });
+      final merged = {...old};
+      for (final entry in parsed.entries) {
+        merged[entry.key] = entry.value;
+      }
+      final updated = Map.fromEntries(merged.entries.where((e) {
+        return e.value != null;
+      }));
+      final mergedObject = build(updated);
       return setAsLocal(mergedObject);
     });
   }
 
   Future<bool> save({
     required String id,
+    required bool hasAnonymous,
     Map<String, dynamic> initials = const {},
     Map<String, dynamic> updates = const {},
     bool cacheUpdateMode = false,
@@ -61,7 +83,7 @@ class _<T extends Auth> {
       await onCreateUser(user);
       return delegate.set(user);
     }
-    await onUpdateUser(id, updates);
+    await onUpdateUser(id, updates, hasAnonymous);
     Map<String, dynamic> current = Map.from(remote.filtered);
     current.addAll(updates);
     return delegate.set(build(current));
@@ -77,12 +99,14 @@ class _<T extends Auth> {
 
   Future<T?> onFetchUser(String id) => delegate.onFetchUser(id);
 
-  Future<void> onCreateUser(T data) {
-    return delegate.onCreateUser(data);
-  }
+  Future<void> onCreateUser(T data) => delegate.onCreateUser(data);
 
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data) {
-    return delegate.onUpdateUser(id, data);
+  Future<void> onUpdateUser(
+    String id,
+    Map<String, dynamic> data,
+    bool hasAnonymous,
+  ) {
+    return delegate.onUpdateUser(id, data, hasAnonymous);
   }
 
   Future<void> onDeleteUser(String id) {

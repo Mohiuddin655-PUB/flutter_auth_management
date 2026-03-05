@@ -25,8 +25,8 @@ class OAuthPage extends StatelessWidget {
           vertical: 50,
         ),
         children: [
-          OauthButton<UserModel>(
-            type: OauthButtonType.apple,
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithApple,
             builder: (context, callback) {
               return ElevatedButton(
                 onPressed: callback,
@@ -35,8 +35,8 @@ class OAuthPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: 12),
-          OauthButton<UserModel>(
-            type: OauthButtonType.biometric,
+          AuthButton<UserModel>(
+            type: AuthButtonType.biometricEnable,
             builder: (context, callback) {
               return ElevatedButton(
                 onPressed: callback,
@@ -45,8 +45,8 @@ class OAuthPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: 12),
-          OauthButton<UserModel>(
-            type: OauthButtonType.facebook,
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithFacebook,
             builder: (context, callback) {
               return ElevatedButton(
                 onPressed: callback,
@@ -55,8 +55,8 @@ class OAuthPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: 12),
-          OauthButton<UserModel>(
-            type: OauthButtonType.github,
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithGithub,
             builder: (context, callback) {
               return ElevatedButton(
                 onPressed: callback,
@@ -65,8 +65,8 @@ class OAuthPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: 12),
-          OauthButton<UserModel>(
-            type: OauthButtonType.google,
+          AuthButton<UserModel>(
+            type: AuthButtonType.signInWithGoogle,
             builder: (context, callback) {
               return ElevatedButton(
                 onPressed: callback,

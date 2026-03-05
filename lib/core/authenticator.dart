@@ -159,9 +159,9 @@ class OtpAuthenticator extends Authenticator {
     super.extra,
   }) : super.otp(idToken: token, accessToken: smsCode);
 
-  String get token => super.idToken ?? "";
-
   String get smsCode => super.accessToken ?? "";
+
+  String get verificationId => super.idToken ?? "";
 }
 
 class PhoneAuthenticator extends Authenticator {

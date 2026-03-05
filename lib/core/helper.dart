@@ -55,6 +55,10 @@ extension AuthHelper on BuildContext {
 
   String errorText<T extends Auth>() => _i<T>("error").errorText;
 
+  bool isAnonymousAccount<T extends Auth>() {
+    return _i<T>("isAnonymousAccount").hasAnonymous;
+  }
+
   Future<bool> isBiometricEnabled<T extends Auth>() {
     return _i<T>("isBiometricEnabled").isBiometricEnabled;
   }
@@ -90,6 +94,10 @@ extension AuthHelper on BuildContext {
   AuthStatus authStatus<T extends Auth>() => _i<T>("authStatus").status;
 
   T? user<T extends Auth>() => _i<T>("user").user;
+
+  Future<Response<T>> canUseBiometric<T extends Auth>() {
+    return _i<T>("canUseBiometric").canUseBiometric;
+  }
 
   Future<Response<void>> biometricEnable<T extends Auth>(bool enabled) {
     return _i<T>("biometricEnable").biometricEnable(enabled);
@@ -163,14 +171,12 @@ extension AuthHelper on BuildContext {
 
   Future<AuthResponse<T>> signInByEmail<T extends Auth>(
     EmailAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByEmail").signInByEmail(
       authenticator,
-      onBiometric: onBiometric,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -223,14 +229,12 @@ extension AuthHelper on BuildContext {
 
   Future<AuthResponse<T>> signInByUsername<T extends Auth>(
     UsernameAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInByUsername").signInByUsername(
       authenticator,
-      onBiometric: onBiometric,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -239,14 +243,12 @@ extension AuthHelper on BuildContext {
 
   Future<AuthResponse<T>> signUpByEmail<T extends Auth>(
     EmailAuthenticator authenticator, {
-    SignByBiometricCallback? onBiometric,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signUpByEmail").signUpByEmail(
       authenticator,
-      onBiometric: onBiometric,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -262,7 +264,6 @@ extension AuthHelper on BuildContext {
   }) {
     return _i<T>("signUpByUsername").signUpByUsername(
       authenticator,
-      onBiometric: onBiometric,
       args: args,
       id: id,
       notifiable: notifiable,

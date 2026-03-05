@@ -218,7 +218,11 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   }
 
   @override
-  Future<void> onUpdateUser(String id, Map<String, dynamic> data) async {
+  Future<void> onUpdateUser(
+    String id,
+    Map<String, dynamic> data,
+    bool hasAnonymous,
+  ) async {
     // Update authorized user data in remote server
     log("Authorized user data : $data");
   }
