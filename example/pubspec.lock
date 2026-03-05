@@ -31,7 +31,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "3.1.0"
+    version: "3.2.14"
   badges:
     dependency: transitive
     description:
@@ -241,10 +241,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_entity
-      sha256: d5c03b9dbc7674a4fd0c0e17188820f33003052d7b79febdf4d182670cc16ed4
+      sha256: c61590b24a0cbab2d447920e8dc1af7572c4412162f242206f7719916a23b9d2
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.7"
+    version: "1.2.8"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -415,14 +415,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
-  object_modifier:
-    dependency: transitive
-    description:
-      name: object_modifier
-      sha256: a0e0eb8c453f558a6f7f1b38b5a39ed9bda998fcd2ab821462232b56fd4a37dd
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   octo_image:
     dependency: transitive
     description:

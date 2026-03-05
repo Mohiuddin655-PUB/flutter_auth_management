@@ -1,9 +1,15 @@
+## 3.2.14
+
+- Account deletion bug fixed
+
 ## 3.2.13
 
 - Improve auth model for last online support
 
 ## 3.2.12
+
 ## 3.2.11
+
 ## 3.2.10
 
 - Enhanced object modifier to merge updating props
