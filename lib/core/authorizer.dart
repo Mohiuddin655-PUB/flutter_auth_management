@@ -193,6 +193,7 @@ class Authorizer<T extends Auth> {
 
       await _delete();
       await _backup.onDeleteUser(data.id);
+      await delegate.signOut();
 
       return emit(
         AuthResponse.unauthenticated(
@@ -381,7 +382,7 @@ class Authorizer<T extends Auth> {
         phone: result.phoneNumber,
         photo: result.photoURL,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
       );
       final value = await _update(
         id: user.id,
@@ -389,7 +390,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
       return emit(
@@ -500,7 +501,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(id: user.id, updates: {
         AuthKeys.i.loggedIn: true,
-        AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+        AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
       });
 
       return emit(
@@ -582,7 +583,7 @@ class Authorizer<T extends Auth> {
         photo: result.photoURL,
         provider: Provider.email,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
       );
 
       bool? biometric;
@@ -596,7 +597,7 @@ class Authorizer<T extends Auth> {
           ...user.extra ?? {},
           if (biometric != null) AuthKeys.i.biometric: biometric,
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -809,7 +810,7 @@ class Authorizer<T extends Auth> {
         photo: result.photoURL,
         provider: Provider.phone,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
 
@@ -819,7 +820,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -902,7 +903,7 @@ class Authorizer<T extends Auth> {
         photo: result.photoURL,
         provider: Provider.username,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
       );
 
       bool? biometric;
@@ -918,7 +919,7 @@ class Authorizer<T extends Auth> {
           ...user.extra ?? {},
           if (biometric != null) AuthKeys.i.biometric: biometric,
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
       return emit(
@@ -991,7 +992,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final creationTime = Entity.generateTimeMills;
+      final creationTime = EntityHelper.generateTimeMills;
       final user = authenticator.copy(
         id: result.uid,
         email: result.email,
@@ -1084,7 +1085,7 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final creationTime = Entity.generateTimeMills;
+      final creationTime = EntityHelper.generateTimeMills;
       final user = authenticator.copy(
         id: result.uid,
         email: result.email,
@@ -1175,7 +1176,7 @@ class Authorizer<T extends Auth> {
 
       await update({
         AuthKeys.i.loggedIn: false,
-        AuthKeys.i.loggedOutTime: Entity.generateTimeMills,
+        AuthKeys.i.loggedOutTime: EntityHelper.generateTimeMills,
       });
 
       if (data.biometric) {
@@ -1184,7 +1185,7 @@ class Authorizer<T extends Auth> {
           updates: {
             ...data.extra ?? {},
             AuthKeys.i.loggedIn: false,
-            AuthKeys.i.loggedOutTime: Entity.generateTimeMills,
+            AuthKeys.i.loggedOutTime: EntityHelper.generateTimeMills,
           },
         );
       } else {
@@ -1291,7 +1292,7 @@ class Authorizer<T extends Auth> {
         photo: result.photoURL,
         provider: Provider.phone,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
 
@@ -1379,7 +1380,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.apple,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -1388,7 +1389,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1486,7 +1487,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.facebook,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -1495,7 +1496,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1596,7 +1597,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.gameCenter,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -1605,7 +1606,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1702,7 +1703,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.github,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -1711,7 +1712,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1808,7 +1809,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.google,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -1817,7 +1818,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -1914,7 +1915,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.microsoft,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -1923,7 +1924,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2020,7 +2021,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.playGames,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
 
@@ -2030,7 +2031,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2127,7 +2128,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.saml,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
 
@@ -2137,7 +2138,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2235,7 +2236,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.twitter,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
 
@@ -2245,7 +2246,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 
@@ -2342,7 +2343,7 @@ class Authorizer<T extends Auth> {
         photo: raw.photoURL ?? result.photoURL,
         provider: Provider.yahoo,
         loggedIn: true,
-        loggedInTime: Entity.generateTimeMills,
+        loggedInTime: EntityHelper.generateTimeMills,
         verified: true,
       );
       final value = await _update(
@@ -2351,7 +2352,7 @@ class Authorizer<T extends Auth> {
         updates: {
           ...user.extra ?? {},
           AuthKeys.i.loggedIn: true,
-          AuthKeys.i.loggedInTime: Entity.generateTimeMills,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
 

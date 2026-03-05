@@ -1,3 +1,7 @@
+## 3.1.1
+
+* Authorizer delete account bug fixed
+
 ## 3.1.0
 
 * Authorizer update function improved
