@@ -254,6 +254,7 @@ class Authorizer<T extends Auth> {
 
       await _delete();
       await _backup.onDeleteUser(data.id);
+      await delegate.signOut();
 
       return emit(
         AuthResponse.unauthenticated(
