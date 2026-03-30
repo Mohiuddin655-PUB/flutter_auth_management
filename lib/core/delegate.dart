@@ -7,184 +7,86 @@ import 'provider.dart';
 abstract class AuthDelegate {
   const AuthDelegate();
 
-  bool get isAnonymous {
-    throw UnimplementedError(
-      "Getter isAnonymous is not yet implemented.",
-    );
-  }
+  bool get isAnonymous;
 
-  bool get isAuthenticated {
-    throw UnimplementedError(
-      "Getter isAuthenticated is not yet implemented.",
-    );
-  }
+  bool get isAuthenticated;
 
-  Future<String?> get rawUid {
-    throw UnimplementedError(
-      "Getter rawUid is not yet implemented.",
-    );
-  }
+  Future<String?> get rawUid;
 
   /// Create the auth credential using a provided credential info.
-  Object credential(Provider provider, Credential credential) {
-    throw UnimplementedError(
-      "Method createCredential() is not yet implemented.",
-    );
-  }
+  Object credential(Provider provider, Credential credential);
 
   /// Deletes the current user's credential.
-  Future<Response<void>> delete() {
-    throw UnimplementedError(
-      "Method delete() is not yet implemented.",
-    );
-  }
+  Future<Response<void>> delete();
 
   /// Checks if a user is currently signed in.
-  Future<bool> isSignIn([Provider? provider]) {
-    throw UnimplementedError(
-      "Method isSignIn() is not yet implemented.",
-    );
-  }
+  Future<bool> isSignIn([Provider? provider]);
 
   /// Signs in the user anonymously.
-  Future<Response<Credential>> signInAnonymously() {
-    throw UnimplementedError(
-      "Method signInAnonymously() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInAnonymously();
 
   /// Signs in the user using biometric authentication.
-  Future<Response<void>> signInWithBiometric() {
-    throw UnimplementedError(
-      "Method signInWithBiometric() is not yet implemented.",
-    );
-  }
+  Future<Response<void>> signInWithBiometric();
 
   /// Signs in the user using a provided credential.
-  Future<Response<Credential>> signInWithCredential(
-    Object credential,
-  ) {
-    throw UnimplementedError(
-      "Method signInWithCredential() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithCredential(Object credential);
 
   /// Signs in the user using email and password.
   Future<Response<Credential>> signInWithEmailNPassword(
     String email,
     String password,
-  ) {
-    throw UnimplementedError(
-      "Method signInWithEmailNPassword() is not yet implemented.",
-    );
-  }
+  );
 
   /// Signs in the user using username and password.
   Future<Response<Credential>> signInWithUsernameNPassword(
     String username,
     String password,
-  ) {
-    throw UnimplementedError(
-      "Method signInWithUsernameNPassword() is not yet implemented.",
-    );
-  }
+  );
 
   /// Signs in the user with an Apple account.
-  Future<Response<Credential>> signInWithApple() {
-    throw UnimplementedError(
-      "Method signInWithApple() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithApple();
 
   /// Signs in the user with a Facebook account.
-  Future<Response<Credential>> signInWithFacebook() {
-    throw UnimplementedError(
-      "Method signInWithFacebook() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithFacebook();
 
   /// Signs in the user with Game Center credentials.
-  Future<Response<Credential>> signInWithGameCenter() {
-    throw UnimplementedError(
-      "Method signInWithGameCenter() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithGameCenter();
 
   /// Signs in the user with a GitHub account.
-  Future<Response<Credential>> signInWithGithub() {
-    throw UnimplementedError(
-      "Method signInWithGithub() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithGithub();
 
   /// Signs in the user with a Google account.
-  Future<Response<Credential>> signInWithGoogle() {
-    throw UnimplementedError(
-      "Method signInWithGoogle() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithGoogle();
 
   /// Signs in the user with a Microsoft account.
-  Future<Response<Credential>> signInWithMicrosoft() {
-    throw UnimplementedError(
-      "Method signInWithMicrosoft() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithMicrosoft();
 
   /// Signs in the user with Play Games credentials.
-  Future<Response<Credential>> signInWithPlayGames() {
-    throw UnimplementedError(
-      "Method signInWithPlayGames() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithPlayGames();
 
   /// Signs in the user using SAML authentication.
-  Future<Response<Credential>> signInWithSAML() {
-    throw UnimplementedError(
-      "Method signInWithSAML() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithSAML();
 
   /// Signs in the user with a Twitter account.
-  Future<Response<Credential>> signInWithTwitter() {
-    throw UnimplementedError(
-      "Method signInWithTwitter() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithTwitter();
 
   /// Signs in the user with a Yahoo account.
-  Future<Response<Credential>> signInWithYahoo() {
-    throw UnimplementedError(
-      "Method signInWithYahoo() is not yet implemented.",
-    );
-  }
+  Future<Response<Credential>> signInWithYahoo();
 
   /// Signs up the user using email and password.
   Future<Response<Credential>> signUpWithEmailNPassword(
     String email,
     String password,
-  ) {
-    throw UnimplementedError(
-      "Method signUpWithEmailNPassword() is not yet implemented.",
-    );
-  }
+  );
 
   /// Signs up the user using username and password.
   Future<Response<Credential>> signUpWithUsernameNPassword(
     String username,
     String password,
-  ) {
-    throw UnimplementedError(
-      "Method signUpWithUsernameNPassword() is not yet implemented.",
-    );
-  }
+  );
 
   /// Signs out the user from the specified provider or all providers if none is specified.
-  Future<Response<void>> signOut([Provider? provider]) {
-    throw UnimplementedError(
-      "Method signOut() is not yet implemented.",
-    );
-  }
+  Future<Response<void>> signOut([Provider? provider]);
 
   /// Verifies the user's phone number.
   Future<void> verifyPhoneNumber({
@@ -197,9 +99,5 @@ abstract class AuthDelegate {
     required void Function(AuthException exception) onFailed,
     required void Function(String verId, int? forceResendingToken) onCodeSent,
     required void Function(String verId) onCodeAutoRetrievalTimeout,
-  }) {
-    throw UnimplementedError(
-      "Method verifyPhoneNumber() is not yet implemented.",
-    );
-  }
+  });
 }

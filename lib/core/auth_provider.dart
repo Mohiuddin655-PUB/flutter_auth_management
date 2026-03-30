@@ -26,14 +26,14 @@ class AuthProviderException {
 class AuthProvider<T extends Auth> extends InheritedWidget {
   final bool initialCheck;
   final bool listening;
-  final bool crateInstance;
+  final bool createInstance;
   final Authorizer<T> authorizer;
 
   AuthProvider({
     super.key,
     this.initialCheck = false,
     this.listening = false,
-    this.crateInstance = false,
+    this.createInstance = false,
     required this.authorizer,
     required Widget child,
   }) : super(
@@ -41,7 +41,7 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
             authorizer: authorizer,
             initialCheck: initialCheck,
             listening: listening,
-            createInstance: crateInstance,
+            createInstance: createInstance,
             child: child,
           ),
         ) {

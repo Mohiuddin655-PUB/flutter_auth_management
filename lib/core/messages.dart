@@ -28,10 +28,17 @@ class AuthMessages {
   final AuthMessage signInWithBiometric;
   final AuthMessage signInWithEmail;
   final AuthMessage signInWithFacebook;
+
+  final AuthMessage signInWithGameCenter;
   final AuthMessage signInWithGithub;
   final AuthMessage signInWithGoogle;
+  final AuthMessage signInWithMicrosoft;
   final AuthMessage signInWithPhone;
+  final AuthMessage signInWithPlayGames;
+  final AuthMessage signInWithSAML;
+  final AuthMessage signInWithTwitter;
   final AuthMessage signInWithUsername;
+  final AuthMessage signInWithYahoo;
 
   final AuthMessage signUpWithEmail;
   final AuthMessage signUpWithUsername;
@@ -63,13 +70,17 @@ class AuthMessages {
       done: "Apple sign in successful!",
     ),
     this.signInWithBiometric = const AuthMessage(
-        done: "Biometric sign in successful!",
-        failure: "Biometric not initialized yet!"),
+      done: "Biometric sign in successful!",
+      failure: "Biometric not initialized yet!",
+    ),
     this.signInWithEmail = const AuthMessage(
       done: "Sign in successful!",
     ),
     this.signInWithFacebook = const AuthMessage(
       done: "Facebook sign in successful!",
+    ),
+    this.signInWithGameCenter = const AuthMessage(
+      done: "Game Center sign in successful!",
     ),
     this.signInWithGithub = const AuthMessage(
       done: "Github sign in successful!",
@@ -77,11 +88,26 @@ class AuthMessages {
     this.signInWithGoogle = const AuthMessage(
       done: "Google sign in successful!",
     ),
+    this.signInWithMicrosoft = const AuthMessage(
+      done: "Microsoft sign in successful!",
+    ),
     this.signInWithPhone = const AuthMessage(
       done: "Phone sign in successful!",
     ),
+    this.signInWithPlayGames = const AuthMessage(
+      done: "Play Games sign in successful!",
+    ),
+    this.signInWithSAML = const AuthMessage(
+      done: "SAML sign in successful!",
+    ),
+    this.signInWithTwitter = const AuthMessage(
+      done: "Twitter sign in successful!",
+    ),
     this.signInWithUsername = const AuthMessage(
       done: "Sign in successful!",
+    ),
+    this.signInWithYahoo = const AuthMessage(
+      done: "Yahoo sign in successful!",
     ),
     this.signUpWithEmail = const AuthMessage(
       done: "Sign up successful!",

@@ -199,16 +199,28 @@ class AuthButton<T extends Auth> extends StatelessWidget {
         );
         break;
       case AuthButtonType.signInByEmail:
+        if (authenticator is! EmailAuthenticator) {
+          throw ArgumentError(
+            'signInByEmail requires an EmailAuthenticator, '
+            'but got ${authenticator.runtimeType}.',
+          );
+        }
         context.signInByEmail<T>(
-          authenticator as EmailAuthenticator,
+          authenticator,
           id: id,
           args: args,
           notifiable: notifiable,
         );
         break;
       case AuthButtonType.signInByUsername:
+        if (authenticator is! UsernameAuthenticator) {
+          throw ArgumentError(
+            'signInByUsername requires a UsernameAuthenticator, '
+            'but got ${authenticator.runtimeType}.',
+          );
+        }
         context.signInByUsername<T>(
-          authenticator as UsernameAuthenticator,
+          authenticator,
           id: id,
           args: args,
           notifiable: notifiable,
@@ -218,16 +230,28 @@ class AuthButton<T extends Auth> extends StatelessWidget {
         context.signOut<T>();
         break;
       case AuthButtonType.signUpByEmail:
+        if (authenticator is! EmailAuthenticator) {
+          throw ArgumentError(
+            'signUpByEmail requires an EmailAuthenticator, '
+            'but got ${authenticator.runtimeType}.',
+          );
+        }
         context.signUpByEmail<T>(
-          authenticator as EmailAuthenticator,
+          authenticator,
           id: id,
           args: args,
           notifiable: notifiable,
         );
         break;
       case AuthButtonType.signUpByUsername:
+        if (authenticator is! UsernameAuthenticator) {
+          throw ArgumentError(
+            'signUpByUsername requires a UsernameAuthenticator, '
+            'but got ${authenticator.runtimeType}.',
+          );
+        }
         context.signUpByUsername<T>(
-          authenticator as UsernameAuthenticator,
+          authenticator,
           onBiometric: onBiometric,
           id: id,
           args: args,
@@ -235,7 +259,13 @@ class AuthButton<T extends Auth> extends StatelessWidget {
         );
         break;
       case AuthButtonType.verifyPhoneByOtp:
-        context.verifyPhoneByOtp<T>(authenticator as OtpAuthenticator);
+        if (authenticator is! OtpAuthenticator) {
+          throw ArgumentError(
+            'verifyPhoneByOtp requires an OtpAuthenticator, '
+            'but got ${authenticator.runtimeType}.',
+          );
+        }
+        context.verifyPhoneByOtp<T>(authenticator);
         break;
     }
   }
