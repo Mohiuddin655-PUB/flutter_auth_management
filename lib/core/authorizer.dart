@@ -348,7 +348,7 @@ class Authorizer<T extends Auth> {
   }
 
   T? _emitUser(T? data) {
-    if (data != null) _userNotifier.value = data;
+    _userNotifier.value = data;
     return _userNotifier.value;
   }
 

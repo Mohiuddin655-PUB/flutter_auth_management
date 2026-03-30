@@ -1,3 +1,7 @@
+## 3.2.15
+
+* Account Logout ui state bug fixed
+
 ## 3.2.14
 
 - Account deletion bug fixed
