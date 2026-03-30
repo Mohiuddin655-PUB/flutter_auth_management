@@ -19,6 +19,12 @@ abstract class AuthDelegate {
     );
   }
 
+  Future<String?> get rawUid {
+    throw UnimplementedError(
+      "Getter rawUid is not yet implemented.",
+    );
+  }
+
   /// Create the auth credential using a provided credential info.
   Object credential(Provider provider, Credential credential) {
     throw UnimplementedError(

@@ -73,6 +73,8 @@ abstract class AuthBackupDelegate<T extends Auth> {
 
   Future<T?> onFetchUser(String id);
 
+  Stream<T?> onListenUser(String id);
+
   Future<void> onCreateUser(T data);
 
   Future<void> onDeleteUser(String id);

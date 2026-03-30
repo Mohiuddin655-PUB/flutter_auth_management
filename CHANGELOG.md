@@ -1,3 +1,8 @@
+## 3.2.16
+
+* Initial user loading bug fixed
+* AuthConsumer auto update when change db
+
 ## 3.2.15
 
 * Account Logout ui state bug fixed
