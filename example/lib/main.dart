@@ -21,165 +21,160 @@ Future<void> main() async {
 
 class MyAuthDelegate extends AuthDelegate {
   @override
-  Future<bool> isSignIn([Provider? provider]) {
-    // implement isSignIn
-    return super.isSignIn(provider);
+  Object credential(Provider provider, Credential credential) {
+    // TODO: implement credential
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<void>> delete() {
-    // implement delete
-    return super.delete();
+    // TODO: implement delete
+    throw UnimplementedError();
   }
 
   @override
-  Object credential(Provider provider, Credential credential) {
-    // implement credential
-    return super.credential(provider, credential);
+  // TODO: implement isAnonymous
+  bool get isAnonymous => throw UnimplementedError();
+
+  @override
+  // TODO: implement isAuthenticated
+  bool get isAuthenticated => throw UnimplementedError();
+
+  @override
+  Future<bool> isSignIn([Provider? provider]) {
+    // TODO: implement isSignIn
+    throw UnimplementedError();
   }
+
+  @override
+  // TODO: implement rawUid
+  Future<String?> get rawUid => throw UnimplementedError();
 
   @override
   Future<Response<Credential>> signInAnonymously() {
-    // implement signInAnonymously
-    return super.signInAnonymously();
+    // TODO: implement signInAnonymously
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithApple() {
-    // implement signInWithApple
-    return super.signInWithApple();
+    // TODO: implement signInWithApple
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<void>> signInWithBiometric() {
-    // implement signInWithBiometric
-    return super.signInWithBiometric();
+    // TODO: implement signInWithBiometric
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithCredential(Object credential) {
-    // implement signInWithCredential
-    return super.signInWithCredential(credential);
+    // TODO: implement signInWithCredential
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithEmailNPassword(
       String email, String password) {
-    // implement signInWithEmailNPassword
-    return super.signInWithEmailNPassword(email, password);
+    // TODO: implement signInWithEmailNPassword
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithFacebook() {
-    // implement signInWithFacebook
-    return super.signInWithFacebook();
+    // TODO: implement signInWithFacebook
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithGameCenter() {
-    // implement signInWithGameCenter
-    return super.signInWithGameCenter();
+    // TODO: implement signInWithGameCenter
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithGithub() {
-    // implement signInWithGithub
-    return super.signInWithGithub();
+    // TODO: implement signInWithGithub
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithGoogle() {
-    // implement signInWithGoogle
-    return super.signInWithGoogle();
+    // TODO: implement signInWithGoogle
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithMicrosoft() {
-    // implement signInWithMicrosoft
-    return super.signInWithMicrosoft();
+    // TODO: implement signInWithMicrosoft
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithPlayGames() {
-    // implement signInWithPlayGames
-    return super.signInWithPlayGames();
+    // TODO: implement signInWithPlayGames
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithSAML() {
-    // implement signInWithSAML
-    return super.signInWithSAML();
+    // TODO: implement signInWithSAML
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithTwitter() {
-    // implement signInWithTwitter
-    return super.signInWithTwitter();
+    // TODO: implement signInWithTwitter
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithUsernameNPassword(
-    String username,
-    String password,
-  ) {
-    // implement signInWithUsernameNPassword
-    return super.signInWithUsernameNPassword(username, password);
+      String username, String password) {
+    // TODO: implement signInWithUsernameNPassword
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signInWithYahoo() {
-    // implement signInWithYahoo
-    return super.signInWithYahoo();
+    // TODO: implement signInWithYahoo
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<void>> signOut([Provider? provider]) {
-    // implement signOut
-    return super.signOut(provider);
+    // TODO: implement signOut
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signUpWithEmailNPassword(
-    String email,
-    String password,
-  ) {
-    // implement signUpWithEmailNPassword
-    return super.signUpWithEmailNPassword(email, password);
+      String email, String password) {
+    // TODO: implement signUpWithEmailNPassword
+    throw UnimplementedError();
   }
 
   @override
   Future<Response<Credential>> signUpWithUsernameNPassword(
-    String username,
-    String password,
-  ) {
-    // implement signUpWithUsernameNPassword
-    return super.signUpWithUsernameNPassword(username, password);
+      String username, String password) {
+    // TODO: implement signUpWithUsernameNPassword
+    throw UnimplementedError();
   }
 
   @override
-  Future<void> verifyPhoneNumber({
-    String? phoneNumber,
-    int? forceResendingToken,
-    Object? multiFactorInfo,
-    Object? multiFactorSession,
-    Duration timeout = const Duration(seconds: 30),
-    required void Function(Credential credential) onComplete,
-    required void Function(AuthException exception) onFailed,
-    required void Function(String verId, int? forceResendingToken) onCodeSent,
-    required void Function(String verId) onCodeAutoRetrievalTimeout,
-  }) {
-    // implement verifyPhoneNumber
-    return super.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      forceResendingToken: forceResendingToken,
-      multiFactorInfo: multiFactorInfo,
-      multiFactorSession: multiFactorSession,
-      timeout: timeout,
-      onComplete: onComplete,
-      onFailed: onFailed,
-      onCodeSent: onCodeSent,
-      onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
-    );
+  Future<void> verifyPhoneNumber(
+      {String? phoneNumber,
+      int? forceResendingToken,
+      Object? multiFactorInfo,
+      Object? multiFactorSession,
+      Duration timeout = const Duration(seconds: 30),
+      required void Function(Credential credential) onComplete,
+      required void Function(AuthException exception) onFailed,
+      required void Function(String verId, int? forceResendingToken) onCodeSent,
+      required void Function(String verId) onCodeAutoRetrievalTimeout}) {
+    // TODO: implement verifyPhoneNumber
+    throw UnimplementedError();
   }
 }
 

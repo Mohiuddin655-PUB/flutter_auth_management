@@ -341,7 +341,7 @@ class Authorizer<T extends Auth> {
 
   void _emitMessage(AuthResponse<T> data) {
     if (data.isMessage) {
-      _errorNotifier.value = data.error;
+      _messageNotifier.value = data.message;
     }
   }
 
@@ -1815,7 +1815,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
+          msg: msg.signInWithGameCenter.done,
           provider: Provider.gameCenter,
           type: AuthType.oauth,
         ),
@@ -1826,7 +1826,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
+          msg.signInWithGameCenter.failure ?? error,
           provider: Provider.gameCenter,
           type: AuthType.oauth,
         ),
@@ -2172,7 +2172,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
+          msg: msg.signInWithMicrosoft.done,
           provider: Provider.microsoft,
           type: AuthType.oauth,
         ),
@@ -2183,7 +2183,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
+          msg.signInWithMicrosoft.failure ?? error,
           provider: Provider.microsoft,
           type: AuthType.oauth,
         ),
@@ -2292,7 +2292,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
+          msg: msg.signInWithPlayGames.done,
           provider: Provider.playGames,
           type: AuthType.oauth,
         ),
@@ -2303,7 +2303,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
+          msg.signInWithPlayGames.failure ?? error,
           provider: Provider.playGames,
           type: AuthType.oauth,
         ),
@@ -2412,7 +2412,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
+          msg: msg.signInWithSAML.done,
           provider: Provider.saml,
           type: AuthType.oauth,
         ),
@@ -2423,7 +2423,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
+          msg.signInWithSAML.failure ?? error,
           provider: Provider.saml,
           type: AuthType.oauth,
         ),
@@ -2533,7 +2533,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
+          msg: msg.signInWithTwitter.done,
           provider: Provider.twitter,
           type: AuthType.oauth,
         ),
@@ -2544,7 +2544,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
+          msg.signInWithTwitter.failure ?? error,
           provider: Provider.twitter,
           type: AuthType.oauth,
         ),
@@ -2652,7 +2652,7 @@ class Authorizer<T extends Auth> {
         notifiable: notifiable,
         AuthResponse.authenticated(
           value,
-          msg: msg.signInWithGithub.done,
+          msg: msg.signInWithYahoo.done,
           provider: Provider.yahoo,
           type: AuthType.oauth,
         ),
@@ -2663,7 +2663,7 @@ class Authorizer<T extends Auth> {
         id: id,
         notifiable: notifiable,
         AuthResponse.failure(
-          msg.signInWithGithub.failure ?? error,
+          msg.signInWithYahoo.failure ?? error,
           provider: Provider.yahoo,
           type: AuthType.oauth,
         ),
