@@ -97,11 +97,12 @@ class Authorizer<T extends Auth> {
     required AuthBackupDelegate<T> backup,
     AuthMessages msg = const AuthMessages(),
     bool initialCheck = true,
+    bool listening = false,
   }) async {
     type = T;
     final auth = Authorizer<T>(delegate: delegate, backup: backup, msg: msg);
     _i = auth;
-    await auth.initialize(initialCheck);
+    await auth.initialize(initialCheck: initialCheck, listening: listening);
   }
 
   static void attach<T extends Auth>(Authorizer<T> authorizer) {
@@ -109,7 +110,7 @@ class Authorizer<T extends Auth> {
     _i = authorizer;
   }
 
-  static void dettach<T extends Auth>() {
+  static void detach<T extends Auth>() {
     try {
       _i?.dispose();
       _i = null;
@@ -298,6 +299,7 @@ class Authorizer<T extends Auth> {
     _messageNotifier.dispose();
     _statusNotifier.dispose();
     _userNotifier.dispose();
+    _subscription?.cancel();
   }
 
   Future<AuthResponse<T>> emit(
@@ -352,18 +354,37 @@ class Authorizer<T extends Auth> {
     return _userNotifier.value;
   }
 
-  Future<T?> initialize([bool initialCheck = true]) async {
+  StreamSubscription? _subscription;
+
+  Future<T?> _cached(T? remote, T? defaultValue) async {
+    _userNotifier.value = remote;
+    await _backup.setAsLocal(remote ?? defaultValue);
+    return remote ?? defaultValue;
+  }
+
+  Future<void> initialize({
+    bool initialCheck = true,
+    bool listening = false,
+  }) async {
     final value = await auth;
-    if (value == null) return null;
     if (initialCheck) {
-      if (value.isLoggedIn) {
+      if (value != null && value.isLoggedIn) {
         _statusNotifier.value = AuthStatus.authenticated;
       }
     }
-    final remote = await _backup.onFetchUser(value.id);
-    _userNotifier.value = remote;
-    await _backup.setAsLocal(remote ?? value);
-    return remote ?? value;
+    final rawUid = await delegate.rawUid;
+    if (rawUid == null || rawUid.isEmpty) {
+      _userNotifier.value = null;
+      return;
+    }
+    final remote = await _backup.onFetchUser(rawUid);
+    await _cached(remote, value);
+    if (listening) {
+      _subscription?.cancel();
+      _subscription = _backup.onListenUser(rawUid).listen((remote) {
+        _cached(remote, value);
+      });
+    }
   }
 
   Future<AuthResponse<T>> isSignIn({

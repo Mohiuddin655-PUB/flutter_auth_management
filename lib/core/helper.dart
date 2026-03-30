@@ -133,8 +133,14 @@ extension AuthHelper on BuildContext {
     );
   }
 
-  Future<T?> initializeAuth<T extends Auth>([bool initialCheck = true]) {
-    return _i<T>("initializeAuth").initialize(initialCheck);
+  Future<void> initializeAuth<T extends Auth>({
+    bool initialCheck = true,
+    bool listening = false,
+  }) {
+    return _i<T>("initializeAuth").initialize(
+      initialCheck: initialCheck,
+      listening: listening,
+    );
   }
 
   Future<AuthResponse<T>> isSignIn<T extends Auth>({

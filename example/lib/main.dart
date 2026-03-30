@@ -218,6 +218,12 @@ class MyAuthBackupDelegate extends AuthBackupDelegate<UserModel> {
   }
 
   @override
+  Stream<UserModel?> onListenUser(String id) async* {
+    // listen authorized user data from remote server
+    log("Authorized user id : $id");
+  }
+
+  @override
   Future<void> onUpdateUser(
     String id,
     Map<String, dynamic> data,

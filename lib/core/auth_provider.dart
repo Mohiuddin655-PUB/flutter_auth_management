@@ -25,12 +25,14 @@ class AuthProviderException {
 
 class AuthProvider<T extends Auth> extends InheritedWidget {
   final bool initialCheck;
+  final bool listening;
   final bool crateInstance;
   final Authorizer<T> authorizer;
 
   AuthProvider({
     super.key,
     this.initialCheck = false,
+    this.listening = false,
     this.crateInstance = false,
     required this.authorizer,
     required Widget child,
@@ -38,6 +40,7 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
           child: _Internal<T>(
             authorizer: authorizer,
             initialCheck: initialCheck,
+            listening: listening,
             createInstance: crateInstance,
             child: child,
           ),
@@ -78,12 +81,14 @@ class AuthProvider<T extends Auth> extends InheritedWidget {
 
 class _Internal<T extends Auth> extends StatefulWidget {
   final bool initialCheck;
+  final bool listening;
   final bool createInstance;
   final Authorizer<T> authorizer;
   final Widget child;
 
   const _Internal({
     this.initialCheck = false,
+    this.listening = false,
     this.createInstance = false,
     required this.child,
     required this.authorizer,
@@ -97,14 +102,17 @@ class _InternalState<T extends Auth> extends State<_Internal<T>> {
   @override
   void initState() {
     if (widget.createInstance) Authorizer.attach<T>(widget.authorizer);
-    widget.authorizer.initialize(widget.initialCheck);
+    widget.authorizer.initialize(
+      initialCheck: widget.initialCheck,
+      listening: widget.listening,
+    );
     super.initState();
   }
 
   @override
   void dispose() {
     widget.authorizer.dispose();
-    if (widget.createInstance) Authorizer.dettach<T>();
+    if (widget.createInstance) Authorizer.detach<T>();
     super.dispose();
   }
 
