@@ -1,5 +1,5 @@
-import 'auth.dart';
-import 'auth_status.dart';
+import '../models/auth.dart';
+import '../models/auth_status.dart';
 
 final class AuthChanges<T extends Auth> {
   final Object? args;

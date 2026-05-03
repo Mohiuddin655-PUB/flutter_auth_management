@@ -3,12 +3,16 @@ part of 'authorizer.dart';
 class _Backup<T extends Auth> {
   final AuthBackupDelegate<T> delegate;
 
-  const _Backup(this.delegate);
+  final void Function(AuthResponse<T>) _emit;
+
+  int _updateGeneration = 0;
+
+  _Backup(this.delegate, this._emit);
 
   Future<T?> get cache async {
     try {
-      return delegate.cache;
-    } catch (error) {
+      return await delegate.cache;
+    } catch (_) {
       return null;
     }
   }
@@ -17,55 +21,63 @@ class _Backup<T extends Auth> {
     return delegate.encryptor(key, value);
   }
 
-  Future<T?> get([bool remotely = false]) {
-    return cache.then((value) {
-      if (value == null || !value.isLoggedIn) return null;
-      if (!remotely) return value;
-      return delegate.onFetchUser(value.id);
-    });
+  Future<T?> get([bool remotely = false]) async {
+    final value = await cache;
+    if (value == null || !value.isLoggedIn) return null;
+    if (!remotely) return value;
+    return delegate.onFetchUser(value.id);
   }
 
   Future<bool> set(T? data) async {
     if (data == null) return false;
-    return update(data.filtered);
+    return setAsLocal(data);
   }
 
-  Future<bool> setAsLocal(T? data) {
-    return cache.then((value) {
-      return delegate.set(data ?? value).onError((_, __) => false);
-    });
+  Future<bool> setAsLocal(T? data) async {
+    final current = await cache;
+    final target = data ?? current;
+    if (target == null) return false;
+
+    final ok = await delegate.set(target).onError((_, __) => false);
+    if (ok) _emit(AuthResponse.data(target));
+    return ok;
   }
 
   Future<bool> update(Map<String, dynamic> data) async {
     if (data.isEmpty) return false;
-    return cache.then((local) {
-      if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
-      onUpdateUser(local.id, data, false);
-      final old = local.filtered;
-      final parsed = data.map((key, value) {
-        if (value == null ||
-            value is num ||
-            value is bool ||
-            value is String ||
-            value is List ||
-            value is Map) {
-          return MapEntry(key, value);
-        }
-        return MapEntry(
-          key,
-          delegate.nonEncodableObjectParser(value, old[key]),
-        );
-      });
-      final merged = {...old};
-      for (final entry in parsed.entries) {
-        merged[entry.key] = entry.value;
-      }
-      final updated = Map.fromEntries(merged.entries.where((e) {
-        return e.value != null;
-      }));
-      final mergedObject = build(updated);
-      return setAsLocal(mergedObject);
+
+    final generation = ++_updateGeneration;
+    bool isCurrent() => _updateGeneration == generation;
+
+    final local = await cache;
+    if (!isCurrent()) return false;
+
+    if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
+
+    final old = local.filtered;
+    final parsed = data.map((key, value) {
+      if (_isPrimitive(value)) return MapEntry(key, value);
+      return MapEntry(key, delegate.nonEncodableObjectParser(value, old[key]));
     });
+
+    final merged = {...old, ...parsed}..removeWhere((_, v) => v == null);
+    final updated = build(merged);
+
+    final localOk = await setAsLocal(updated);
+    if (!isCurrent()) return false;
+    if (!localOk) return false;
+
+    try {
+      await onUpdateUser(local.id, data, false);
+      if (!isCurrent()) return false;
+      return true;
+    } catch (_) {
+      if (isCurrent()) {
+        _emit(AuthResponse.loading());
+        await setAsLocal(local);
+      }
+      return false;
+    }
   }
 
   Future<bool> save({
@@ -76,23 +88,45 @@ class _Backup<T extends Auth> {
     bool cacheUpdateMode = false,
   }) async {
     if (id.isEmpty) return false;
-    if (cacheUpdateMode) return delegate.update(updates);
-    final remote = await onFetchUser(id);
-    if (remote == null || !remote.isAuthenticated) {
-      final user = build(initials);
-      await onCreateUser(user);
-      return delegate.set(user);
+
+    if (cacheUpdateMode) {
+      final ok = await delegate.update(updates);
+      if (ok) {
+        final refreshed = await cache;
+        if (refreshed != null) _emit(AuthResponse.data(refreshed));
+      }
+      return ok;
     }
-    await onUpdateUser(id, updates, hasAnonymous);
-    Map<String, dynamic> current = Map.from(remote.filtered);
-    current.addAll(updates);
-    return delegate.set(build(current));
+
+    final remote = await onFetchUser(id);
+
+    if (remote == null || !remote.isAuthenticated) {
+      if (initials.isEmpty) return false;
+      final user = build(initials);
+      try {
+        await onCreateUser(user);
+      } catch (_) {
+        return false;
+      }
+      return setAsLocal(user);
+    }
+
+    try {
+      await onUpdateUser(id, updates, hasAnonymous);
+    } catch (_) {
+      return false;
+    }
+
+    final current = {...remote.filtered, ...updates};
+    return setAsLocal(build(current));
   }
 
   Future<bool> clear() async {
     try {
-      return delegate.clear();
-    } catch (error) {
+      final ok = await delegate.clear();
+      if (ok) _emit(AuthResponse.unauthenticated());
+      return ok;
+    } catch (_) {
       return false;
     }
   }
@@ -107,13 +141,19 @@ class _Backup<T extends Auth> {
     String id,
     Map<String, dynamic> data,
     bool hasAnonymous,
-  ) {
-    return delegate.onUpdateUser(id, data, hasAnonymous);
-  }
+  ) =>
+      delegate.onUpdateUser(id, data, hasAnonymous);
 
-  Future<void> onDeleteUser(String id) {
-    return delegate.onDeleteUser(id);
-  }
+  Future<void> onDeleteUser(String id) => delegate.onDeleteUser(id);
 
-  T build(Map source) => delegate.build(source);
+  T build(Map<dynamic, dynamic> source) => delegate.build(source);
+
+  static bool _isPrimitive(Object? value) {
+    return value == null ||
+        value is num ||
+        value is bool ||
+        value is String ||
+        value is List ||
+        value is Map;
+  }
 }

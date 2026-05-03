@@ -1,33 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../core/auth.dart';
-import '../core/authenticator.dart';
 import '../core/authorizer.dart';
-import '../core/helper.dart';
-
-enum AuthButtonType {
-  biometricEnable,
-  deleteAccount,
-  updateAccount,
-  signInAnonymously,
-  signInWithApple,
-  signInWithFacebook,
-  signInWithGameCenter,
-  signInWithGithub,
-  signInWithGoogle,
-  signInWithMicrosoft,
-  signInWithPlayGames,
-  signInWithSAML,
-  signInWithTwitter,
-  signInWithYahoo,
-  signInByBiometric,
-  signInByEmail,
-  signInByUsername,
-  signOut,
-  signUpByEmail,
-  signUpByUsername,
-  verifyPhoneByOtp,
-}
+import '../models/auth.dart';
+import '../models/auth_button_type.dart';
+import '../models/authenticator.dart';
+import '../utils/helper.dart';
 
 class AuthButton<T extends Auth> extends StatelessWidget {
   final Object? args;

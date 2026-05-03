@@ -1,3 +1,10 @@
+## 3.3.0
+
+* Major update
+    - Replace some files
+    - Improve auth system
+    - Replace 'AuthObserver' to 'AuthListener'
+
 ## 3.2.16
 
 * Initial user loading bug fixed

@@ -44,7 +44,7 @@ class _StartupPageState extends State<StartupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthObserver<UserModel>(
+    return AuthListener<UserModel>(
       onError: _showError,
       onMessage: _showMessage,
       onLoading: _showLoading,

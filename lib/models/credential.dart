@@ -2,10 +2,7 @@ class Metadata {
   final DateTime? creationTime;
   final DateTime? lastSignInTime;
 
-  const Metadata({
-    this.creationTime,
-    this.lastSignInTime,
-  });
+  const Metadata({this.creationTime, this.lastSignInTime});
 
   Map<String, dynamic> get source {
     return {

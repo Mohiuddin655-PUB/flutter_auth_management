@@ -19,10 +19,7 @@ enum Provider {
   final String id;
   final String name;
 
-  const Provider({
-    required this.id,
-    required this.name,
-  });
+  const Provider({required this.id, required this.name});
 
   factory Provider.from(Object? source) {
     final key = source?.toString().trim().toUpperCase();

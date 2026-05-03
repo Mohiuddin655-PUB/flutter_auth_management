@@ -13,6 +13,10 @@ class AuthResponse<T extends Auth> {
   final AuthStatus? _state;
   final AuthType? _type;
 
+  // ------------------------------------------------------------------
+  // Getters
+  // ------------------------------------------------------------------
+
   bool get isInitial => _initial ?? false;
 
   bool get isLoading => _loading ?? false;
@@ -21,11 +25,11 @@ class AuthResponse<T extends Auth> {
 
   bool get isMessage => message.isNotEmpty;
 
-  bool get isState => _state != null;
+  bool get hasStatus => _state != null;
 
-  String get error => _error ?? "";
+  String get error => _error ?? '';
 
-  String get message => _message ?? "";
+  String get message => _message ?? '';
 
   Provider get provider => _provider ?? Provider.email;
 
@@ -35,18 +39,19 @@ class AuthResponse<T extends Auth> {
 
   bool isCurrentProvider(Provider value) => provider == value;
 
-  const AuthResponse.initial({
-    dynamic msg,
-    Provider? provider,
-    AuthType? type,
-  }) : this._(initial: true, msg: msg, provider: provider, type: type);
+  // ------------------------------------------------------------------
+  // Named constructors
+  // ------------------------------------------------------------------
+
+  const AuthResponse.initial({String? msg, Provider? provider, AuthType? type})
+      : this._(initial: true, msg: msg, provider: provider, type: type);
 
   const AuthResponse.loading([Provider? provider, AuthType? type])
       : this._(loading: true, provider: provider, type: type);
 
   const AuthResponse.guest(
     T? data, {
-    dynamic msg,
+    String? msg,
     Provider? provider,
     AuthType? type,
   }) : this._(
@@ -59,7 +64,7 @@ class AuthResponse<T extends Auth> {
 
   const AuthResponse.authenticated(
     T? data, {
-    dynamic msg,
+    String? msg,
     Provider? provider,
     AuthType? type,
   }) : this._(
@@ -71,7 +76,7 @@ class AuthResponse<T extends Auth> {
         );
 
   const AuthResponse.unauthenticated({
-    dynamic msg,
+    String? msg,
     Provider? provider,
     AuthType? type,
   }) : this._(
@@ -82,7 +87,7 @@ class AuthResponse<T extends Auth> {
         );
 
   const AuthResponse.unauthorized({
-    dynamic msg,
+    String? msg,
     Provider? provider,
     AuthType? type,
   }) : this._(
@@ -92,56 +97,62 @@ class AuthResponse<T extends Auth> {
           type: type,
         );
 
-  const AuthResponse.message(
-    dynamic msg, {
-    Provider? provider,
-    AuthType? type,
-  }) : this._(msg: msg, provider: provider, type: type);
+  const AuthResponse.message(String msg, {Provider? provider, AuthType? type})
+      : this._(msg: msg, provider: provider, type: type);
 
-  const AuthResponse.failure(
-    dynamic msg, {
-    Provider? provider,
-    AuthType? type,
-  }) : this._(error: msg, provider: provider, type: type);
+  const AuthResponse.failure(String msg, {Provider? provider, AuthType? type})
+      : this._(error: msg, provider: provider, type: type);
 
-  const AuthResponse.rollback(
+  const AuthResponse.data(
     T? data, {
-    dynamic msg,
+    AuthStatus? state,
+    String? msg,
     Provider? provider,
     AuthType? type,
-  }) : this._(data: data, msg: msg, provider: provider, type: type);
+  }) : this._(
+          data: data,
+          state: state,
+          msg: msg,
+          provider: provider,
+          type: type,
+        );
+
+  // ------------------------------------------------------------------
+  // Private canonical constructor
+  // ------------------------------------------------------------------
 
   const AuthResponse._({
     this.data,
     bool? initial,
     bool? loading,
-    dynamic error,
-    dynamic msg,
+    String? error,
+    String? msg,
     Provider? provider,
     AuthStatus? state,
     AuthType? type,
   })  : _initial = initial,
         _loading = loading,
-        _error = error != null ? "$error" : null,
-        _message = msg != null ? "$msg" : null,
+        _error = error,
+        _message = msg,
         _provider = provider,
         _state = state,
         _type = type;
 
-  Map<String, dynamic> get _source {
-    return {
-      "isInitial": isInitial,
-      "isLoading": isLoading,
-      "isError": isError,
-      "error": _error,
-      "message": _message,
-      "data": data,
-      "provider": _provider,
-      "status": _state,
-      "type": _type,
-    };
-  }
+  // ------------------------------------------------------------------
+  // Debug
+  // ------------------------------------------------------------------
 
   @override
-  String toString() => "AuthResponse($_source)";
+  String toString() {
+    return 'AuthResponse('
+        'status: ${_state?.name}, '
+        'isInitial: $isInitial, '
+        'isLoading: $isLoading, '
+        'error: $_error, '
+        'message: $_message, '
+        'provider: ${_provider?.name}, '
+        'type: ${_type?.name}, '
+        'data: $data'
+        ')';
+  }
 }

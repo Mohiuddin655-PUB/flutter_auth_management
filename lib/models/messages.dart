@@ -2,22 +2,19 @@ class AuthMessage {
   final String? done;
   final String? failure;
 
-  const AuthMessage({
-    this.done,
-    this.failure,
-  });
+  const AuthMessage({this.done, this.failure});
 }
 
 class AuthMessages {
-  final String? authorization;
-  final String? biometric;
-  final String? email;
-  final String? error;
-  final String? otp;
-  final String? phoneNumber;
-  final String? password;
-  final String? username;
-  final String? token;
+  final String authorization;
+  final String biometric;
+  final String email;
+  final String error;
+  final String otp;
+  final String phoneNumber;
+  final String password;
+  final String username;
+  final String token;
 
   final AuthMessage delete;
 
@@ -28,7 +25,6 @@ class AuthMessages {
   final AuthMessage signInWithBiometric;
   final AuthMessage signInWithEmail;
   final AuthMessage signInWithFacebook;
-
   final AuthMessage signInWithGameCenter;
   final AuthMessage signInWithGithub;
   final AuthMessage signInWithGoogle;
@@ -63,19 +59,13 @@ class AuthMessages {
       done: "User logged in!",
       failure: "You're not logged in!",
     ),
-    this.loggedOut = const AuthMessage(
-      done: "User logged out!",
-    ),
-    this.signInWithApple = const AuthMessage(
-      done: "Apple sign in successful!",
-    ),
+    this.loggedOut = const AuthMessage(done: "User logged out!"),
+    this.signInWithApple = const AuthMessage(done: "Apple sign in successful!"),
     this.signInWithBiometric = const AuthMessage(
       done: "Biometric sign in successful!",
       failure: "Biometric not initialized yet!",
     ),
-    this.signInWithEmail = const AuthMessage(
-      done: "Sign in successful!",
-    ),
+    this.signInWithEmail = const AuthMessage(done: "Sign in successful!"),
     this.signInWithFacebook = const AuthMessage(
       done: "Facebook sign in successful!",
     ),
@@ -91,32 +81,18 @@ class AuthMessages {
     this.signInWithMicrosoft = const AuthMessage(
       done: "Microsoft sign in successful!",
     ),
-    this.signInWithPhone = const AuthMessage(
-      done: "Phone sign in successful!",
-    ),
+    this.signInWithPhone = const AuthMessage(done: "Phone sign in successful!"),
     this.signInWithPlayGames = const AuthMessage(
       done: "Play Games sign in successful!",
     ),
-    this.signInWithSAML = const AuthMessage(
-      done: "SAML sign in successful!",
-    ),
+    this.signInWithSAML = const AuthMessage(done: "SAML sign in successful!"),
     this.signInWithTwitter = const AuthMessage(
       done: "Twitter sign in successful!",
     ),
-    this.signInWithUsername = const AuthMessage(
-      done: "Sign in successful!",
-    ),
-    this.signInWithYahoo = const AuthMessage(
-      done: "Yahoo sign in successful!",
-    ),
-    this.signUpWithEmail = const AuthMessage(
-      done: "Sign up successful!",
-    ),
-    this.signUpWithUsername = const AuthMessage(
-      done: "Sign up successful!",
-    ),
-    this.signOut = const AuthMessage(
-      done: "Sign out successful!",
-    ),
+    this.signInWithUsername = const AuthMessage(done: "Sign in successful!"),
+    this.signInWithYahoo = const AuthMessage(done: "Yahoo sign in successful!"),
+    this.signUpWithEmail = const AuthMessage(done: "Sign up successful!"),
+    this.signUpWithUsername = const AuthMessage(done: "Sign up successful!"),
+    this.signOut = const AuthMessage(done: "Sign out successful!"),
   });
 }
