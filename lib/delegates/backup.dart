@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:core';
 
-import 'auth.dart';
+import '../models/auth.dart';
 
 typedef Backup = Map<String, dynamic>;
 typedef BackupReader = Future<String?> Function(String key);

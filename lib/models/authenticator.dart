@@ -97,10 +97,10 @@ class EmailAuthenticator extends Authenticator {
   }) : super.email();
 
   @override
-  String get email => super.email ?? '';
+  String get email => super.email ?? "example@gmail.com";
 
   @override
-  String get password => super.password ?? '';
+  String get password => super.password ?? "123456";
 }
 
 class GuestAuthenticator extends Authenticator {
@@ -159,14 +159,15 @@ class OtpAuthenticator extends Authenticator {
     super.extra,
   }) : super.otp(idToken: token, accessToken: smsCode);
 
-  String get smsCode => super.accessToken ?? '';
+  String get smsCode => super.accessToken ?? "";
 
-  String get verificationId => super.idToken ?? '';
+  String get verificationId => super.idToken ?? "";
 }
 
 class PhoneAuthenticator extends Authenticator {
   PhoneAuthenticator({
     required super.phone,
+    String? token,
     super.id,
     super.timeMills,
     super.email,
@@ -176,10 +177,7 @@ class PhoneAuthenticator extends Authenticator {
     super.extra,
   }) : super.phone();
 
-  OtpAuthenticator otp({
-    required String token,
-    required String smsCode,
-  }) {
+  OtpAuthenticator otp({required String token, required String smsCode}) {
     return OtpAuthenticator(
       token: token,
       smsCode: smsCode,
@@ -196,7 +194,7 @@ class PhoneAuthenticator extends Authenticator {
   }
 
   @override
-  String get phone => super.phone ?? '';
+  String get phone => super.phone ?? "";
 }
 
 class UsernameAuthenticator extends Authenticator {
@@ -213,8 +211,8 @@ class UsernameAuthenticator extends Authenticator {
   }) : super.username();
 
   @override
-  String get username => super.username ?? '';
+  String get username => super.username ?? "username";
 
   @override
-  String get password => super.password ?? '';
+  String get password => super.password ?? "123456";
 }

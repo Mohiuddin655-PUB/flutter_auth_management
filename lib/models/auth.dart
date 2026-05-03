@@ -1,27 +1,27 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_entity/flutter_entity.dart';
 
+import '../utils/platform.dart';
 import 'provider.dart';
 
-final String kPlatform = kIsWeb
-    ? 'web'
-    : Platform.isAndroid
-        ? 'android'
-        : Platform.isIOS
-            ? 'ios'
-            : Platform.isMacOS
-                ? 'macos'
-                : Platform.isFuchsia
-                    ? 'fuchsia'
-                    : Platform.isLinux
-                        ? 'linux'
-                        : Platform.isWindows
-                            ? 'windows'
-                            : 'unknown';
+/// Current platform identifier. Safe across web, mobile, and desktop.
+final String kPlatform = currentPlatform;
 
+/// ## Create an authorized key class for User:
+///
+/// ```dart
+/// class UserKeys extends AuthKeys {
+///   final address = "address";
+///   final contact = "contact";
+///
+///   const UserKeys._();
+///
+///   static UserKeys? _i;
+///
+///   static UserKeys get i => _i ??= const UserKeys._();
+/// }
+/// ```
 class AuthKeys extends EntityKey {
   static const key = "__uid__";
 
@@ -50,10 +50,7 @@ class AuthKeys extends EntityKey {
   final username = "username";
   final verified = "verified";
 
-  const AuthKeys({
-    super.id,
-    super.timeMills,
-  });
+  const AuthKeys({super.id, super.timeMills});
 
   static AuthKeys? _i;
 
@@ -65,6 +62,7 @@ class AuthKeys extends EntityKey {
       id,
       timeMills,
       accessToken,
+      age,
       anonymous,
       biometric,
       email,
@@ -76,16 +74,17 @@ class AuthKeys extends EntityKey {
       loggedOutTime,
       name,
       online,
+      lastOnline,
       password,
       path,
       phone,
       photo,
       platform,
       provider,
+      random,
       token,
       username,
       verified,
-      lastOnline,
     ];
   }
 }
@@ -128,27 +127,35 @@ class Auth<K extends AuthKeys> extends Entity<K> {
 
   bool get isVerified => verified ?? provider?.isVerified ?? false;
 
+  int? get lastOnlineMillis => _lastOnline;
+
   DateTime? get lastOnline {
-    if (_lastOnline == null || _lastOnline! <= 0) return null;
-    return DateTime.fromMillisecondsSinceEpoch(_lastOnline!);
+    final ms = _lastOnline;
+    if (ms == null || ms <= 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   Duration get lastOnlineInDuration {
-    final lastOnline = this.lastOnline;
-    if (lastOnline == null) return Duration.zero;
-    return DateTime.now().difference(lastOnline);
+    final value = lastOnline;
+    if (value == null) return Duration.zero;
+    return DateTime.now().difference(value);
   }
 
-  DateTime get lastLoggedInDate =>
-      DateTime.fromMillisecondsSinceEpoch(loggedInTime ?? 0);
+  DateTime get lastLoggedInDate {
+    return DateTime.fromMillisecondsSinceEpoch(loggedInTime ?? 0);
+  }
 
-  DateTime get lastLoggedOutDate =>
-      DateTime.fromMillisecondsSinceEpoch(loggedOutTime ?? 0);
+  DateTime get lastLoggedOutDate {
+    return DateTime.fromMillisecondsSinceEpoch(loggedOutTime ?? 0);
+  }
 
-  Duration get lastLoggedInTime => DateTime.now().difference(lastLoggedInDate);
+  Duration get lastLoggedInTime {
+    return DateTime.now().difference(lastLoggedInDate);
+  }
 
-  Duration get lastLoggedOutTime =>
-      DateTime.now().difference(lastLoggedOutDate);
+  Duration get lastLoggedOutTime {
+    return DateTime.now().difference(lastLoggedOutDate);
+  }
 
   Auth({
     super.id = "",
@@ -180,7 +187,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
   })  : platform = platform ?? kPlatform,
         _lastOnline = lastOnline;
 
-  Auth copy({
+  Auth<K> copy({
     String? id,
     int? timeMills,
     String? accessToken,
@@ -208,7 +215,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     String? username,
     bool? verified,
   }) {
-    return Auth(
+    return Auth<K>(
       id: id ?? idOrNull,
       timeMills: timeMills ?? timeMillsOrNull,
       accessToken: accessToken ?? this.accessToken,
@@ -238,7 +245,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     );
   }
 
-  Auth update({
+  Auth<K> update({
     Modifier<String>? id,
     Modifier<int>? timeMills,
     Modifier<String>? accessToken,
@@ -266,7 +273,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     Modifier<String>? username,
     Modifier<bool>? verified,
   }) {
-    return Auth(
+    return Auth<K>(
       id: modify(id, idOrNull),
       timeMills: modify(timeMills, timeMillsOrNull),
       accessToken: modify(accessToken, this.accessToken),
@@ -299,7 +306,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
   factory Auth.from(Object? source) {
     if (source is Auth<K>) return source;
     final key = AuthKeys.i;
-    return Auth(
+    return Auth<K>(
       id: source.entityValue(key.id),
       timeMills: source.entityValue(key.timeMills),
       accessToken: source.entityValue(key.accessToken),
@@ -307,9 +314,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       anonymous: source.entityValue(key.anonymous),
       biometric: source.entityValue(key.biometric),
       email: source.entityValue(key.email),
-      extra: source.entityValue(key.extra, (value) {
-        return value is Map<String, dynamic> ? value : {};
-      }),
+      extra: _readMap(source, key.extra),
       gender: source.entityValue(key.gender),
       idToken: source.entityValue(key.idToken),
       loggedIn: source.entityValue(key.loggedIn),
@@ -323,7 +328,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       phone: source.entityValue(key.phone),
       photo: source.entityValue(key.photo),
       platform: source.entityValue(key.platform),
-      provider: source.entityValue(key.provider),
+      provider: _readProvider(source, key.provider),
       random: source.entityValue(key.random),
       token: source.entityValue(key.token),
       username: source.entityValue(key.username),
@@ -331,12 +336,30 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     );
   }
 
+  static Map<String, dynamic>? _readMap(Object? source, String key) {
+    final raw = source.entityValue(key);
+    if (raw == null) return null;
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) {
+      return raw.map((k, v) => MapEntry(k.toString(), v));
+    }
+    return null;
+  }
+
+  static Provider? _readProvider(Object? source, String key) {
+    final raw = source.entityValue(key);
+    if (raw == null) return null;
+    if (raw is Provider) return raw;
+    if (raw is String) return Provider.from(raw);
+    return null;
+  }
+
   @override
   K makeKey() {
     try {
-      return const AuthKeys() as K;
+      return AuthKeys.i as K;
     } catch (_) {
-      return throw UnimplementedError(
+      throw UnimplementedError(
         "You must override makeKey() and return the current key from sub-entity class.",
       );
     }
@@ -357,7 +380,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       key.loggedIn: loggedIn,
       key.loggedInTime: loggedInTime,
       key.loggedOutTime: loggedOutTime,
-      key.lastOnline: lastOnline,
+      key.lastOnline: _lastOnline,
       key.name: name,
       key.online: online,
       key.password: password,
@@ -391,7 +414,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       loggedIn,
       loggedInTime,
       loggedOutTime,
-      lastOnline,
+      _lastOnline,
       name,
       online,
       password,

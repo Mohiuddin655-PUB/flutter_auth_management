@@ -49,89 +49,87 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: AuthObserver<UserModel>(
+        child: AuthListener<UserModel>(
           onError: _showSnackBar,
           onMessage: _showSnackBar,
           onLoading: _showLoading,
           onStatus: _status,
-          child: AuthConsumer<UserModel>(
-            builder: (context, value) {
-              return Container(
-                padding: const EdgeInsets.all(32),
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 150,
-                      height: 150,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.1),
-                      ),
-                      child: value?.photo == null
-                          ? null
-                          : Image.network(
-                              value?.photo ?? "",
-                              fit: BoxFit.cover,
-                            ),
+          builder: (context, value, child) {
+            return Container(
+              padding: const EdgeInsets.all(32),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 150,
+                    height: 150,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.1),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      value?.name ?? "",
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                    child: value?.photo == null
+                        ? null
+                        : Image.network(
+                            value?.photo ?? "",
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    value?.name ?? "",
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    value?.email ?? "",
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    "Account created at ".join(
+                      DateHelper.toRealtime(value?.timeMills ?? 0),
                     ),
-                    Text(
-                      value?.email ?? "",
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      "Account created at ".join(
-                        DateHelper.toRealtime(value?.timeMills ?? 0),
-                      ),
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.normal),
-                    ),
-                    const SizedBox(height: 12),
-                    Opacity(
-                      opacity: value?.biometric ?? false ? 1 : 0.5,
-                      child: SwitchListTile.adaptive(
-                        value: value?.biometric ?? false,
-                        onChanged: _biometricEnable,
-                        title: const Text("Biometric mode"),
-                        contentPadding: const EdgeInsets.only(
-                          left: 24,
-                          right: 16,
-                        ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.normal),
+                  ),
+                  const SizedBox(height: 12),
+                  Opacity(
+                    opacity: value?.biometric ?? false ? 1 : 0.5,
+                    child: SwitchListTile.adaptive(
+                      value: value?.biometric ?? false,
+                      onChanged: _biometricEnable,
+                      title: const Text("Biometric mode"),
+                      contentPadding: const EdgeInsets.only(
+                        left: 24,
+                        right: 16,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _updateUser,
-                        child: const Text("Update"),
-                      ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _updateUser,
+                      child: const Text("Update"),
                     ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _signOut,
-                        child: const Text("Logout"),
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _signOut,
+                      child: const Text("Logout"),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

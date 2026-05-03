@@ -1,6 +1,6 @@
 name: auth_management
 description: Collection of auth service with advanced controlling system.
-version: 3.2.16
+version: 3.3.0
 repository: https://github.com/P-YMR/flutter_auth_management.git
 
 environment:
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_entity: ^1.2.8
+  flutter_entity: ^1.3.3
 
 dev_dependencies:
   flutter_test:

@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_entity/entity.dart';
 
-import 'auth.dart';
-import 'auth_provider.dart';
-import 'auth_response.dart';
-import 'auth_status.dart';
-import 'authenticator.dart';
-import 'authorizer.dart';
-import 'credential.dart';
-import 'exception.dart';
-import 'provider.dart';
+import '../core/authorizer.dart';
+import '../exceptions/exception.dart';
+import '../models/auth.dart';
+import '../models/auth_response.dart';
+import '../models/auth_status.dart';
+import '../models/authenticator.dart';
+import '../models/credential.dart';
+import '../models/provider.dart';
+import '../widgets/provider.dart';
 
 extension AuthHelper on BuildContext {
   Authorizer<T> _i<T extends Auth>(
@@ -108,11 +108,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("deleteAccount").delete(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "deleteAccount",
+    ).delete(args: args, id: id, notifiable: notifiable);
   }
 
   void disposeAuthController<T extends Auth>() {
@@ -125,27 +123,21 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("emitAuthResponse").emit(
-      data,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "emitAuthResponse",
+    ).emit(data, args: args, id: id, notifiable: notifiable);
   }
 
   Future<void> initializeAuth<T extends Auth>({
     bool initialCheck = true,
     bool listening = false,
   }) {
-    return _i<T>("initializeAuth").initialize(
-      initialCheck: initialCheck,
-      listening: listening,
-    );
+    return _i<T>(
+      "initializeAuth",
+    ).initialize(initialCheck: initialCheck, listening: listening);
   }
 
-  Future<AuthResponse<T>> isSignIn<T extends Auth>({
-    Provider? provider,
-  }) {
+  Future<AuthResponse<T>> isSignIn<T extends Auth>({Provider? provider}) {
     return _i<T>("isSignIn").isSignIn(provider: provider);
   }
 
@@ -168,11 +160,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInByBiometric").signInByBiometric(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInByBiometric",
+    ).signInByBiometric(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInByEmail<T extends Auth>(
@@ -181,12 +171,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInByEmail").signInByEmail(
-      authenticator,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInByEmail",
+    ).signInByEmail(authenticator, args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInByPhone<T extends Auth>(
@@ -253,12 +240,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signUpByEmail").signUpByEmail(
-      authenticator,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signUpByEmail",
+    ).signUpByEmail(authenticator, args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signUpByUsername<T extends Auth>(
@@ -282,12 +266,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signOut").signOut(
-      provider: provider,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signOut",
+    ).signOut(provider: provider, args: args, id: id, notifiable: notifiable);
   }
 
   Future<T?> updateAccount<T extends Auth>(
@@ -295,11 +276,7 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("updateAccount").update(
-      data,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>("updateAccount").update(data, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse> verifyPhoneByOtp<T extends Auth>(
@@ -466,16 +443,5 @@ extension AuthHelper on BuildContext {
       id: id,
       notifiable: notifiable,
     );
-  }
-}
-
-extension AuthLoadingExtension<T extends Auth> on Future<AuthResponse<T>> {
-  Future<AuthResponse<T>> onAuthLoading(
-    void Function(bool loading) callback,
-  ) async {
-    callback(true);
-    final data = await this;
-    callback(false);
-    return data;
   }
 }
