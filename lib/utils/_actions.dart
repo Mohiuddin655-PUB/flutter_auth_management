@@ -9,7 +9,7 @@ import '../models/authenticator.dart'
         UsernameAuthenticator,
         OtpAuthenticator,
         OAuthAuthenticator;
-import '../utils/helper.dart' show AuthHelper;
+import 'helper.dart' show AuthHelper;
 
 /// Contract for every auth action.
 /// Each [AuthButtonType] maps to exactly one [AuthAction] subclass.

@@ -5,8 +5,8 @@ import '../core/authorizer.dart' show SignByBiometricCallback;
 import '../models/auth.dart' show Auth;
 import '../models/auth_button_type.dart' show AuthButtonType;
 import '../models/authenticator.dart' show Authenticator;
-import 'action_factory.dart' show AuthActionFactory;
-import 'actions.dart' show AuthAction;
+import '../utils/_action_factory.dart' show AuthActionFactory;
+import '../utils/_actions.dart' show AuthAction;
 
 /// Callback signature for the button builder.
 ///
