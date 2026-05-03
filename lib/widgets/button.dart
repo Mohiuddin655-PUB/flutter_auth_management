@@ -1,12 +1,43 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    show BuildContext, Widget, VoidCallback, StatefulWidget, State;
 
-import '../core/authorizer.dart';
-import '../models/auth.dart';
-import '../models/auth_button_type.dart';
-import '../models/authenticator.dart';
-import '../utils/helper.dart';
+import '../core/authorizer.dart' show SignByBiometricCallback;
+import '../models/auth.dart' show Auth;
+import '../models/auth_button_type.dart' show AuthButtonType;
+import '../models/authenticator.dart' show Authenticator;
+import 'action_factory.dart' show AuthActionFactory;
+import 'actions.dart' show AuthAction;
 
-class AuthButton<T extends Auth> extends StatelessWidget {
+/// Callback signature for the button builder.
+///
+/// [callback] triggers the auth action. It is `null` while an action is in
+/// progress, letting callers disable or style the button accordingly.
+typedef AuthButtonBuilder = Widget Function(
+  BuildContext context,
+  VoidCallback? callback,
+);
+
+/// A stateful widget that wires an [AuthButtonType] to a builder-pattern UI.
+///
+/// Responsibilities:
+/// - Resolves the correct [AuthAction] via [AuthActionFactory].
+/// - Manages loading state so callers can disable the button while busy.
+/// - Surfaces errors through the optional [onError] callback instead of
+///   swallowing or crashing.
+///
+/// Example:
+/// ```dart
+/// AuthButton<AppUser>(
+///   type: AuthButtonType.signInWithGoogle,
+///   storeToken: true,
+///   onError: (e) => showSnackBar(context, e.toString()),
+///   builder: (context, callback) => ElevatedButton(
+///     onPressed: callback,
+///     child: const Text('Sign in with Google'),
+///   ),
+/// )
+/// ```
+class AuthButton<T extends Auth> extends StatefulWidget {
   final Object? args;
   final String? id;
   final bool notifiable;
@@ -16,7 +47,14 @@ class AuthButton<T extends Auth> extends StatelessWidget {
   final Map<String, dynamic>? updates;
   final SignByBiometricCallback? onBiometric;
 
-  final Widget Function(BuildContext context, VoidCallback callback) builder;
+  /// Called with any error thrown during [AuthAction.execute].
+  /// If null, errors are rethrown.
+  final void Function(Object error)? onError;
+
+  /// Builder receives a nullable [VoidCallback]:
+  /// - non-null  → idle, safe to press
+  /// - null      → loading, should disable the button
+  final AuthButtonBuilder builder;
 
   const AuthButton({
     super.key,
@@ -29,226 +67,50 @@ class AuthButton<T extends Auth> extends StatelessWidget {
     this.storeToken = false,
     this.updates,
     this.onBiometric,
+    this.onError,
   });
 
-  void _biometricEnable(BuildContext context) async {
-    final biometricSupport = await context.canUseBiometric();
-    if (!biometricSupport.isSuccessful) {
-      throw Exception('Biometric authentication is not available.');
-    }
-    if (!context.mounted) return;
-    bool? biometric;
-    if (onBiometric == null) return;
-    biometric = await onBiometric!(biometricSupport.data);
-    if (!context.mounted) return;
-    context.biometricEnable<T>(biometric ?? false);
-  }
+  @override
+  State<AuthButton<T>> createState() => _AuthButtonState<T>();
+}
 
-  void _callback(BuildContext context) {
-    final authenticator = this.authenticator;
-    switch (type) {
-      case AuthButtonType.biometricEnable:
-        _biometricEnable(context);
-        break;
-      case AuthButtonType.deleteAccount:
-        context.deleteAccount<T>(args: args, notifiable: notifiable, id: id);
-        break;
-      case AuthButtonType.updateAccount:
-        if (updates == null) {
-          throw Exception('Updates cannot be null for updateAccount.');
-        }
-        context.updateAccount<T>(updates!, notifiable: notifiable, id: id);
-        break;
-      case AuthButtonType.signInAnonymously:
-        context.signInAnonymously<T>(
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is GuestAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithApple:
-        context.signInWithApple<T>(
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          storeToken: storeToken,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithFacebook:
-        context.signInWithFacebook<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithGameCenter:
-        context.signInWithGameCenter<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithGithub:
-        context.signInWithGithub<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithGoogle:
-        context.signInWithGoogle<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithMicrosoft:
-        context.signInWithMicrosoft<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithPlayGames:
-        context.signInWithPlayGames<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithSAML:
-        context.signInWithSAML<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithTwitter:
-        context.signInWithTwitter<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInWithYahoo:
-        context.signInWithYahoo<T>(
-          storeToken: storeToken,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-          authenticator:
-              authenticator is OAuthAuthenticator ? authenticator : null,
-        );
-        break;
-      case AuthButtonType.signInByBiometric:
-        context.signInByBiometric<T>(
-          id: id,
-          args: args,
-          notifiable: notifiable,
-        );
-        break;
-      case AuthButtonType.signInByEmail:
-        if (authenticator is! EmailAuthenticator) {
-          throw ArgumentError(
-            'signInByEmail requires an EmailAuthenticator, '
-            'but got ${authenticator.runtimeType}.',
-          );
-        }
-        context.signInByEmail<T>(
-          authenticator,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-        );
-        break;
-      case AuthButtonType.signInByUsername:
-        if (authenticator is! UsernameAuthenticator) {
-          throw ArgumentError(
-            'signInByUsername requires a UsernameAuthenticator, '
-            'but got ${authenticator.runtimeType}.',
-          );
-        }
-        context.signInByUsername<T>(
-          authenticator,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-        );
-        break;
-      case AuthButtonType.signOut:
-        context.signOut<T>();
-        break;
-      case AuthButtonType.signUpByEmail:
-        if (authenticator is! EmailAuthenticator) {
-          throw ArgumentError(
-            'signUpByEmail requires an EmailAuthenticator, '
-            'but got ${authenticator.runtimeType}.',
-          );
-        }
-        context.signUpByEmail<T>(
-          authenticator,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-        );
-        break;
-      case AuthButtonType.signUpByUsername:
-        if (authenticator is! UsernameAuthenticator) {
-          throw ArgumentError(
-            'signUpByUsername requires a UsernameAuthenticator, '
-            'but got ${authenticator.runtimeType}.',
-          );
-        }
-        context.signUpByUsername<T>(
-          authenticator,
-          onBiometric: onBiometric,
-          id: id,
-          args: args,
-          notifiable: notifiable,
-        );
-        break;
-      case AuthButtonType.verifyPhoneByOtp:
-        if (authenticator is! OtpAuthenticator) {
-          throw ArgumentError(
-            'verifyPhoneByOtp requires an OtpAuthenticator, '
-            'but got ${authenticator.runtimeType}.',
-          );
-        }
-        context.verifyPhoneByOtp<T>(authenticator);
-        break;
+class _AuthButtonState<T extends Auth> extends State<AuthButton<T>> {
+  bool _loading = false;
+
+  Future<void> _handleTap() async {
+    if (_loading) return;
+
+    setState(() => _loading = true);
+
+    try {
+      final action = AuthActionFactory.build<T>(
+        type: widget.type,
+        authenticator: widget.authenticator,
+        updates: widget.updates,
+        onBiometric: widget.onBiometric,
+        storeToken: widget.storeToken,
+        id: widget.id,
+        args: widget.args,
+        notifiable: widget.notifiable,
+      );
+      await action.execute(context);
+    } catch (error) {
+      final handler = widget.onError;
+      if (handler != null) {
+        handler(error);
+      } else {
+        rethrow;
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return builder(context, () => _callback(context));
+    return widget.builder(
+      context,
+      _loading ? null : _handleTap,
+    );
   }
 }
