@@ -32,7 +32,7 @@ typedef UndoAccountCallback = Future<bool> Function(Auth authorizer);
 typedef OnAuthChanges<T extends Auth> = void Function(
     BuildContext context, AuthChanges<T> changes);
 
-typedef _OAuthSignIn = Future<Response<dynamic>> Function();
+typedef _OAuthSignIn = Future<Response<Credential>> Function();
 
 class Authorizer<T extends Auth> {
   final AuthMessages msg;
@@ -209,7 +209,7 @@ class Authorizer<T extends Auth> {
       final value = await _update(
         id: auth.id,
         updateMode: true,
-        updates: {AuthKeys.i.biometric: enabled},
+        data: {AuthKeys.i.biometric: enabled},
       );
       return Response(status: Status.ok, data: value);
     } catch (error) {
@@ -237,8 +237,7 @@ class Authorizer<T extends Auth> {
     bool initialCheck = true,
     bool listening = false,
   }) async {
-    if (_disposed) return;
-    if (_initializing) return;
+    if (_disposed || _initializing) return;
     _initializing = true;
 
     try {
@@ -527,7 +526,8 @@ class Authorizer<T extends Auth> {
       }
 
       final result = response.data;
-      if (result == null) {
+      final uid = result?.uid;
+      if (result == null || uid == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
           provider: Provider.guest,
@@ -538,26 +538,14 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.guest()).update(
-        id: Modifier(result.uid),
-        anonymous: Modifier(result.isAnonymous),
-        email: Modifier(result.email),
-        name: Modifier(result.displayName),
-        phone: Modifier(result.phoneNumber),
-        photo: Modifier(result.photoURL),
-        provider: Modifier(Provider.guest),
-        loggedIn: Modifier(true),
-        loggedInTime: Modifier(EntityHelper.generateTimeMills),
-      );
-
       final value = await _update(
-        id: user.id,
-        initials: user.filtered,
-        updates: _buildUpdates(
-          provider: Provider.guest,
-          authenticator: authenticator,
-          result: result,
-        ),
+        id: uid,
+        data: {
+          AuthKeys.i.id: uid,
+          AuthKeys.i.loggedIn: true,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.provider: Provider.guest.id,
+        },
       );
 
       return emit(
@@ -626,7 +614,6 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final token = user.accessToken;
       final provider = Provider.from(user.provider);
       var current = Response<Credential>();
 
@@ -643,15 +630,6 @@ class Authorizer<T extends Auth> {
             user.password ?? '',
           );
         }
-      } else if ((token ?? user.idToken ?? '').isNotEmpty) {
-        current = await delegate.signInWithCredential(
-          Credential(
-            uid: user.id,
-            providerId: provider.id,
-            idToken: user.idToken,
-            accessToken: token,
-          ),
-        );
       }
 
       if (!current.isSuccessful) {
@@ -667,7 +645,7 @@ class Authorizer<T extends Auth> {
 
       final value = await _update(
         id: user.id,
-        updates: {
+        data: {
           AuthKeys.i.loggedIn: true,
           AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
         },
@@ -707,7 +685,7 @@ class Authorizer<T extends Auth> {
     String? id,
     bool notifiable = true,
   }) {
-    return _signInWithCredentials(
+    return _signInWithEmailOrUsername(
       provider: Provider.email,
       type: AuthType.login,
       doneMsg: msg.signInWithEmail.done,
@@ -731,7 +709,7 @@ class Authorizer<T extends Auth> {
     String? id,
     bool notifiable = true,
   }) {
-    return _signInWithCredentials(
+    return _signInWithEmailOrUsername(
       provider: Provider.username,
       type: AuthType.login,
       doneMsg: msg.signInWithUsername.done,
@@ -755,7 +733,7 @@ class Authorizer<T extends Auth> {
     String? id,
     bool notifiable = true,
   }) {
-    return _signInWithCredentials(
+    return _signInWithEmailOrUsername(
       provider: Provider.email,
       type: AuthType.register,
       doneMsg: msg.signUpWithEmail.done,
@@ -780,7 +758,7 @@ class Authorizer<T extends Auth> {
     String? id,
     bool notifiable = true,
   }) {
-    return _signInWithCredentials(
+    return _signInWithEmailOrUsername(
       provider: Provider.username,
       type: AuthType.register,
       doneMsg: msg.signUpWithUsername.done,
@@ -798,7 +776,7 @@ class Authorizer<T extends Auth> {
     );
   }
 
-  Future<AuthResponse<T>> _signInWithCredentials({
+  Future<AuthResponse<T>> _signInWithEmailOrUsername({
     required Provider provider,
     required AuthType type,
     required String? doneMsg,
@@ -833,7 +811,8 @@ class Authorizer<T extends Auth> {
       }
 
       final result = response.data;
-      if (result == null) {
+      final uid = result?.uid ?? '';
+      if (result == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
           provider: provider,
@@ -844,30 +823,23 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final creationTime = EntityHelper.generateTimeMills;
-      final user = authenticator.update(
-        id: Modifier(result.uid),
-        anonymous: Modifier(result.isAnonymous),
-        email: Modifier(result.email),
-        name: Modifier(result.displayName),
-        phone: Modifier(result.phoneNumber),
-        photo: Modifier(result.photoURL),
-        provider: Modifier(provider),
-        loggedIn: Modifier(true),
-        loggedInTime: Modifier(creationTime),
-        timeMills: isSignUp ? Modifier(creationTime) : null,
-      );
-
       final value = await _update(
-        id: user.id,
+        id: uid,
         hasAnonymous: hasAnonymous,
         onBiometric: onBiometric,
-        initials: user.filtered,
-        updates: _buildUpdates(
-          provider: provider,
-          authenticator: authenticator,
-          result: result,
-        ),
+        updateMode: !isSignUp,
+        data: {
+          AuthKeys.i.id: uid,
+          AuthKeys.i.loggedIn: true,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.provider: provider.id,
+          if (authenticator is EmailAuthenticator) ...{
+            AuthKeys.i.email: authenticator.email,
+          } else if (authenticator is UsernameAuthenticator) ...{
+            AuthKeys.i.username: authenticator.username,
+          },
+          AuthKeys.i.password: _passwordOf(authenticator),
+        },
       );
 
       return emit(
@@ -913,7 +885,7 @@ class Authorizer<T extends Auth> {
     try {
       delegate.verifyPhoneNumber(
         phoneNumber: authenticator.phone,
-        forceResendingToken: int.tryParse(authenticator.accessToken ?? ''),
+        forceResendingToken: int.tryParse(authenticator.resendToken ?? ''),
         multiFactorInfo: multiFactorInfo,
         multiFactorSession: multiFactorSession,
         timeout: timeout,
@@ -935,7 +907,11 @@ class Authorizer<T extends Auth> {
             final code = credential.smsCode;
             if (verId != null && code != null) {
               await signInByOtp(
-                authenticator.otp(token: verId, smsCode: code),
+                OtpAuthenticator.phone(
+                  token: verId,
+                  code: code,
+                  phone: authenticator.phone,
+                ),
                 args: args,
                 id: id,
                 notifiable: notifiable,
@@ -1031,8 +1007,8 @@ class Authorizer<T extends Auth> {
       final credential = delegate.credential(
         Provider.phone,
         Credential(
-          smsCode: authenticator.smsCode,
-          verificationId: authenticator.verificationId,
+          smsCode: authenticator.code,
+          verificationId: authenticator.token,
         ),
       );
 
@@ -1049,7 +1025,8 @@ class Authorizer<T extends Auth> {
       }
 
       final result = response.data;
-      if (result == null) {
+      final uid = result?.uid ?? '';
+      if (result == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
           provider: Provider.phone,
@@ -1060,31 +1037,17 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = authenticator.update(
-        id: Modifier(result.uid),
-        accessToken:
-            storeToken ? Modifier(result.accessToken) : Modifier.nullable(),
-        idToken: storeToken ? Modifier(result.idToken) : Modifier.nullable(),
-        anonymous: Modifier(result.isAnonymous),
-        email: Modifier(result.email),
-        name: Modifier(result.displayName),
-        phone: Modifier(result.phoneNumber),
-        photo: Modifier(result.photoURL),
-        provider: Modifier(Provider.phone),
-        loggedIn: Modifier(true),
-        loggedInTime: Modifier(EntityHelper.generateTimeMills),
-        verified: Modifier(true),
-      );
-
       final value = await _update(
-        id: user.id,
+        id: uid,
         hasAnonymous: hasAnonymous,
-        initials: user.filtered,
-        updates: _buildUpdates(
-          provider: Provider.phone,
-          authenticator: authenticator,
-          result: result,
-        ),
+        data: {
+          AuthKeys.i.id: uid,
+          AuthKeys.i.loggedIn: true,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.provider: Provider.phone.id,
+          AuthKeys.i.phone: authenticator.value,
+          AuthKeys.i.verified: true,
+        },
       );
 
       return emit(
@@ -1117,8 +1080,8 @@ class Authorizer<T extends Auth> {
       final credential = delegate.credential(
         Provider.phone,
         Credential(
-          smsCode: authenticator.smsCode,
-          verificationId: authenticator.verificationId,
+          smsCode: authenticator.code,
+          verificationId: authenticator.token,
         ),
       );
 
@@ -1132,7 +1095,8 @@ class Authorizer<T extends Auth> {
       }
 
       final result = response.data;
-      if (result == null) {
+      final uid = result?.uid ?? '';
+      if (result == null || uid.isEmpty) {
         return AuthResponse.failure(
           msg.authorization,
           provider: Provider.phone,
@@ -1140,23 +1104,17 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final updated = authenticator.update(
-        id: Modifier(result.uid),
-        accessToken: Modifier(result.accessToken),
-        idToken: Modifier(result.idToken),
-        anonymous: Modifier(result.isAnonymous),
-        email: Modifier(result.email),
-        name: Modifier(result.displayName),
-        phone: Modifier(result.phoneNumber),
-        photo: Modifier(result.photoURL),
-        provider: Modifier(Provider.phone),
-        loggedIn: Modifier(true),
-        loggedInTime: Modifier(EntityHelper.generateTimeMills),
-        verified: Modifier(true),
-      );
+      final source = {
+        AuthKeys.i.id: uid,
+        AuthKeys.i.loggedIn: true,
+        AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+        AuthKeys.i.provider: Provider.phone.id,
+        AuthKeys.i.phone: result.phoneNumber,
+        AuthKeys.i.verified: true,
+      };
 
       return AuthResponse<T>.authenticated(
-        updated is T ? updated : null,
+        _backup.build(source),
         msg: msg.signInWithPhone.done,
         provider: Provider.phone,
         type: AuthType.phone,
@@ -1175,8 +1133,6 @@ class Authorizer<T extends Auth> {
   // --------------------------------------------------------------------------
 
   Future<AuthResponse<T>> signInWithApple({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1186,8 +1142,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithApple.done,
       failureMsg: msg.signInWithApple.failure,
       signIn: () => delegate.signInWithApple(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1195,8 +1149,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithFacebook({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1206,8 +1158,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithFacebook.done,
       failureMsg: msg.signInWithFacebook.failure,
       signIn: () => delegate.signInWithFacebook(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1215,8 +1165,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithGameCenter({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1226,8 +1174,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithGameCenter.done,
       failureMsg: msg.signInWithGameCenter.failure,
       signIn: () => delegate.signInWithGameCenter(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1235,8 +1181,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithGithub({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1246,8 +1190,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithGithub.done,
       failureMsg: msg.signInWithGithub.failure,
       signIn: () => delegate.signInWithGithub(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1255,8 +1197,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithGoogle({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1266,8 +1206,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithGoogle.done,
       failureMsg: msg.signInWithGoogle.failure,
       signIn: () => delegate.signInWithGoogle(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1275,8 +1213,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithMicrosoft({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1286,8 +1222,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithMicrosoft.done,
       failureMsg: msg.signInWithMicrosoft.failure,
       signIn: () => delegate.signInWithMicrosoft(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1295,8 +1229,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithPlayGames({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1306,8 +1238,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithPlayGames.done,
       failureMsg: msg.signInWithPlayGames.failure,
       signIn: () => delegate.signInWithPlayGames(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1315,8 +1245,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithSAML({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1326,8 +1254,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithSAML.done,
       failureMsg: msg.signInWithSAML.failure,
       signIn: () => delegate.signInWithSAML(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1335,8 +1261,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithTwitter({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1346,8 +1270,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithTwitter.done,
       failureMsg: msg.signInWithTwitter.failure,
       signIn: () => delegate.signInWithTwitter(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1355,8 +1277,6 @@ class Authorizer<T extends Auth> {
   }
 
   Future<AuthResponse<T>> signInWithYahoo({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1366,8 +1286,6 @@ class Authorizer<T extends Auth> {
       doneMsg: msg.signInWithYahoo.done,
       failureMsg: msg.signInWithYahoo.failure,
       signIn: () => delegate.signInWithYahoo(),
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -1379,8 +1297,6 @@ class Authorizer<T extends Auth> {
     required String? doneMsg,
     required String? failureMsg,
     required _OAuthSignIn signIn,
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -1420,7 +1336,8 @@ class Authorizer<T extends Auth> {
       }
 
       final result = current.data;
-      if (result == null) {
+      final uid = result?.uid ?? '';
+      if (result == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
           provider: provider,
@@ -1431,32 +1348,23 @@ class Authorizer<T extends Auth> {
         );
       }
 
-      final user = (authenticator ?? Authenticator.oauth()).update(
-        id: Modifier(result.uid),
-        accessToken:
-            storeToken ? Modifier(raw.accessToken) : Modifier.nullable(),
-        idToken: storeToken ? Modifier(raw.idToken) : Modifier.nullable(),
-        anonymous: Modifier(raw.isAnonymous ?? result.isAnonymous),
-        email: Modifier(raw.email ?? result.email),
-        name: Modifier(raw.displayName ?? result.displayName),
-        phone: Modifier(raw.phoneNumber ?? result.phoneNumber),
-        photo: Modifier(raw.photoURL ?? result.photoURL),
-        provider: Modifier(provider),
-        loggedIn: Modifier(true),
-        loggedInTime: Modifier(EntityHelper.generateTimeMills),
-        verified: Modifier(true),
-      );
+      final email = result.email ?? '';
+      final name = result.displayName ?? '';
+      final photo = result.photoURL ?? '';
 
       final value = await _update(
-        id: user.id,
+        id: uid,
         hasAnonymous: hasAnonymous,
-        initials: user.filtered,
-        updates: _buildUpdates(
-          provider: provider,
-          authenticator: authenticator,
-          result: result,
-          raw: raw,
-        ),
+        data: {
+          AuthKeys.i.id: uid,
+          AuthKeys.i.loggedIn: true,
+          AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
+          AuthKeys.i.provider: provider.id,
+          AuthKeys.i.verified: true,
+          if (email.isNotEmpty) AuthKeys.i.email: email,
+          if (name.isNotEmpty) AuthKeys.i.name: name,
+          if (photo.isNotEmpty) AuthKeys.i.photo: photo,
+        },
       );
 
       return emit(
@@ -1557,7 +1465,6 @@ class Authorizer<T extends Auth> {
       _backupEmitEnabled = notifiable;
       final ok = await _backup.update(data);
       _backupEmitEnabled = prevBackupEmit;
-
       if (!ok) return null;
       return _userNotifier.value;
     } catch (error) {
@@ -1568,39 +1475,31 @@ class Authorizer<T extends Auth> {
 
   Future<T?> _update({
     required String id,
-    Map<String, dynamic> initials = const {},
-    Map<String, dynamic> updates = const {},
+    Map<String, dynamic> data = const {},
     bool updateMode = false,
     bool hasAnonymous = false,
     SignByBiometricCallback<T>? onBiometric,
   }) async {
     try {
+      var finalData = data;
       if (onBiometric != null) {
         final biometric = await onBiometric(
-          _backup.build({...user?.source ?? {}, ...initials, ...updates}),
+          _backup.build({...?user?.source, ...data}),
         );
-        initials = {...initials, AuthKeys.i.biometric: biometric};
-        updates = {...updates, AuthKeys.i.biometric: biometric};
+        finalData = {...data, AuthKeys.i.biometric: biometric};
       }
 
       final saved = await _backup.save(
         id: id,
-        initials: initials.map((k, v) => MapEntry(k, _backup.encryptor(k, v))),
+        data: finalData.map((k, v) => MapEntry(k, _backup.encryptor(k, v))),
         cacheUpdateMode: updateMode,
-        updates: updates.map((k, v) => MapEntry(k, _backup.encryptor(k, v))),
         hasAnonymous: hasAnonymous,
       );
 
       if (!saved) return user;
 
-      var updated = await _auth;
-
-      updated ??= _backup.build(<String, dynamic>{
-        ...?user?.source,
-        ...initials,
-        ...updates,
-      });
-
+      final updated =
+          await _auth ?? _backup.build({...?user?.source, ...finalData});
       if (updated != _userNotifier.value) _emitUser(updated);
       return updated;
     } catch (error) {
@@ -1613,27 +1512,12 @@ class Authorizer<T extends Auth> {
   // Helpers
   // --------------------------------------------------------------------------
 
-  Map<String, dynamic> _buildUpdates({
-    required Provider provider,
-    Authenticator? authenticator,
-    required dynamic result,
-    dynamic raw,
-  }) {
-    return {
-      if (authenticator?.extra != null) ...authenticator!.extra!,
-      AuthKeys.i.loggedIn: true,
-      AuthKeys.i.loggedInTime: EntityHelper.generateTimeMills,
-      AuthKeys.i.anonymous: raw?.isAnonymous ?? result.isAnonymous,
-      AuthKeys.i.email: raw?.email ?? result.email,
-      AuthKeys.i.name: raw?.displayName ?? result.displayName,
-      AuthKeys.i.password: authenticator?.password,
-      AuthKeys.i.phone: raw?.phoneNumber ?? result.phoneNumber,
-      AuthKeys.i.photo: raw?.photoURL ?? result.photoURL,
-      AuthKeys.i.provider: provider.id,
-      AuthKeys.i.username: authenticator?.username,
-      AuthKeys.i.verified: raw?.emailVerified ?? result.emailVerified,
-    };
-  }
+  static String? _passwordOf(Authenticator authenticator) =>
+      switch (authenticator) {
+        EmailAuthenticator(:final password) => password,
+        UsernameAuthenticator(:final password) => password,
+        _ => null,
+      };
 
   Future<AuthResponse<T>> _failure(
     Object? msgOrError, {

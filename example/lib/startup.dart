@@ -79,9 +79,7 @@ class _StartupPageState extends State<StartupPage> {
               ElevatedButton(
                 onPressed: () {
                   context.signInAnonymously<UserModel>(
-                    authenticator: GuestAuthenticator(
-                      name: "Omie talukdar",
-                    ),
+                    authenticator: GuestAuthenticator(),
                   );
                 },
                 child: const Text("Guest"),

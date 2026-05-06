@@ -83,14 +83,13 @@ class _Backup<T extends Auth> {
   Future<bool> save({
     required String id,
     required bool hasAnonymous,
-    Map<String, dynamic> initials = const {},
-    Map<String, dynamic> updates = const {},
+    Map<String, dynamic> data = const {},
     bool cacheUpdateMode = false,
   }) async {
     if (id.isEmpty) return false;
 
     if (cacheUpdateMode) {
-      final ok = await delegate.update(updates);
+      final ok = await delegate.update(data);
       if (ok) {
         final refreshed = await cache;
         if (refreshed != null) _emit(AuthResponse.data(refreshed));
@@ -101,8 +100,8 @@ class _Backup<T extends Auth> {
     final remote = await onFetchUser(id);
 
     if (remote == null || !remote.isAuthenticated) {
-      if (initials.isEmpty) return false;
-      final user = build(initials);
+      if (data.isEmpty) return false;
+      final user = build(data);
       try {
         await onCreateUser(user);
       } catch (_) {
@@ -112,13 +111,12 @@ class _Backup<T extends Auth> {
     }
 
     try {
-      await onUpdateUser(id, updates, hasAnonymous);
+      await onUpdateUser(id, data, hasAnonymous);
     } catch (_) {
       return false;
     }
 
-    final current = {...remote.filtered, ...updates};
-    return setAsLocal(build(current));
+    return setAsLocal(build({...remote.filtered, ...data}));
   }
 
   Future<bool> clear() async {

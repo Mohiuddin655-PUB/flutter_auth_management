@@ -26,7 +26,6 @@ class AuthKeys extends EntityKey {
   static const key = "__uid__";
 
   final accessToken = "access_token";
-  final anonymous = "anonymous";
   final biometric = "biometric";
   final email = "email";
   final extra = "extra";
@@ -56,7 +55,6 @@ class AuthKeys extends EntityKey {
       id,
       timeMills,
       accessToken,
-      anonymous,
       biometric,
       email,
       extra,
@@ -79,7 +77,6 @@ class AuthKeys extends EntityKey {
 
 class Auth<K extends AuthKeys> extends Entity<K> {
   final String? accessToken;
-  final bool? anonymous;
   final bool? biometric;
   final String? email;
   final Map<String, dynamic>? extra;
@@ -96,8 +93,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
   final String? token;
   final String? username;
   final bool? verified;
-
-  bool get isAnonymous => anonymous ?? false;
 
   bool get isAuthenticated => true;
 
@@ -127,7 +122,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     super.id = "",
     super.timeMills,
     this.accessToken,
-    this.anonymous,
     this.biometric,
     this.email,
     this.extra,
@@ -150,7 +144,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     String? id,
     int? timeMills,
     String? accessToken,
-    bool? anonymous,
     bool? biometric,
     String? email,
     Map<String, dynamic>? extra,
@@ -172,7 +165,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       id: id ?? idOrNull,
       timeMills: timeMills ?? timeMillsOrNull,
       accessToken: accessToken ?? this.accessToken,
-      anonymous: anonymous ?? this.anonymous,
       biometric: biometric ?? this.biometric,
       email: email ?? this.email,
       extra: extra ?? this.extra,
@@ -192,52 +184,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     );
   }
 
-  Auth<K> update({
-    Modifier<String>? id,
-    Modifier<int>? timeMills,
-    Modifier<String>? accessToken,
-    Modifier<bool>? anonymous,
-    Modifier<bool>? biometric,
-    Modifier<String>? email,
-    Modifier<Map<String, dynamic>>? extra,
-    Modifier<String>? idToken,
-    Modifier<bool>? loggedIn,
-    Modifier<int>? loggedInTime,
-    Modifier<int>? loggedOutTime,
-    Modifier<String>? name,
-    Modifier<String>? password,
-    Modifier<String>? phone,
-    Modifier<String>? photo,
-    Modifier<String>? platform,
-    Modifier<Provider>? provider,
-    Modifier<String>? token,
-    Modifier<String>? username,
-    Modifier<bool>? verified,
-  }) {
-    return Auth<K>(
-      id: modify(id, idOrNull),
-      timeMills: modify(timeMills, timeMillsOrNull),
-      accessToken: modify(accessToken, this.accessToken),
-      anonymous: modify(anonymous, this.anonymous),
-      biometric: modify(biometric, this.biometric),
-      email: modify(email, this.email),
-      extra: modify(extra, this.extra),
-      idToken: modify(idToken, this.idToken),
-      loggedIn: modify(loggedIn, this.loggedIn),
-      loggedInTime: modify(loggedInTime, this.loggedInTime),
-      loggedOutTime: modify(loggedOutTime, this.loggedOutTime),
-      name: modify(name, this.name),
-      password: modify(password, this.password),
-      phone: modify(phone, this.phone),
-      photo: modify(photo, this.photo),
-      platform: modify(platform, this.platform),
-      provider: modify(provider, this.provider),
-      token: modify(token, this.token),
-      username: modify(username, this.username),
-      verified: modify(verified, this.verified),
-    );
-  }
-
   factory Auth.from(Object? source) {
     if (source is Auth<K>) return source;
     final key = AuthKeys.i;
@@ -245,7 +191,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
       id: source.entityValue(key.id),
       timeMills: source.entityValue(key.timeMills),
       accessToken: source.entityValue(key.accessToken),
-      anonymous: source.entityValue(key.anonymous),
       biometric: source.entityValue(key.biometric),
       email: source.entityValue(key.email),
       extra: _readMap(source, key.extra),
@@ -299,7 +244,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     return {
       ...super.source,
       key.accessToken: accessToken,
-      key.anonymous: anonymous,
       key.biometric: biometric,
       key.email: email,
       key.extra: extra,
@@ -327,7 +271,6 @@ class Auth<K extends AuthKeys> extends Entity<K> {
     return [
       ...super.props,
       accessToken,
-      anonymous,
       biometric,
       email,
       extra,

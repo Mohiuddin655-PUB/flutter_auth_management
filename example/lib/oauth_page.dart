@@ -1,4 +1,4 @@
-import 'package:auth_management/widgets.dart';
+import 'package:auth_management/core.dart';
 import 'package:flutter/material.dart';
 
 import 'user_model.dart';
@@ -25,54 +25,29 @@ class OAuthPage extends StatelessWidget {
           vertical: 50,
         ),
         children: [
-          AuthButton<UserModel>(
-            type: AuthButtonType.signInWithApple,
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: callback,
-                child: const Text("Continue with Apple"),
-              );
-            },
+          ElevatedButton(
+            onPressed: () => context.signInWithApple<UserModel>(),
+            child: const Text("Continue with Apple"),
           ),
           const SizedBox(height: 12),
-          AuthButton<UserModel>(
-            type: AuthButtonType.biometricEnable,
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: callback,
-                child: const Text("Continue with Biometric"),
-              );
-            },
+          ElevatedButton(
+            onPressed: () => context.signInByBiometric<UserModel>(),
+            child: const Text("Continue with Biometric"),
           ),
           const SizedBox(height: 12),
-          AuthButton<UserModel>(
-            type: AuthButtonType.signInWithFacebook,
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: callback,
-                child: const Text("Continue with Facebook"),
-              );
-            },
+          ElevatedButton(
+            onPressed: () => context.signInWithFacebook<UserModel>(),
+            child: const Text("Continue with Facebook"),
           ),
           const SizedBox(height: 12),
-          AuthButton<UserModel>(
-            type: AuthButtonType.signInWithGithub,
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: callback,
-                child: const Text("Continue with Github"),
-              );
-            },
+          ElevatedButton(
+            onPressed: () => context.signInWithGithub<UserModel>(),
+            child: const Text("Continue with Github"),
           ),
           const SizedBox(height: 12),
-          AuthButton<UserModel>(
-            type: AuthButtonType.signInWithGoogle,
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: callback,
-                child: const Text("Continue with Google"),
-              );
-            },
+          ElevatedButton(
+            onPressed: () => context.signInWithGoogle<UserModel>(),
+            child: const Text("Continue with Google"),
           ),
         ],
       ),

@@ -286,15 +286,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithApple<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithApple").signInWithApple(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -302,15 +298,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithFacebook<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithFacebook").signInWithFacebook(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -318,15 +310,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithGameCenter<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithGameCenter").signInWithGameCenter(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -334,15 +322,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithGithub<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithGithub").signInWithGithub(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -350,15 +334,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithGoogle<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithGoogle").signInWithGoogle(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -366,15 +346,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithMicrosoft<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithMicrosoft").signInWithMicrosoft(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -382,15 +358,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithPlayGames<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithPlayGames").signInWithPlayGames(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -398,15 +370,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithSAML<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithSAML").signInWithSAML(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -414,15 +382,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithTwitter<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
     return _i<T>("signInWithTwitter").signInWithTwitter(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,
@@ -437,8 +401,6 @@ extension AuthHelper on BuildContext {
     bool notifiable = true,
   }) {
     return _i<T>("signInWithYahoo").signInWithYahoo(
-      authenticator: authenticator,
-      storeToken: storeToken,
       args: args,
       id: id,
       notifiable: notifiable,

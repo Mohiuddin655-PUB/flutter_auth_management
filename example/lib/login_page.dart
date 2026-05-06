@@ -40,10 +40,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void signInByPhone() async {
-    final name = etName.text;
     final phone = etPhone.text;
     context.signInByPhone<UserModel>(
-      PhoneAuthenticator(phone: phone, name: name),
+      PhoneAuthenticator(phone: phone),
       onCodeSent: (verId, refreshTokenId) {
         token = verId;
         log(verId);
@@ -52,14 +51,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void signInByOtp() async {
-    final name = etName.text;
     final phone = etPhone.text;
     final code = etOTP.text;
     final token = this.token;
-    context.signInByOtp<UserModel>(OtpAuthenticator(
+    context.signInByOtp<UserModel>(OtpAuthenticator.phone(
       token: token ?? "",
       code: code,
-      name: name,
       phone: phone,
     ));
   }

@@ -25,17 +25,26 @@ class OAuthAuthenticator extends Authenticator {
 class OtpAuthenticator extends Authenticator {
   final String token;
   final String code;
+  final String value;
   final String type;
 
   bool get isEmail => type == 'email';
 
   bool get isPhone => type == 'phone';
 
-  const OtpAuthenticator.email({required this.token, required this.code})
-      : type = 'email';
+  const OtpAuthenticator.email({
+    required this.token,
+    required this.code,
+    required String email,
+  })  : type = 'email',
+        value = email;
 
-  const OtpAuthenticator.phone({required this.token, required this.code})
-      : type = 'phone';
+  const OtpAuthenticator.phone({
+    required this.token,
+    required this.code,
+    required String phone,
+  })  : type = 'phone',
+        value = phone;
 }
 
 class PhoneAuthenticator extends Authenticator {
