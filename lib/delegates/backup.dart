@@ -1,7 +1,7 @@
-import 'dart:convert';
-import 'dart:core';
+import 'dart:convert' show jsonDecode, jsonEncode;
 
-import '../models/auth.dart';
+import '../models/auth.dart' show Auth;
+import '../models/key.dart' show AuthKeys;
 
 typedef Backup = Map<String, dynamic>;
 typedef BackupReader = Future<String?> Function(String key);

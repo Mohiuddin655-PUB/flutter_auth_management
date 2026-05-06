@@ -8,6 +8,7 @@ export 'models/auth_status.dart';
 export 'models/auth_type.dart';
 export 'models/authenticator.dart';
 export 'models/credential.dart';
+export 'models/key.dart';
 export 'models/messages.dart';
 export 'models/provider.dart';
 export 'utils/auth_changes.dart';

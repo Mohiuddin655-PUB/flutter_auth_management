@@ -94,7 +94,7 @@ class _StartupPageState extends State<StartupPage> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  context.updateAccount<UserModel>({AuthKeys.i.name: "XYZ"});
+                  context.updateAccount<UserModel>({UserKeys.i.name: "XYZ"});
                 },
                 child: const Text("Update account"),
               ),
