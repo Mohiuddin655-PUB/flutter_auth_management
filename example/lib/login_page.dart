@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
     final token = this.token;
     context.signInByOtp<UserModel>(OtpAuthenticator(
       token: token ?? "",
-      smsCode: code,
+      code: code,
       name: name,
       phone: phone,
     ));
