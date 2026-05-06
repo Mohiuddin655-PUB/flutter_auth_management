@@ -1,3 +1,7 @@
+## 3.4.1
+
+* OTP sign in bug fixed
+
 ## 3.4.0
 
 * Major change
