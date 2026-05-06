@@ -131,14 +131,12 @@ mixin _AuthPhoneMixin<T extends Auth>
 
     try {
       final hasAnonymous = this.hasAnonymous;
-      final credential = delegate.credential(
-        Credential(
-          smsCode: authenticator.code,
-          verificationId: authenticator.token,
-        ),
+
+      final response = await delegate.signInWithOtp(
+        authenticator.token,
+        authenticator.code,
       );
 
-      final response = await delegate.signInWithCredential(credential);
       if (!response.isSuccessful) {
         return _failure(
           response.error,
@@ -199,14 +197,10 @@ mixin _AuthPhoneMixin<T extends Auth>
     OtpAuthenticator authenticator,
   ) async {
     try {
-      final credential = delegate.credential(
-        Credential(
-          smsCode: authenticator.code,
-          verificationId: authenticator.token,
-        ),
+      final response = await delegate.signInWithOtp(
+        authenticator.token,
+        authenticator.code,
       );
-
-      final response = await delegate.signInWithCredential(credential);
       if (!response.isSuccessful) {
         return AuthResponse.failure(
           response.error.isEmpty ? msg.authorization : response.error,

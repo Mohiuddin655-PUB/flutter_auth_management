@@ -16,6 +16,7 @@ import '../models/key.dart' show AuthKeys;
 import '../models/messages.dart';
 import '../widgets/provider.dart';
 
+part '_auth_backup.dart';
 part '_auth_biometric_mixin.dart';
 part '_auth_email_mixin.dart';
 part '_auth_emit_mixin.dart';
@@ -26,7 +27,6 @@ part '_auth_signout_mixin.dart';
 part '_auth_state_mixin.dart';
 part '_auth_update_mixin.dart';
 part '_authorizer_base.dart';
-part '_auth_backup.dart';
 
 typedef OnAuthMode = void Function(BuildContext context);
 typedef OnAuthError = void Function(BuildContext context, String error);

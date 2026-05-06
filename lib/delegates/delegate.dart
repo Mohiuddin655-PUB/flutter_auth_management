@@ -18,13 +18,6 @@ abstract class AuthDelegate {
     throw UnimplementedError("Getter rawUid is not yet implemented.");
   }
 
-  /// Create the auth credential using a provided credential info.
-  Object credential(Credential credential) {
-    throw UnimplementedError(
-      "Method createCredential() is not yet implemented.",
-    );
-  }
-
   /// Deletes the current user's credential.
   Future<Response<void>> delete() {
     throw UnimplementedError("Method delete() is not yet implemented.");
@@ -53,6 +46,13 @@ abstract class AuthDelegate {
   Future<Response<Credential>> signInWithCredential(Object credential) {
     throw UnimplementedError(
       "Method signInWithCredential() is not yet implemented.",
+    );
+  }
+
+  /// Signs in the user using a provided credential.
+  Future<Response<Credential>> signInWithOtp(String verId, String smsCode) {
+    throw UnimplementedError(
+      "Method signInWithSmsCode() is not yet implemented.",
     );
   }
 
