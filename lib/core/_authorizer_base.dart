@@ -4,7 +4,7 @@ abstract class _AuthorizerBase<T extends Auth> {
   final AuthKeys keys;
   final AuthMessages msg;
   final AuthDelegate delegate;
-  late final _Backup<T> _backup;
+  late final _AuthBackup<T> _backup;
 
   final _errorNotifier = ValueNotifier('');
   final _loadingNotifier = ValueNotifier(false);
@@ -25,7 +25,7 @@ abstract class _AuthorizerBase<T extends Auth> {
     this.keys = const AuthKeys(),
     this.msg = const AuthMessages(),
   }) {
-    _backup = _Backup<T>(backup, _emitFromBackup);
+    _backup = _AuthBackup<T>(backup, _emitFromBackup);
   }
 
   /// Raw cached auth — may be null or logged-out.

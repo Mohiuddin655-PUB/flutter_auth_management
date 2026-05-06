@@ -1,13 +1,13 @@
 part of 'authorizer.dart';
 
-class _Backup<T extends Auth> {
+class _AuthBackup<T extends Auth> {
   final AuthBackupDelegate<T> delegate;
 
   final void Function(AuthResponse<T>) _emit;
 
   int _updateGeneration = 0;
 
-  _Backup(this.delegate, this._emit);
+  _AuthBackup(this.delegate, this._emit);
 
   Future<T?> get cache async {
     try {

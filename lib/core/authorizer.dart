@@ -26,7 +26,7 @@ part '_auth_signout_mixin.dart';
 part '_auth_state_mixin.dart';
 part '_auth_update_mixin.dart';
 part '_authorizer_base.dart';
-part '_backup.dart';
+part '_auth_backup.dart';
 
 typedef OnAuthMode = void Function(BuildContext context);
 typedef OnAuthError = void Function(BuildContext context, String error);
