@@ -1,3 +1,8 @@
+## 3.4.0
+
+* Major change
+    - Optimized auth and other codes
+
 ## 3.3.0
 
 * Major update
