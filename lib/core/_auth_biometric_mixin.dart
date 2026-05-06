@@ -38,7 +38,7 @@ mixin _AuthBiometricMixin<T extends Auth>
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(Provider.biometric, AuthType.biometric),
+      const AuthResponse.loading(AuthType.biometric),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -50,7 +50,6 @@ mixin _AuthBiometricMixin<T extends Auth>
         return emit(
           AuthResponse.unauthorized(
             msg: msg.signInWithBiometric.failure ?? _errorNotifier.value,
-            provider: Provider.biometric,
             type: AuthType.biometric,
           ),
           args: args,
@@ -63,7 +62,6 @@ mixin _AuthBiometricMixin<T extends Auth>
       if (!response.isSuccessful) {
         return _failure(
           response.error,
-          provider: Provider.biometric,
           type: AuthType.biometric,
           args: args,
           id: id,
@@ -71,19 +69,19 @@ mixin _AuthBiometricMixin<T extends Auth>
         );
       }
 
-      final provider = Provider.from(user.provider);
+      final provider = user.provider;
       var current = Response<Credential>();
 
       final hasCredentials = (user.email ?? user.username ?? '').isNotEmpty &&
           (user.password ?? '').isNotEmpty;
 
       if (hasCredentials) {
-        if (provider.isEmail) {
+        if (provider == 'EMAIL') {
           current = await delegate.signInWithEmailNPassword(
             user.email ?? '',
             user.password ?? '',
           );
-        } else if (provider.isUsername) {
+        } else if (provider == 'USERNAME') {
           current = await delegate.signInWithUsernameNPassword(
             user.username ?? '',
             user.password ?? '',
@@ -94,7 +92,6 @@ mixin _AuthBiometricMixin<T extends Auth>
       if (!current.isSuccessful) {
         return _failure(
           current.error,
-          provider: Provider.biometric,
           type: AuthType.biometric,
           args: args,
           id: id,
@@ -114,7 +111,6 @@ mixin _AuthBiometricMixin<T extends Auth>
         AuthResponse.authenticated(
           value,
           msg: msg.signInWithBiometric.done,
-          provider: Provider.biometric,
           type: AuthType.biometric,
         ),
         args: args,
@@ -124,7 +120,6 @@ mixin _AuthBiometricMixin<T extends Auth>
     } catch (error) {
       return _failure(
         msg.signInWithBiometric.failure ?? error.toString(),
-        provider: Provider.biometric,
         type: AuthType.biometric,
         args: args,
         id: id,
@@ -135,8 +130,10 @@ mixin _AuthBiometricMixin<T extends Auth>
 
   Future<Response<T>> _checkBiometricEligibility() async {
     final auth = await _cachedAuth;
-    final provider = Provider.from(auth?.provider);
-    if (auth == null || !auth.isLoggedIn || !provider.isAllowBiometric) {
+    final provider = auth?.provider;
+    if (auth == null ||
+        !auth.isLoggedIn ||
+        !['EMAIL', 'USERNAME'].contains(provider)) {
       return Response(
         status: Status.notSupported,
         error: 'User not logged in with email or username!',

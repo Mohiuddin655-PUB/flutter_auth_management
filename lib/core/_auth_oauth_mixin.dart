@@ -8,7 +8,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.apple,
+      provider: 'APPLE',
       doneMsg: msg.signInWithApple.done,
       failureMsg: msg.signInWithApple.failure,
       signIn: () => delegate.signInWithApple(),
@@ -24,7 +24,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.facebook,
+      provider: 'FACEBOOK',
       doneMsg: msg.signInWithFacebook.done,
       failureMsg: msg.signInWithFacebook.failure,
       signIn: () => delegate.signInWithFacebook(),
@@ -40,7 +40,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.gameCenter,
+      provider: 'GAME_CENTER',
       doneMsg: msg.signInWithGameCenter.done,
       failureMsg: msg.signInWithGameCenter.failure,
       signIn: () => delegate.signInWithGameCenter(),
@@ -56,7 +56,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.github,
+      provider: 'GITHUB',
       doneMsg: msg.signInWithGithub.done,
       failureMsg: msg.signInWithGithub.failure,
       signIn: () => delegate.signInWithGithub(),
@@ -72,7 +72,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.google,
+      provider: 'GOOGLE',
       doneMsg: msg.signInWithGoogle.done,
       failureMsg: msg.signInWithGoogle.failure,
       signIn: () => delegate.signInWithGoogle(),
@@ -88,7 +88,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.microsoft,
+      provider: 'MICROSOFT',
       doneMsg: msg.signInWithMicrosoft.done,
       failureMsg: msg.signInWithMicrosoft.failure,
       signIn: () => delegate.signInWithMicrosoft(),
@@ -104,7 +104,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.playGames,
+      provider: 'PLAY_GAMES',
       doneMsg: msg.signInWithPlayGames.done,
       failureMsg: msg.signInWithPlayGames.failure,
       signIn: () => delegate.signInWithPlayGames(),
@@ -120,7 +120,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.saml,
+      provider: 'SAML',
       doneMsg: msg.signInWithSAML.done,
       failureMsg: msg.signInWithSAML.failure,
       signIn: () => delegate.signInWithSAML(),
@@ -136,7 +136,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.twitter,
+      provider: 'TWITTER',
       doneMsg: msg.signInWithTwitter.done,
       failureMsg: msg.signInWithTwitter.failure,
       signIn: () => delegate.signInWithTwitter(),
@@ -152,7 +152,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithOAuth(
-      provider: Provider.yahoo,
+      provider: 'YAHOO',
       doneMsg: msg.signInWithYahoo.done,
       failureMsg: msg.signInWithYahoo.failure,
       signIn: () => delegate.signInWithYahoo(),
@@ -163,7 +163,7 @@ mixin _AuthOAuthMixin<T extends Auth>
   }
 
   Future<AuthResponse<T>> _signInWithOAuth({
-    required Provider provider,
+    required String provider,
     required String? doneMsg,
     required String? failureMsg,
     required _OAuthSignIn signIn,
@@ -172,7 +172,7 @@ mixin _AuthOAuthMixin<T extends Auth>
     bool notifiable = true,
   }) async {
     emit(
-      AuthResponse.loading(provider, AuthType.oauth),
+      AuthResponse.loading(AuthType.oauth),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -185,7 +185,6 @@ mixin _AuthOAuthMixin<T extends Auth>
       if (raw == null || raw.credential == null) {
         return _failure(
           response.error,
-          provider: provider,
           type: AuthType.oauth,
           args: args,
           id: id,
@@ -197,7 +196,6 @@ mixin _AuthOAuthMixin<T extends Auth>
       if (!current.isSuccessful) {
         return _failure(
           current.error,
-          provider: provider,
           type: AuthType.oauth,
           args: args,
           id: id,
@@ -210,7 +208,6 @@ mixin _AuthOAuthMixin<T extends Auth>
       if (result == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
-          provider: provider,
           type: AuthType.oauth,
           args: args,
           id: id,
@@ -225,7 +222,7 @@ mixin _AuthOAuthMixin<T extends Auth>
           keys.id: uid,
           keys.loggedIn: true,
           keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: provider.id,
+          keys.provider: provider,
           keys.verified: true,
           if ((result.email ?? '').isNotEmpty) keys.email: result.email,
           if ((result.displayName ?? '').isNotEmpty)
@@ -235,12 +232,7 @@ mixin _AuthOAuthMixin<T extends Auth>
       );
 
       return emit(
-        AuthResponse.authenticated(
-          value,
-          msg: doneMsg,
-          provider: provider,
-          type: AuthType.oauth,
-        ),
+        AuthResponse.authenticated(value, msg: doneMsg, type: AuthType.oauth),
         args: args,
         id: id,
         notifiable: notifiable,
@@ -248,7 +240,6 @@ mixin _AuthOAuthMixin<T extends Auth>
     } catch (error) {
       return _failure(
         failureMsg ?? error.toString(),
-        provider: provider,
         type: AuthType.oauth,
         args: args,
         id: id,

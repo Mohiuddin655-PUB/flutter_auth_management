@@ -10,7 +10,7 @@ mixin _AuthEmailMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithEmailOrUsername(
-      provider: Provider.email,
+      provider: 'EMAIL',
       type: AuthType.login,
       doneMsg: msg.signInWithEmail.done,
       failureMsg: msg.signInWithEmail.failure,
@@ -34,7 +34,7 @@ mixin _AuthEmailMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithEmailOrUsername(
-      provider: Provider.email,
+      provider: 'EMAIL',
       type: AuthType.register,
       doneMsg: msg.signUpWithEmail.done,
       failureMsg: msg.signUpWithEmail.failure,
@@ -59,7 +59,7 @@ mixin _AuthEmailMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithEmailOrUsername(
-      provider: Provider.username,
+      provider: 'USERNAME',
       type: AuthType.login,
       doneMsg: msg.signInWithUsername.done,
       failureMsg: msg.signInWithUsername.failure,
@@ -83,7 +83,7 @@ mixin _AuthEmailMixin<T extends Auth>
     bool notifiable = true,
   }) {
     return _signInWithEmailOrUsername(
-      provider: Provider.username,
+      provider: 'USERNAME',
       type: AuthType.register,
       doneMsg: msg.signUpWithUsername.done,
       failureMsg: msg.signUpWithUsername.failure,
@@ -101,7 +101,7 @@ mixin _AuthEmailMixin<T extends Auth>
   }
 
   Future<AuthResponse<T>> _signInWithEmailOrUsername({
-    required Provider provider,
+    required String provider,
     required AuthType type,
     required String? doneMsg,
     required String? failureMsg,
@@ -114,7 +114,7 @@ mixin _AuthEmailMixin<T extends Auth>
     bool notifiable = true,
   }) async {
     emit(
-      AuthResponse.loading(provider, type),
+      AuthResponse.loading(type),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -126,7 +126,6 @@ mixin _AuthEmailMixin<T extends Auth>
       if (!response.isSuccessful) {
         return _failure(
           response.error,
-          provider: provider,
           type: type,
           args: args,
           id: id,
@@ -139,7 +138,6 @@ mixin _AuthEmailMixin<T extends Auth>
       if (result == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
-          provider: provider,
           type: type,
           args: args,
           id: id,
@@ -156,7 +154,7 @@ mixin _AuthEmailMixin<T extends Auth>
           keys.id: uid,
           keys.loggedIn: true,
           keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: provider.id,
+          keys.provider: provider,
           if (authenticator is EmailAuthenticator) ...{
             keys.email: authenticator.email,
             keys.password: authenticator.password,
@@ -171,7 +169,6 @@ mixin _AuthEmailMixin<T extends Auth>
         AuthResponse.authenticated(
           value,
           msg: doneMsg,
-          provider: provider,
           type: type,
         ),
         args: args,
@@ -181,7 +178,6 @@ mixin _AuthEmailMixin<T extends Auth>
     } catch (error) {
       return _failure(
         failureMsg ?? error.toString(),
-        provider: provider,
         type: type,
         args: args,
         id: id,

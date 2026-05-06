@@ -21,7 +21,7 @@ Future<void> main() async {
 
 class MyAuthDelegate extends AuthDelegate {
   @override
-  Object credential(Provider provider, Credential credential) {
+  Object credential(Credential credential) {
     // TODO: implement credential
     throw UnimplementedError();
   }
@@ -41,7 +41,7 @@ class MyAuthDelegate extends AuthDelegate {
   bool get isAuthenticated => throw UnimplementedError();
 
   @override
-  Future<bool> isSignIn([Provider? provider]) {
+  Future<bool> isSignIn() {
     // TODO: implement isSignIn
     throw UnimplementedError();
   }
@@ -143,7 +143,7 @@ class MyAuthDelegate extends AuthDelegate {
   }
 
   @override
-  Future<Response<void>> signOut([Provider? provider]) {
+  Future<Response<void>> signOut() {
     // TODO: implement signOut
     throw UnimplementedError();
   }

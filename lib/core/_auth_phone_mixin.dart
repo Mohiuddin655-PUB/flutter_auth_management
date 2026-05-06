@@ -27,7 +27,6 @@ mixin _AuthPhoneMixin<T extends Auth>
             emit(
               const AuthResponse.message(
                 'Verification done!',
-                provider: Provider.phone,
                 type: AuthType.otp,
               ),
               args: args,
@@ -53,7 +52,6 @@ mixin _AuthPhoneMixin<T extends Auth>
               emit(
                 const AuthResponse.failure(
                   'Verification token or otp code not valid!',
-                  provider: Provider.phone,
                   type: AuthType.otp,
                 ),
                 args: args,
@@ -67,7 +65,6 @@ mixin _AuthPhoneMixin<T extends Auth>
           emit(
             const AuthResponse.message(
               'Code sent to your device!',
-              provider: Provider.phone,
               type: AuthType.otp,
             ),
             args: args,
@@ -80,7 +77,6 @@ mixin _AuthPhoneMixin<T extends Auth>
           emit(
             AuthResponse.failure(
               exception.msg,
-              provider: Provider.phone,
               type: AuthType.otp,
             ),
             args: args,
@@ -93,7 +89,6 @@ mixin _AuthPhoneMixin<T extends Auth>
           emit(
             const AuthResponse.failure(
               'Auto retrieval code timeout!',
-              provider: Provider.phone,
               type: AuthType.otp,
             ),
             args: args,
@@ -104,7 +99,7 @@ mixin _AuthPhoneMixin<T extends Auth>
         },
       );
       return emit(
-        const AuthResponse.loading(Provider.phone, AuthType.otp),
+        const AuthResponse.loading(AuthType.otp),
         args: args,
         id: id,
         notifiable: notifiable,
@@ -112,7 +107,6 @@ mixin _AuthPhoneMixin<T extends Auth>
     } catch (error) {
       return _failure(
         msg.signOut.failure ?? error.toString(),
-        provider: Provider.phone,
         type: AuthType.otp,
         args: args,
         id: id,
@@ -129,7 +123,7 @@ mixin _AuthPhoneMixin<T extends Auth>
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(Provider.phone, AuthType.phone),
+      const AuthResponse.loading(AuthType.phone),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -138,7 +132,6 @@ mixin _AuthPhoneMixin<T extends Auth>
     try {
       final hasAnonymous = this.hasAnonymous;
       final credential = delegate.credential(
-        Provider.phone,
         Credential(
           smsCode: authenticator.code,
           verificationId: authenticator.token,
@@ -149,7 +142,6 @@ mixin _AuthPhoneMixin<T extends Auth>
       if (!response.isSuccessful) {
         return _failure(
           response.error,
-          provider: Provider.phone,
           type: AuthType.phone,
           args: args,
           id: id,
@@ -162,7 +154,6 @@ mixin _AuthPhoneMixin<T extends Auth>
       if (result == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
-          provider: Provider.phone,
           type: AuthType.phone,
           args: args,
           id: id,
@@ -177,7 +168,7 @@ mixin _AuthPhoneMixin<T extends Auth>
           keys.id: uid,
           keys.loggedIn: true,
           keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: Provider.phone.id,
+          keys.provider: 'PHONE_NUMBER',
           keys.phone: authenticator.value,
           keys.verified: true,
         },
@@ -187,7 +178,6 @@ mixin _AuthPhoneMixin<T extends Auth>
         AuthResponse.authenticated(
           value,
           msg: msg.signInWithPhone.done,
-          provider: Provider.phone,
           type: AuthType.phone,
         ),
         args: args,
@@ -197,7 +187,6 @@ mixin _AuthPhoneMixin<T extends Auth>
     } catch (error) {
       return _failure(
         msg.signInWithPhone.failure ?? error.toString(),
-        provider: Provider.phone,
         type: AuthType.phone,
         args: args,
         id: id,
@@ -211,7 +200,6 @@ mixin _AuthPhoneMixin<T extends Auth>
   ) async {
     try {
       final credential = delegate.credential(
-        Provider.phone,
         Credential(
           smsCode: authenticator.code,
           verificationId: authenticator.token,
@@ -222,7 +210,6 @@ mixin _AuthPhoneMixin<T extends Auth>
       if (!response.isSuccessful) {
         return AuthResponse.failure(
           response.error.isEmpty ? msg.authorization : response.error,
-          provider: Provider.phone,
           type: AuthType.phone,
         );
       }
@@ -232,7 +219,6 @@ mixin _AuthPhoneMixin<T extends Auth>
       if (result == null || uid.isEmpty) {
         return AuthResponse.failure(
           msg.authorization,
-          provider: Provider.phone,
           type: AuthType.phone,
         );
       }
@@ -242,18 +228,16 @@ mixin _AuthPhoneMixin<T extends Auth>
           keys.id: uid,
           keys.loggedIn: true,
           keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: Provider.phone.id,
+          keys.provider: 'PHONE_NUMBER',
           keys.phone: result.phoneNumber,
           keys.verified: true,
         }),
         msg: msg.signInWithPhone.done,
-        provider: Provider.phone,
         type: AuthType.phone,
       );
     } catch (error) {
       return AuthResponse.failure(
         msg.signInWithPhone.failure ?? error.toString(),
-        provider: Provider.phone,
         type: AuthType.phone,
       );
     }

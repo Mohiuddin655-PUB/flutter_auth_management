@@ -10,7 +10,6 @@ import '../models/auth_response.dart';
 import '../models/auth_status.dart';
 import '../models/authenticator.dart';
 import '../models/credential.dart';
-import '../models/provider.dart';
 import '../widgets/provider.dart';
 
 extension AuthHelper on BuildContext {
@@ -137,8 +136,8 @@ extension AuthHelper on BuildContext {
     ).initialize(initialCheck: initialCheck, listening: listening);
   }
 
-  Future<AuthResponse<T>> isSignIn<T extends Auth>({Provider? provider}) {
-    return _i<T>("isSignIn").isSignIn(provider: provider);
+  Future<AuthResponse<T>> isSignIn<T extends Auth>() {
+    return _i<T>("isSignIn").isSignIn();
   }
 
   Future<AuthResponse<T>> signInAnonymously<T extends Auth>({
@@ -261,14 +260,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signOut<T extends Auth>({
-    Provider? provider,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>(
-      "signOut",
-    ).signOut(provider: provider, args: args, id: id, notifiable: notifiable);
+    return _i<T>("signOut").signOut(args: args, id: id, notifiable: notifiable);
   }
 
   Future<T?> updateAccount<T extends Auth>(

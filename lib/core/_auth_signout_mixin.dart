@@ -3,24 +3,22 @@ part of 'authorizer.dart';
 mixin _AuthSignOutMixin<T extends Auth>
     on _AuthorizerBase<T>, _AuthEmitMixin<T> {
   Future<AuthResponse<T>> signOut({
-    Provider? provider,
     Object? args,
     String? id,
     bool notifiable = true,
   }) async {
     try {
       emit(
-        AuthResponse.loading(provider, AuthType.logout),
+        AuthResponse.loading(AuthType.logout),
         args: args,
         id: id,
         notifiable: notifiable,
       );
 
-      final response = await delegate.signOut(provider);
+      final response = await delegate.signOut();
       if (!response.isSuccessful) {
         return _failure(
           response.error,
-          provider: provider,
           type: AuthType.logout,
           args: args,
           id: id,
@@ -38,7 +36,6 @@ mixin _AuthSignOutMixin<T extends Auth>
       return emit(
         AuthResponse.unauthenticated(
           msg: msg.signOut.done,
-          provider: provider,
           type: AuthType.logout,
         ),
         args: args,
@@ -49,7 +46,6 @@ mixin _AuthSignOutMixin<T extends Auth>
       _backupEmitEnabled = true;
       return _failure(
         msg.signOut.failure ?? error.toString(),
-        provider: provider,
         type: AuthType.logout,
         args: args,
         id: id,
@@ -64,7 +60,7 @@ mixin _AuthSignOutMixin<T extends Auth>
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(Provider.none, AuthType.delete),
+      const AuthResponse.loading(AuthType.delete),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -76,7 +72,6 @@ mixin _AuthSignOutMixin<T extends Auth>
         AuthResponse.data(
           data,
           msg: msg.loggedIn.failure,
-          provider: Provider.none,
           type: AuthType.delete,
         ),
         args: args,
@@ -92,7 +87,6 @@ mixin _AuthSignOutMixin<T extends Auth>
           AuthResponse.data(
             data,
             msg: response.message,
-            provider: Provider.none,
             type: AuthType.delete,
           ),
           args: args,
@@ -108,7 +102,6 @@ mixin _AuthSignOutMixin<T extends Auth>
       return emit(
         AuthResponse.unauthenticated(
           msg: msg.delete.done,
-          provider: Provider.none,
           type: AuthType.delete,
         ),
         args: args,
@@ -120,7 +113,6 @@ mixin _AuthSignOutMixin<T extends Auth>
         AuthResponse.data(
           data,
           msg: msg.delete.failure ?? error.toString(),
-          provider: Provider.none,
           type: AuthType.delete,
         ),
         args: args,

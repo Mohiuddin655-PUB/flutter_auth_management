@@ -2,7 +2,6 @@ import 'package:flutter_entity/entity.dart';
 
 import '../exceptions/exception.dart';
 import '../models/credential.dart';
-import '../models/provider.dart';
 
 abstract class AuthDelegate {
   const AuthDelegate();
@@ -20,7 +19,7 @@ abstract class AuthDelegate {
   }
 
   /// Create the auth credential using a provided credential info.
-  Object credential(Provider provider, Credential credential) {
+  Object credential(Credential credential) {
     throw UnimplementedError(
       "Method createCredential() is not yet implemented.",
     );
@@ -32,7 +31,7 @@ abstract class AuthDelegate {
   }
 
   /// Checks if a user is currently signed in.
-  Future<bool> isSignIn([Provider? provider]) {
+  Future<bool> isSignIn() {
     throw UnimplementedError("Method isSignIn() is not yet implemented.");
   }
 
@@ -166,7 +165,7 @@ abstract class AuthDelegate {
   }
 
   /// Signs out the user from the specified provider or all providers if none is specified.
-  Future<Response<void>> signOut([Provider? provider]) {
+  Future<Response<void>> signOut() {
     throw UnimplementedError("Method signOut() is not yet implemented.");
   }
 

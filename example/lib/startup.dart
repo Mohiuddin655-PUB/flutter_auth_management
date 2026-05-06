@@ -32,23 +32,12 @@ class _StartupPageState extends State<StartupPage> {
     );
   }
 
-  void _changes(
-    BuildContext context,
-    AuthChanges<UserModel> changes,
-  ) {
-    log("AUTH STATUS : $changes");
-    if (changes.status.isAuthenticated) {
-      Navigator.pushNamedAndRemoveUntil(context, "home", (route) => false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return AuthListener<UserModel>(
       onError: _showError,
       onMessage: _showMessage,
       onLoading: _showLoading,
-      onChanges: _changes,
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(

@@ -77,7 +77,6 @@ mixin _AuthEmitMixin<T extends Auth> on _AuthorizerBase<T> {
 
   Future<AuthResponse<T>> _failure(
     Object? msgOrError, {
-    required Provider? provider,
     required AuthType type,
     Object? args,
     String? id,
@@ -86,7 +85,6 @@ mixin _AuthEmitMixin<T extends Auth> on _AuthorizerBase<T> {
     return emit(
       AuthResponse.failure(
         msgOrError?.toString() ?? 'An unexpected error occurred.',
-        provider: provider,
         type: type,
       ),
       args: args,

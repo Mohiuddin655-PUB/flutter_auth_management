@@ -10,7 +10,5 @@ export 'models/authenticator.dart';
 export 'models/credential.dart';
 export 'models/key.dart';
 export 'models/messages.dart';
-export 'models/provider.dart';
-export 'utils/auth_changes.dart';
 export 'utils/helper.dart';
 export 'widgets/provider.dart';

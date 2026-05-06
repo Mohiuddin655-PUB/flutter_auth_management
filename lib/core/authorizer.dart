@@ -14,8 +14,6 @@ import '../models/authenticator.dart';
 import '../models/credential.dart';
 import '../models/key.dart' show AuthKeys;
 import '../models/messages.dart';
-import '../models/provider.dart';
-import '../utils/auth_changes.dart';
 import '../widgets/provider.dart';
 
 part '_auth_biometric_mixin.dart';
@@ -40,10 +38,6 @@ typedef SignByBiometricCallback<T extends Auth> = Future<bool?>? Function(
     T? auth);
 typedef SignOutCallback = Future Function(Auth authorizer);
 typedef UndoAccountCallback = Future<bool> Function(Auth authorizer);
-typedef OnAuthChanges<T extends Auth> = void Function(
-  BuildContext context,
-  AuthChanges<T> changes,
-);
 typedef _OAuthSignIn = Future<Response<Credential>> Function();
 
 class Authorizer<T extends Auth> extends _AuthorizerBase<T>
@@ -117,26 +111,18 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
     }
   }
 
-  Future<AuthResponse<T>> isSignIn({Provider? provider}) async {
+  Future<AuthResponse<T>> isSignIn() async {
     try {
-      final signedIn = await delegate.isSignIn(provider);
+      final signedIn = await delegate.isSignIn();
       final data = signedIn ? await auth : null;
       if (data == null) {
-        if (signedIn) await delegate.signOut(provider);
-        return AuthResponse.unauthenticated(
-          provider: provider,
-          type: AuthType.signedIn,
-        );
+        if (signedIn) await delegate.signOut();
+        return AuthResponse.unauthenticated(type: AuthType.signedIn);
       }
-      return AuthResponse.authenticated(
-        data,
-        provider: provider,
-        type: AuthType.signedIn,
-      );
+      return AuthResponse.authenticated(data, type: AuthType.signedIn);
     } catch (error) {
       return AuthResponse.failure(
         msg.loggedIn.failure ?? error.toString(),
-        provider: provider,
         type: AuthType.signedIn,
       );
     }
@@ -149,7 +135,7 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
     bool notifiable = true,
   }) async {
     emit(
-      const AuthResponse.loading(Provider.guest, AuthType.none),
+      const AuthResponse.loading(AuthType.none),
       args: args,
       id: id,
       notifiable: notifiable,
@@ -160,7 +146,6 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
       if (!response.isSuccessful) {
         return _failure(
           response.error,
-          provider: Provider.guest,
           type: AuthType.none,
           args: args,
           id: id,
@@ -173,7 +158,6 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
       if (result == null || uid == null || uid.isEmpty) {
         return _failure(
           msg.authorization,
-          provider: Provider.guest,
           type: AuthType.none,
           args: args,
           id: id,
@@ -187,7 +171,7 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
           keys.id: uid,
           keys.loggedIn: true,
           keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: Provider.guest.id,
+          keys.provider: 'GUEST',
         },
       );
 
@@ -195,7 +179,6 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
         AuthResponse.authenticated(
           value,
           msg: msg.signInWithEmail.done,
-          provider: Provider.guest,
           type: AuthType.none,
         ),
         args: args,
@@ -205,7 +188,6 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
     } catch (error) {
       return _failure(
         msg.signInWithEmail.failure ?? error.toString(),
-        provider: Provider.guest,
         type: AuthType.none,
         args: args,
         id: id,
