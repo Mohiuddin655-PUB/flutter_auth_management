@@ -1,3 +1,16 @@
+## 3.4.2
+
+* Optimized code
+
+## 3.4.1
+
+* OTP sign in bug fixed
+
+## 3.4.0
+
+* Major change
+    - Optimized auth and other codes
+
 ## 3.3.0
 
 * Major update

@@ -32,23 +32,12 @@ class _StartupPageState extends State<StartupPage> {
     );
   }
 
-  void _changes(
-    BuildContext context,
-    AuthChanges<UserModel> changes,
-  ) {
-    log("AUTH STATUS : $changes");
-    if (changes.status.isAuthenticated) {
-      Navigator.pushNamedAndRemoveUntil(context, "home", (route) => false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return AuthListener<UserModel>(
       onError: _showError,
       onMessage: _showMessage,
       onLoading: _showLoading,
-      onChanges: _changes,
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -79,9 +68,7 @@ class _StartupPageState extends State<StartupPage> {
               ElevatedButton(
                 onPressed: () {
                   context.signInAnonymously<UserModel>(
-                    authenticator: GuestAuthenticator(
-                      name: "Omie talukdar",
-                    ),
+                    authenticator: GuestAuthenticator(),
                   );
                 },
                 child: const Text("Guest"),
@@ -96,7 +83,7 @@ class _StartupPageState extends State<StartupPage> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  context.updateAccount<UserModel>({AuthKeys.i.name: "XYZ"});
+                  context.updateAccount<UserModel>({UserKeys.i.name: "XYZ"});
                 },
                 child: const Text("Update account"),
               ),

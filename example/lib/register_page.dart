@@ -16,13 +16,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final etPassword = TextEditingController();
 
   void signUpByEmail() async {
-    final name = etName.text;
     final email = etEmail.text;
     final password = etPassword.text;
     context.signUpByEmail<UserModel>(EmailAuthenticator(
       email: email,
       password: password,
-      name: name, // Optional
     ));
   }
 
@@ -32,7 +30,6 @@ class _RegisterPageState extends State<RegisterPage> {
     context.signUpByUsername<UserModel>(UsernameAuthenticator(
       username: name,
       password: password,
-      name: name, // Optional
     ));
   }
 
