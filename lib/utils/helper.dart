@@ -271,8 +271,14 @@ extension AuthHelper on BuildContext {
     Map<String, dynamic> data, {
     String? id,
     bool notifiable = true,
+    bool lazyRemoteUpdate = true,
   }) {
-    return _i<T>("updateAccount").update(data, id: id, notifiable: notifiable);
+    return _i<T>("updateAccount").update(
+      data,
+      id: id,
+      notifiable: notifiable,
+      lazyRemoteUpdate: lazyRemoteUpdate,
+    );
   }
 
   Future<AuthResponse> verifyPhoneByOtp<T extends Auth>(

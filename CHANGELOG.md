@@ -1,3 +1,7 @@
+## 3.4.3
+
+* Improve lazy remote update system in update account
+
 ## 3.4.2
 
 * Optimized code
