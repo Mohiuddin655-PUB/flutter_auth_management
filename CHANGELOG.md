@@ -1,3 +1,7 @@
+## 3.4.2
+
+* Optimized code
+
 ## 3.4.1
 
 * OTP sign in bug fixed
