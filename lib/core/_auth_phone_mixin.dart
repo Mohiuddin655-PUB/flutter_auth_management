@@ -15,6 +15,13 @@ mixin _AuthPhoneMixin<T extends Auth>
     String? id,
     bool notifiable = true,
   }) async {
+    final loadingResponse = await emit(
+      const AuthResponse.loading(AuthType.otp),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+
     try {
       delegate.verifyPhoneNumber(
         phoneNumber: authenticator.phone,
@@ -23,6 +30,7 @@ mixin _AuthPhoneMixin<T extends Auth>
         multiFactorSession: multiFactorSession,
         timeout: timeout,
         onComplete: (credential) async {
+          if (_disposed) return;
           if (onComplete != null) {
             emit(
               const AuthResponse.message(
@@ -34,34 +42,35 @@ mixin _AuthPhoneMixin<T extends Auth>
               notifiable: notifiable,
             );
             onComplete(credential);
+            return;
+          }
+          final verId = credential.verificationId;
+          final code = credential.smsCode;
+          if (verId != null && code != null) {
+            await signInByOtp(
+              OtpAuthenticator.phone(
+                token: verId,
+                code: code,
+                phone: authenticator.phone,
+              ),
+              args: args,
+              id: id,
+              notifiable: notifiable,
+            );
           } else {
-            final verId = credential.verificationId;
-            final code = credential.smsCode;
-            if (verId != null && code != null) {
-              await signInByOtp(
-                OtpAuthenticator.phone(
-                  token: verId,
-                  code: code,
-                  phone: authenticator.phone,
-                ),
-                args: args,
-                id: id,
-                notifiable: notifiable,
-              );
-            } else {
-              emit(
-                const AuthResponse.failure(
-                  'Verification token or otp code not valid!',
-                  type: AuthType.otp,
-                ),
-                args: args,
-                id: id,
-                notifiable: notifiable,
-              );
-            }
+            emit(
+              const AuthResponse.failure(
+                'Verification token or otp code not valid!',
+                type: AuthType.otp,
+              ),
+              args: args,
+              id: id,
+              notifiable: notifiable,
+            );
           }
         },
         onCodeSent: (verId, forceResendingToken) {
+          if (_disposed) return;
           emit(
             const AuthResponse.message(
               'Code sent to your device!',
@@ -74,11 +83,9 @@ mixin _AuthPhoneMixin<T extends Auth>
           onCodeSent?.call(verId, forceResendingToken);
         },
         onFailed: (exception) {
+          if (_disposed) return;
           emit(
-            AuthResponse.failure(
-              exception.msg,
-              type: AuthType.otp,
-            ),
+            AuthResponse.failure(exception.msg, type: AuthType.otp),
             args: args,
             id: id,
             notifiable: notifiable,
@@ -86,6 +93,7 @@ mixin _AuthPhoneMixin<T extends Auth>
           onFailed?.call(exception);
         },
         onCodeAutoRetrievalTimeout: (verId) {
+          if (_disposed) return;
           emit(
             const AuthResponse.failure(
               'Auto retrieval code timeout!',
@@ -98,15 +106,10 @@ mixin _AuthPhoneMixin<T extends Auth>
           onCodeAutoRetrievalTimeout?.call(verId);
         },
       );
-      return emit(
-        const AuthResponse.loading(AuthType.otp),
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
+      return loadingResponse;
     } catch (error) {
       return _failure(
-        msg.signOut.failure ?? error.toString(),
+        msg.signInWithPhone.failure ?? error.toString(),
         type: AuthType.otp,
         args: args,
         id: id,
@@ -129,6 +132,8 @@ mixin _AuthPhoneMixin<T extends Auth>
       notifiable: notifiable,
     );
 
+    final opToken = _beginOp();
+
     try {
       final hasAnonymous = this.hasAnonymous;
 
@@ -136,6 +141,10 @@ mixin _AuthPhoneMixin<T extends Auth>
         authenticator.token,
         authenticator.code,
       );
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.phone);
+      }
 
       if (!response.isSuccessful) {
         return _failure(
@@ -171,6 +180,20 @@ mixin _AuthPhoneMixin<T extends Auth>
           keys.verified: true,
         },
       );
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.phone);
+      }
+
+      if (value == null) {
+        return _failure(
+          msg.authorization,
+          type: AuthType.phone,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
 
       return emit(
         AuthResponse.authenticated(
@@ -211,10 +234,7 @@ mixin _AuthPhoneMixin<T extends Auth>
       final result = response.data;
       final uid = result?.uid ?? '';
       if (result == null || uid.isEmpty) {
-        return AuthResponse.failure(
-          msg.authorization,
-          type: AuthType.phone,
-        );
+        return AuthResponse.failure(msg.authorization, type: AuthType.phone);
       }
 
       return AuthResponse<T>.authenticated(

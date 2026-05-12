@@ -1,20 +1,26 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription, Completer;
 
-import 'package:flutter/material.dart';
-import 'package:flutter_entity/entity.dart';
+import 'package:flutter/foundation.dart' show ValueNotifier;
+import 'package:flutter_entity/entity.dart' show EntityHelper, Response, Status;
 
-import '../delegates/backup.dart';
-import '../delegates/delegate.dart';
-import '../exceptions/exception.dart';
-import '../models/auth.dart';
-import '../models/auth_response.dart';
-import '../models/auth_status.dart';
-import '../models/auth_type.dart';
-import '../models/authenticator.dart';
-import '../models/credential.dart';
+import '../delegates/backup.dart' show AuthBackupDelegate;
+import '../delegates/delegate.dart' show AuthDelegate;
+import '../exceptions/exception.dart' show AuthException;
+import '../models/auth.dart' show Auth;
+import '../models/auth_response.dart' show AuthResponse;
+import '../models/auth_status.dart' show AuthStatus;
+import '../models/auth_type.dart' show AuthType;
+import '../models/authenticator.dart'
+    show
+        Authenticator,
+        EmailAuthenticator,
+        GuestAuthenticator,
+        OtpAuthenticator,
+        PhoneAuthenticator,
+        UsernameAuthenticator;
+import '../models/credential.dart' show Credential;
 import '../models/key.dart' show AuthKeys;
-import '../models/messages.dart';
-import '../widgets/provider.dart';
+import '../models/messages.dart' show AuthMessages;
 
 part '_auth_backup.dart';
 part '_auth_biometric_mixin.dart';
@@ -28,11 +34,6 @@ part '_auth_state_mixin.dart';
 part '_auth_update_mixin.dart';
 part '_authorizer_base.dart';
 
-typedef OnAuthMode = void Function(BuildContext context);
-typedef OnAuthError = void Function(BuildContext context, String error);
-typedef OnAuthMessage = void Function(BuildContext context, String message);
-typedef OnAuthLoading = void Function(BuildContext context, bool loading);
-typedef OnAuthStatus = void Function(BuildContext context, AuthStatus status);
 typedef IdentityBuilder = String Function(String uid);
 typedef SignByBiometricCallback<T extends Auth> = Future<bool?>? Function(
     T? auth);
@@ -51,39 +52,32 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
         _AuthPhoneMixin<T>,
         _AuthOAuthMixin<T>,
         _AuthSignOutMixin<T> {
-  Authorizer({
-    required super.delegate,
-    required super.backup,
-    super.msg,
-  });
+  Authorizer({required super.delegate, required super.backup, super.msg});
 
   static Authorizer? _i;
 
-  factory Authorizer.of(BuildContext context) {
-    try {
-      return AuthProvider.authorizerOf<T>(context);
-    } catch (e) {
-      throw AuthProviderException(
-        'No Authorizer<${AuthProvider.type}> found. '
-        'Ensure AuthProvider<${AuthProvider.type}> wraps the widget tree. (cause: $e)',
-      );
-    }
-  }
+  static Future<void>? _ioLock;
 
   static Authorizer<T> instanceOf<T extends Auth>() {
-    if (_i == null) {
-      throw AuthProviderException(
+    final current = _i;
+    if (current == null) {
+      throw AuthException(
         'Authorizer has not been initialised. '
         'Call Authorizer.init<T>() or attach an instance first.',
       );
     }
-    if (_i is! Authorizer<T>) {
-      throw AuthProviderException(
-        'Type mismatch: expected Authorizer<T> '
-        'but the attached instance is ${_i.runtimeType}.',
+    if (current.isDisposed) {
+      throw AuthException(
+        'Authorizer has been disposed. Re-initialise before use.',
       );
     }
-    return _i as Authorizer<T>;
+    if (current is! Authorizer<T>) {
+      throw AuthException(
+        'Type mismatch: expected Authorizer<$T> but the attached instance '
+        'is ${current.runtimeType}.',
+      );
+    }
+    return current;
   }
 
   static Future<void> init<T extends Auth>({
@@ -93,11 +87,41 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
     bool initialCheck = true,
     bool listening = false,
   }) async {
-    _i = Authorizer<T>(delegate: delegate, backup: backup, msg: msg);
-    await _i!.initialize(initialCheck: initialCheck, listening: listening);
+    while (_ioLock != null) {
+      await _ioLock;
+    }
+    final completer = Completer<void>();
+    _ioLock = completer.future;
+    try {
+      final prev = _i;
+      if (prev != null) {
+        try {
+          prev.dispose();
+        } catch (_) {}
+      }
+      final created = Authorizer<T>(
+        delegate: delegate,
+        backup: backup,
+        msg: msg,
+      );
+      _i = created;
+      await created.initialize(
+        initialCheck: initialCheck,
+        listening: listening,
+      );
+    } finally {
+      completer.complete();
+      if (_ioLock == completer.future) _ioLock = null;
+    }
   }
 
   static void attach<T extends Auth>(Authorizer<T> authorizer) {
+    final prev = _i;
+    if (prev != null && !identical(prev, authorizer)) {
+      try {
+        prev.dispose();
+      } catch (_) {}
+    }
     _i = authorizer;
   }
 
@@ -116,7 +140,11 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
       final signedIn = await delegate.isSignIn();
       final data = signedIn ? await auth : null;
       if (data == null) {
-        if (signedIn) await delegate.signOut();
+        if (signedIn) {
+          try {
+            await delegate.signOut();
+          } catch (_) {}
+        }
         return AuthResponse.unauthenticated(type: AuthType.signedIn);
       }
       return AuthResponse.authenticated(data, type: AuthType.signedIn);
@@ -141,8 +169,15 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
       notifiable: notifiable,
     );
 
+    final opToken = _beginOp();
+
     try {
       final response = await delegate.signInAnonymously();
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.none);
+      }
+
       if (!response.isSuccessful) {
         return _failure(
           response.error,
@@ -174,6 +209,20 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
           keys.provider: 'GUEST',
         },
       );
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.none);
+      }
+
+      if (value == null) {
+        return _failure(
+          msg.authorization,
+          type: AuthType.none,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
 
       return emit(
         AuthResponse.authenticated(

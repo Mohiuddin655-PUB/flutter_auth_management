@@ -21,11 +21,19 @@ class _AuthBackup<T extends Auth> {
     return delegate.encryptor(key, value);
   }
 
+  E? decryptor<E extends Object?>(String key, E? value) {
+    return delegate.decryptor(key, value);
+  }
+
   Future<T?> get([bool remotely = false]) async {
     final value = await cache;
     if (value == null || !value.isLoggedIn) return null;
     if (!remotely) return value;
-    return delegate.onFetchUser(value.id);
+    try {
+      return await delegate.onFetchUser(value.id);
+    } catch (_) {
+      return value;
+    }
   }
 
   Future<bool> set(T? data) async {
@@ -37,10 +45,7 @@ class _AuthBackup<T extends Auth> {
     final current = await cache;
     final target = data ?? current;
     if (target == null) return false;
-
-    final ok = await delegate.set(target).onError((_, __) => false);
-    if (ok) _emit(AuthResponse.data(target));
-    return ok;
+    return await delegate.set(target).onError((e, st) => false);
   }
 
   Future<bool> update(Map<String, dynamic> data) async {
@@ -70,11 +75,12 @@ class _AuthBackup<T extends Auth> {
     try {
       await onUpdateUser(local.id, data, false);
       if (!isCurrent()) return false;
+      _emit(AuthResponse.data(updated));
       return true;
     } catch (_) {
       if (isCurrent()) {
-        _emit(AuthResponse.loading());
         await setAsLocal(local);
+        if (isCurrent()) _emit(AuthResponse.data(local));
       }
       return false;
     }
@@ -88,8 +94,16 @@ class _AuthBackup<T extends Auth> {
   }) async {
     if (id.isEmpty) return false;
 
-    if (cacheUpdateMode) {
-      final ok = await delegate.update(data);
+    final hasCache = (await cache) != null;
+    final useCacheUpdate = cacheUpdateMode && hasCache;
+
+    if (useCacheUpdate) {
+      bool ok;
+      try {
+        ok = await delegate.update(data);
+      } catch (_) {
+        ok = false;
+      }
       if (ok) {
         final refreshed = await cache;
         if (refreshed != null) _emit(AuthResponse.data(refreshed));
@@ -97,9 +111,14 @@ class _AuthBackup<T extends Auth> {
       return ok;
     }
 
-    final remote = await onFetchUser(id);
+    T? remote;
+    try {
+      remote = await onFetchUser(id);
+    } catch (_) {
+      remote = null;
+    }
 
-    if (remote == null || !remote.isAuthenticated) {
+    if (remote == null) {
       if (data.isEmpty) return false;
       final user = build(data);
       try {
@@ -139,8 +158,9 @@ class _AuthBackup<T extends Auth> {
     String id,
     Map<String, dynamic> data,
     bool hasAnonymous,
-  ) =>
-      delegate.onUpdateUser(id, data, hasAnonymous);
+  ) {
+    return delegate.onUpdateUser(id, data, hasAnonymous);
+  }
 
   Future<void> onDeleteUser(String id) => delegate.onDeleteUser(id);
 

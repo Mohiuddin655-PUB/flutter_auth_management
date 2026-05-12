@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import '../core/authorizer.dart';
 import '../exceptions/exception.dart';
 import '../models/auth.dart';
+import '../models/auth_status.dart' show AuthStatus;
 import 'provider.dart';
+
+typedef OnAuthMode = void Function(BuildContext context);
+typedef OnAuthError = void Function(BuildContext context, String error);
+typedef OnAuthMessage = void Function(BuildContext context, String message);
+typedef OnAuthLoading = void Function(BuildContext context, bool loading);
+typedef OnAuthStatus = void Function(BuildContext context, AuthStatus status);
 
 /// Builder signature for [AuthListener].
 typedef OnAuthBuilder<T extends Auth> = Widget Function(

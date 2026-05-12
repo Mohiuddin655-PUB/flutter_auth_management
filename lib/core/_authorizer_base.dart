@@ -19,6 +19,8 @@ abstract class _AuthorizerBase<T extends Auth> {
   bool _initializing = false;
   bool _backupEmitEnabled = true;
 
+  int _opGeneration = 0;
+
   _AuthorizerBase({
     required this.delegate,
     required AuthBackupDelegate<T> backup,
@@ -28,10 +30,14 @@ abstract class _AuthorizerBase<T extends Auth> {
     _backup = _AuthBackup<T>(backup, _emitFromBackup);
   }
 
-  /// Raw cached auth — may be null or logged-out.
+  int _beginOp() => ++_opGeneration;
+
+  bool _isOpAlive(int token) => !_disposed && _opGeneration == token;
+
+  bool get isDisposed => _disposed;
+
   Future<T?> get _cachedAuth => _backup.cache;
 
-  /// Filtered auth — returns null if not currently logged in.
   Future<T?> get auth async {
     try {
       final value = await _cachedAuth;
@@ -42,9 +48,14 @@ abstract class _AuthorizerBase<T extends Auth> {
     }
   }
 
-  bool get hasAnonymous => delegate.isAnonymous;
+  bool get hasAnonymous {
+    try {
+      return delegate.isAnonymous;
+    } catch (_) {
+      return false;
+    }
+  }
 
-  /// Clears local cached auth and surfaces errors silently.
   Future<bool> _clearLocal() async {
     try {
       return await _backup.clear();
@@ -54,6 +65,5 @@ abstract class _AuthorizerBase<T extends Auth> {
     }
   }
 
-  /// Implemented by [_AuthEmitMixin].
   void _emitFromBackup(AuthResponse<T> data);
 }

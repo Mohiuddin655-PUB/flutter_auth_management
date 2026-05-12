@@ -7,15 +7,13 @@ mixin _AuthUpdateMixin<T extends Auth>
     String? id,
     bool notifiable = true,
   }) async {
+    if (data.isEmpty) return _userNotifier.value;
     try {
-      final prevBackupEmit = _backupEmitEnabled;
-      _backupEmitEnabled = notifiable;
       final ok = await _backup.update(data);
-      _backupEmitEnabled = prevBackupEmit;
       if (!ok) return null;
       return _userNotifier.value;
     } catch (error) {
-      if (!_disposed) _errorNotifier.value = error.toString();
+      if (!_disposed && notifiable) _errorNotifier.value = error.toString();
       return null;
     }
   }
@@ -36,9 +34,13 @@ mixin _AuthUpdateMixin<T extends Auth>
         finalData = {...data, keys.biometric: biometric};
       }
 
+      final encrypted = finalData.map(
+        (k, v) => MapEntry(k, _backup.encryptor(k, v)),
+      );
+
       final saved = await _backup.save(
         id: id,
-        data: finalData.map((k, v) => MapEntry(k, _backup.encryptor(k, v))),
+        data: encrypted,
         cacheUpdateMode: updateMode,
         hasAnonymous: hasAnonymous,
       );

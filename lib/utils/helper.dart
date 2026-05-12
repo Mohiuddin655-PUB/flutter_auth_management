@@ -286,11 +286,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithApple").signInWithApple(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithApple",
+    ).signInWithApple(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithFacebook<T extends Auth>({
@@ -298,11 +296,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithFacebook").signInWithFacebook(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithFacebook",
+    ).signInWithFacebook(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithGameCenter<T extends Auth>({
@@ -310,11 +306,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithGameCenter").signInWithGameCenter(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithGameCenter",
+    ).signInWithGameCenter(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithGithub<T extends Auth>({
@@ -322,11 +316,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithGithub").signInWithGithub(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithGithub",
+    ).signInWithGithub(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithGoogle<T extends Auth>({
@@ -334,11 +326,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithGoogle").signInWithGoogle(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithGoogle",
+    ).signInWithGoogle(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithMicrosoft<T extends Auth>({
@@ -346,11 +336,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithMicrosoft").signInWithMicrosoft(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithMicrosoft",
+    ).signInWithMicrosoft(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithPlayGames<T extends Auth>({
@@ -358,11 +346,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithPlayGames").signInWithPlayGames(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithPlayGames",
+    ).signInWithPlayGames(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithSAML<T extends Auth>({
@@ -370,11 +356,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithSAML").signInWithSAML(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithSAML",
+    ).signInWithSAML(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithTwitter<T extends Auth>({
@@ -382,11 +366,9 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithTwitter").signInWithTwitter(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithTwitter",
+    ).signInWithTwitter(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithYahoo<T extends Auth>({
@@ -396,10 +378,8 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithYahoo").signInWithYahoo(
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithYahoo",
+    ).signInWithYahoo(args: args, id: id, notifiable: notifiable);
   }
 }

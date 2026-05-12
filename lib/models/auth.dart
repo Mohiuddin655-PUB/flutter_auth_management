@@ -18,7 +18,7 @@ class Auth<K extends AuthKeys> extends Entity<K> {
   final String? provider;
   final String? username;
 
-  bool get isAuthenticated => true;
+  bool get isAuthenticated => isLoggedIn && id.isNotEmpty;
 
   bool get isBiometric => biometric ?? false;
 

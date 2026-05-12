@@ -35,7 +35,7 @@ mixin _AuthStateMixin<T extends Auth> on _AuthorizerBase<T> {
       final value = await _cachedAuth;
       return value != null && value.isBiometric;
     } catch (error) {
-      _errorNotifier.value = error.toString();
+      if (!_disposed) _errorNotifier.value = error.toString();
       return false;
     }
   }

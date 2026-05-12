@@ -40,11 +40,12 @@ mixin _AuthEmailMixin<T extends Auth>
       failureMsg: msg.signUpWithEmail.failure,
       authenticator: authenticator,
       onBiometric: onBiometric,
-      isSignUp: true,
-      signIn: () => delegate.signUpWithEmailNPassword(
-        authenticator.email,
-        authenticator.password,
-      ),
+      signIn: () {
+        return delegate.signUpWithEmailNPassword(
+          authenticator.email,
+          authenticator.password,
+        );
+      },
       args: args,
       id: id,
       notifiable: notifiable,
@@ -89,7 +90,6 @@ mixin _AuthEmailMixin<T extends Auth>
       failureMsg: msg.signUpWithUsername.failure,
       authenticator: authenticator,
       onBiometric: onBiometric,
-      isSignUp: true,
       signIn: () => delegate.signUpWithUsernameNPassword(
         authenticator.username,
         authenticator.password,
@@ -108,7 +108,6 @@ mixin _AuthEmailMixin<T extends Auth>
     required Authenticator authenticator,
     required _OAuthSignIn signIn,
     SignByBiometricCallback<T>? onBiometric,
-    bool isSignUp = false,
     Object? args,
     String? id,
     bool notifiable = true,
@@ -120,9 +119,16 @@ mixin _AuthEmailMixin<T extends Auth>
       notifiable: notifiable,
     );
 
+    final opToken = _beginOp();
+
     try {
       final hasAnonymous = this.hasAnonymous;
       final response = await signIn();
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: type);
+      }
+
       if (!response.isSuccessful) {
         return _failure(
           response.error,
@@ -145,11 +151,13 @@ mixin _AuthEmailMixin<T extends Auth>
         );
       }
 
+      final wantsBiometric = onBiometric != null;
+
       final value = await _update(
         id: uid,
         hasAnonymous: hasAnonymous,
         onBiometric: onBiometric,
-        updateMode: !isSignUp,
+        updateMode: false,
         data: {
           keys.id: uid,
           keys.loggedIn: true,
@@ -157,20 +165,30 @@ mixin _AuthEmailMixin<T extends Auth>
           keys.provider: provider,
           if (authenticator is EmailAuthenticator) ...{
             keys.email: authenticator.email,
-            keys.password: authenticator.password,
+            if (wantsBiometric) keys.password: authenticator.password,
           } else if (authenticator is UsernameAuthenticator) ...{
             keys.username: authenticator.username,
-            keys.password: authenticator.password,
-          }
+            if (wantsBiometric) keys.password: authenticator.password,
+          },
         },
       );
 
-      return emit(
-        AuthResponse.authenticated(
-          value,
-          msg: doneMsg,
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: type);
+      }
+
+      if (value == null) {
+        return _failure(
+          msg.authorization,
           type: type,
-        ),
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
+
+      return emit(
+        AuthResponse.authenticated(value, msg: doneMsg, type: type),
         args: args,
         id: id,
         notifiable: notifiable,

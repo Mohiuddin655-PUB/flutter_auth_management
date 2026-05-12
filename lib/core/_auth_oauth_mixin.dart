@@ -178,9 +178,16 @@ mixin _AuthOAuthMixin<T extends Auth>
       notifiable: notifiable,
     );
 
+    final opToken = _beginOp();
+
     try {
       final hasAnonymous = this.hasAnonymous;
       final response = await signIn();
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
+      }
+
       final raw = response.data;
       if (raw == null || raw.credential == null) {
         return _failure(
@@ -193,6 +200,11 @@ mixin _AuthOAuthMixin<T extends Auth>
       }
 
       final current = await delegate.signInWithCredential(raw.credential!);
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
+      }
+
       if (!current.isSuccessful) {
         return _failure(
           current.error,
@@ -230,6 +242,20 @@ mixin _AuthOAuthMixin<T extends Auth>
           if ((result.photoURL ?? '').isNotEmpty) keys.photo: result.photoURL,
         },
       );
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
+      }
+
+      if (value == null) {
+        return _failure(
+          msg.authorization,
+          type: AuthType.oauth,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
 
       return emit(
         AuthResponse.authenticated(value, msg: doneMsg, type: AuthType.oauth),

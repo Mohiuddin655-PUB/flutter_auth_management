@@ -6,10 +6,7 @@ class EmailAuthenticator extends Authenticator {
   final String email;
   final String password;
 
-  const EmailAuthenticator({
-    required this.email,
-    required this.password,
-  });
+  const EmailAuthenticator({required this.email, required this.password});
 }
 
 class GuestAuthenticator extends Authenticator {

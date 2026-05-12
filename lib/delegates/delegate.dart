@@ -1,7 +1,7 @@
-import 'package:flutter_entity/entity.dart';
+import 'package:flutter_entity/entity.dart' show Response;
 
-import '../exceptions/exception.dart';
-import '../models/credential.dart';
+import '../exceptions/exception.dart' show AuthException;
+import '../models/credential.dart' show Credential;
 
 abstract class AuthDelegate {
   const AuthDelegate();

@@ -24,7 +24,7 @@ mixin _AuthBiometricMixin<T extends Auth>
       final value = await _update(
         id: auth.id,
         updateMode: true,
-        data: {keys.biometric: enabled},
+        data: {keys.biometric: enabled, if (!enabled) keys.password: null},
       );
       return Response(status: Status.ok, data: value);
     } catch (error) {
@@ -44,6 +44,8 @@ mixin _AuthBiometricMixin<T extends Auth>
       notifiable: notifiable,
     );
 
+    final opToken = _beginOp();
+
     try {
       final user = await _cachedAuth;
       if (user == null || !user.isBiometric) {
@@ -59,6 +61,9 @@ mixin _AuthBiometricMixin<T extends Auth>
       }
 
       final response = await delegate.signInWithBiometric();
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.biometric);
+      }
       if (!response.isSuccessful) {
         return _failure(
           response.error,
@@ -70,23 +75,33 @@ mixin _AuthBiometricMixin<T extends Auth>
       }
 
       final provider = user.provider;
-      var current = Response<Credential>();
+      Response<Credential> current = Response<Credential>(status: Status.ok);
 
-      final hasCredentials = (user.email ?? user.username ?? '').isNotEmpty &&
-          (user.password ?? '').isNotEmpty;
+      final storedPassword = user.password;
+      final plainPassword = storedPassword == null
+          ? null
+          : _backup.decryptor<String>(keys.password, storedPassword);
+
+      final identity = user.email ?? user.username ?? '';
+      final hasCredentials =
+          identity.isNotEmpty && (plainPassword ?? '').isNotEmpty;
 
       if (hasCredentials) {
         if (provider == 'EMAIL') {
           current = await delegate.signInWithEmailNPassword(
             user.email ?? '',
-            user.password ?? '',
+            plainPassword!,
           );
         } else if (provider == 'USERNAME') {
           current = await delegate.signInWithUsernameNPassword(
             user.username ?? '',
-            user.password ?? '',
+            plainPassword!,
           );
         }
+      }
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.biometric);
       }
 
       if (!current.isSuccessful) {
@@ -101,11 +116,26 @@ mixin _AuthBiometricMixin<T extends Auth>
 
       final value = await _update(
         id: user.id,
+        updateMode: true,
         data: {
           keys.loggedIn: true,
           keys.loggedInTime: EntityHelper.generateTimeMills,
         },
       );
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.biometric);
+      }
+
+      if (value == null) {
+        return _failure(
+          msg.authorization,
+          type: AuthType.biometric,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
 
       return emit(
         AuthResponse.authenticated(
