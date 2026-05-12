@@ -48,7 +48,7 @@ class _AuthBackup<T extends Auth> {
     return await delegate.set(target).onError((e, st) => false);
   }
 
-  Future<bool> update(Map<String, dynamic> data) async {
+  Future<bool> update(Map<String, dynamic> data, bool lazyRemoteUpdate) async {
     if (data.isEmpty) return false;
 
     final generation = ++_updateGeneration;
@@ -73,7 +73,11 @@ class _AuthBackup<T extends Auth> {
     if (!localOk) return false;
 
     try {
-      await onUpdateUser(local.id, data, false);
+      if (lazyRemoteUpdate) {
+        onUpdateUser(local.id, data, false);
+      } else {
+        await onUpdateUser(local.id, data, false);
+      }
       if (!isCurrent()) return false;
       _emit(AuthResponse.data(updated));
       return true;

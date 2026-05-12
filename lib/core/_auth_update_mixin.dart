@@ -6,10 +6,11 @@ mixin _AuthUpdateMixin<T extends Auth>
     Map<String, dynamic> data, {
     String? id,
     bool notifiable = true,
+    bool lazyRemoteUpdate = true,
   }) async {
     if (data.isEmpty) return _userNotifier.value;
     try {
-      final ok = await _backup.update(data);
+      final ok = await _backup.update(data, lazyRemoteUpdate);
       if (!ok) return null;
       return _userNotifier.value;
     } catch (error) {
