@@ -10,7 +10,6 @@ import '../models/auth_response.dart';
 import '../models/auth_status.dart';
 import '../models/authenticator.dart';
 import '../models/credential.dart';
-import '../models/provider.dart';
 import '../widgets/provider.dart';
 
 extension AuthHelper on BuildContext {
@@ -137,8 +136,8 @@ extension AuthHelper on BuildContext {
     ).initialize(initialCheck: initialCheck, listening: listening);
   }
 
-  Future<AuthResponse<T>> isSignIn<T extends Auth>({Provider? provider}) {
-    return _i<T>("isSignIn").isSignIn(provider: provider);
+  Future<AuthResponse<T>> isSignIn<T extends Auth>() {
+    return _i<T>("isSignIn").isSignIn();
   }
 
   Future<AuthResponse<T>> signInAnonymously<T extends Auth>({
@@ -261,14 +260,11 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signOut<T extends Auth>({
-    Provider? provider,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>(
-      "signOut",
-    ).signOut(provider: provider, args: args, id: id, notifiable: notifiable);
+    return _i<T>("signOut").signOut(args: args, id: id, notifiable: notifiable);
   }
 
   Future<T?> updateAccount<T extends Auth>(
@@ -286,147 +282,93 @@ extension AuthHelper on BuildContext {
   }
 
   Future<AuthResponse<T>> signInWithApple<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithApple").signInWithApple(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithApple",
+    ).signInWithApple(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithFacebook<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithFacebook").signInWithFacebook(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithFacebook",
+    ).signInWithFacebook(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithGameCenter<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithGameCenter").signInWithGameCenter(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithGameCenter",
+    ).signInWithGameCenter(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithGithub<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithGithub").signInWithGithub(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithGithub",
+    ).signInWithGithub(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithGoogle<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithGoogle").signInWithGoogle(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithGoogle",
+    ).signInWithGoogle(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithMicrosoft<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithMicrosoft").signInWithMicrosoft(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithMicrosoft",
+    ).signInWithMicrosoft(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithPlayGames<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithPlayGames").signInWithPlayGames(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithPlayGames",
+    ).signInWithPlayGames(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithSAML<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithSAML").signInWithSAML(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithSAML",
+    ).signInWithSAML(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithTwitter<T extends Auth>({
-    OAuthAuthenticator? authenticator,
-    bool storeToken = false,
     Object? args,
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithTwitter").signInWithTwitter(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithTwitter",
+    ).signInWithTwitter(args: args, id: id, notifiable: notifiable);
   }
 
   Future<AuthResponse<T>> signInWithYahoo<T extends Auth>({
@@ -436,12 +378,8 @@ extension AuthHelper on BuildContext {
     String? id,
     bool notifiable = true,
   }) {
-    return _i<T>("signInWithYahoo").signInWithYahoo(
-      authenticator: authenticator,
-      storeToken: storeToken,
-      args: args,
-      id: id,
-      notifiable: notifiable,
-    );
+    return _i<T>(
+      "signInWithYahoo",
+    ).signInWithYahoo(args: args, id: id, notifiable: notifiable);
   }
 }

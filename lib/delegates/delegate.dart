@@ -1,8 +1,7 @@
-import 'package:flutter_entity/entity.dart';
+import 'package:flutter_entity/entity.dart' show Response;
 
-import '../exceptions/exception.dart';
-import '../models/credential.dart';
-import '../models/provider.dart';
+import '../exceptions/exception.dart' show AuthException;
+import '../models/credential.dart' show Credential;
 
 abstract class AuthDelegate {
   const AuthDelegate();
@@ -19,20 +18,13 @@ abstract class AuthDelegate {
     throw UnimplementedError("Getter rawUid is not yet implemented.");
   }
 
-  /// Create the auth credential using a provided credential info.
-  Object credential(Provider provider, Credential credential) {
-    throw UnimplementedError(
-      "Method createCredential() is not yet implemented.",
-    );
-  }
-
   /// Deletes the current user's credential.
   Future<Response<void>> delete() {
     throw UnimplementedError("Method delete() is not yet implemented.");
   }
 
   /// Checks if a user is currently signed in.
-  Future<bool> isSignIn([Provider? provider]) {
+  Future<bool> isSignIn() {
     throw UnimplementedError("Method isSignIn() is not yet implemented.");
   }
 
@@ -54,6 +46,13 @@ abstract class AuthDelegate {
   Future<Response<Credential>> signInWithCredential(Object credential) {
     throw UnimplementedError(
       "Method signInWithCredential() is not yet implemented.",
+    );
+  }
+
+  /// Signs in the user using a provided credential.
+  Future<Response<Credential>> signInWithOtp(String verId, String smsCode) {
+    throw UnimplementedError(
+      "Method signInWithSmsCode() is not yet implemented.",
     );
   }
 
@@ -166,7 +165,7 @@ abstract class AuthDelegate {
   }
 
   /// Signs out the user from the specified provider or all providers if none is specified.
-  Future<Response<void>> signOut([Provider? provider]) {
+  Future<Response<void>> signOut() {
     throw UnimplementedError("Method signOut() is not yet implemented.");
   }
 

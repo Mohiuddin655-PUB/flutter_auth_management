@@ -1,0 +1,276 @@
+part of 'authorizer.dart';
+
+mixin _AuthOAuthMixin<T extends Auth>
+    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthUpdateMixin<T> {
+  Future<AuthResponse<T>> signInWithApple({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'APPLE',
+      doneMsg: msg.signInWithApple.done,
+      failureMsg: msg.signInWithApple.failure,
+      signIn: () => delegate.signInWithApple(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithFacebook({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'FACEBOOK',
+      doneMsg: msg.signInWithFacebook.done,
+      failureMsg: msg.signInWithFacebook.failure,
+      signIn: () => delegate.signInWithFacebook(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithGameCenter({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'GAME_CENTER',
+      doneMsg: msg.signInWithGameCenter.done,
+      failureMsg: msg.signInWithGameCenter.failure,
+      signIn: () => delegate.signInWithGameCenter(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithGithub({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'GITHUB',
+      doneMsg: msg.signInWithGithub.done,
+      failureMsg: msg.signInWithGithub.failure,
+      signIn: () => delegate.signInWithGithub(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithGoogle({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'GOOGLE',
+      doneMsg: msg.signInWithGoogle.done,
+      failureMsg: msg.signInWithGoogle.failure,
+      signIn: () => delegate.signInWithGoogle(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithMicrosoft({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'MICROSOFT',
+      doneMsg: msg.signInWithMicrosoft.done,
+      failureMsg: msg.signInWithMicrosoft.failure,
+      signIn: () => delegate.signInWithMicrosoft(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithPlayGames({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'PLAY_GAMES',
+      doneMsg: msg.signInWithPlayGames.done,
+      failureMsg: msg.signInWithPlayGames.failure,
+      signIn: () => delegate.signInWithPlayGames(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithSAML({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'SAML',
+      doneMsg: msg.signInWithSAML.done,
+      failureMsg: msg.signInWithSAML.failure,
+      signIn: () => delegate.signInWithSAML(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithTwitter({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'TWITTER',
+      doneMsg: msg.signInWithTwitter.done,
+      failureMsg: msg.signInWithTwitter.failure,
+      signIn: () => delegate.signInWithTwitter(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> signInWithYahoo({
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) {
+    return _signInWithOAuth(
+      provider: 'YAHOO',
+      doneMsg: msg.signInWithYahoo.done,
+      failureMsg: msg.signInWithYahoo.failure,
+      signIn: () => delegate.signInWithYahoo(),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+  }
+
+  Future<AuthResponse<T>> _signInWithOAuth({
+    required String provider,
+    required String? doneMsg,
+    required String? failureMsg,
+    required _OAuthSignIn signIn,
+    Object? args,
+    String? id,
+    bool notifiable = true,
+  }) async {
+    emit(
+      AuthResponse.loading(AuthType.oauth),
+      args: args,
+      id: id,
+      notifiable: notifiable,
+    );
+
+    final opToken = _beginOp();
+
+    try {
+      final hasAnonymous = this.hasAnonymous;
+      final response = await signIn();
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
+      }
+
+      final raw = response.data;
+      if (raw == null || raw.credential == null) {
+        return _failure(
+          response.error,
+          type: AuthType.oauth,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
+
+      final current = await delegate.signInWithCredential(raw.credential!);
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
+      }
+
+      if (!current.isSuccessful) {
+        return _failure(
+          current.error,
+          type: AuthType.oauth,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
+
+      final result = current.data;
+      final uid = result?.uid ?? '';
+      if (result == null || uid.isEmpty) {
+        return _failure(
+          msg.authorization,
+          type: AuthType.oauth,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
+
+      final value = await _update(
+        id: uid,
+        hasAnonymous: hasAnonymous,
+        data: {
+          keys.id: uid,
+          keys.loggedIn: true,
+          keys.loggedInTime: EntityHelper.generateTimeMills,
+          keys.provider: provider,
+          keys.verified: true,
+          if ((result.email ?? '').isNotEmpty) keys.email: result.email,
+          if ((result.displayName ?? '').isNotEmpty)
+            keys.name: result.displayName,
+          if ((result.photoURL ?? '').isNotEmpty) keys.photo: result.photoURL,
+        },
+      );
+
+      if (!_isOpAlive(opToken)) {
+        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
+      }
+
+      if (value == null) {
+        return _failure(
+          msg.authorization,
+          type: AuthType.oauth,
+          args: args,
+          id: id,
+          notifiable: notifiable,
+        );
+      }
+
+      return emit(
+        AuthResponse.authenticated(value, msg: doneMsg, type: AuthType.oauth),
+        args: args,
+        id: id,
+        notifiable: notifiable,
+      );
+    } catch (error) {
+      return _failure(
+        failureMsg ?? error.toString(),
+        type: AuthType.oauth,
+        args: args,
+        id: id,
+        notifiable: notifiable,
+      );
+    }
+  }
+}

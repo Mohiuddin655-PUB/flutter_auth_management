@@ -1,7 +1,7 @@
-import 'dart:convert';
-import 'dart:core';
+import 'dart:convert' show jsonDecode, jsonEncode;
 
-import '../models/auth.dart';
+import '../models/auth.dart' show Auth;
+import '../models/key.dart' show AuthKeys;
 
 typedef Backup = Map<String, dynamic>;
 typedef BackupReader = Future<String?> Function(String key);
@@ -18,14 +18,14 @@ abstract class AuthBackupDelegate<T extends Auth> {
     required this.writer,
   });
 
-  Future<T?> get cache {
-    return _r(key).then((value) {
-      if (value.isNotEmpty) {
-        return build(value);
-      } else {
-        return null;
-      }
-    });
+  Future<T?> get cache async {
+    final value = await _r(key);
+    if (value.isEmpty) return null;
+    try {
+      return build(value);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<Backup> _r(String key) async {
@@ -38,7 +38,7 @@ abstract class AuthBackupDelegate<T extends Auth> {
         return output.map((key, value) => MapEntry(key.toString(), value));
       }
       return {};
-    } catch (error) {
+    } catch (_) {
       return {};
     }
   }
@@ -49,27 +49,31 @@ abstract class AuthBackupDelegate<T extends Auth> {
       final value = jsonEncode(snapshot);
       if (value.isEmpty) return false;
       return writer(key, value);
-    } catch (error) {
+    } catch (_) {
       return false;
     }
   }
 
   E? encryptor<E extends Object?>(String key, E? value) => value;
 
+  E? decryptor<E extends Object?>(String key, E? value) => value;
+
   Future<bool> set(T? data) => _w(key, data?.source);
 
-  Future<bool> update(Map<String, dynamic> data) {
-    return cache.then((value) {
-      if (value != null) {
-        final current = value.source..addAll(data);
-        return _w(key, current);
-      } else {
-        return false;
-      }
-    });
+  Future<bool> update(Map<String, dynamic> data) async {
+    final value = await cache;
+    if (value == null) return false;
+    final current = value.source..addAll(data);
+    return _w(key, current);
   }
 
-  Future<bool> clear() => writer(key, null);
+  Future<bool> clear() async {
+    try {
+      return await writer(key, null);
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<T?> onFetchUser(String id);
 
@@ -86,7 +90,7 @@ abstract class AuthBackupDelegate<T extends Auth> {
   );
 
   Object? nonEncodableObjectParser(Object? current, Object? old) {
-    return old;
+    return current;
   }
 
   T build(Map source);

@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 import '../core/authorizer.dart';
 import '../exceptions/exception.dart';
 import '../models/auth.dart';
-import '../utils/auth_changes.dart';
+import '../models/auth_status.dart' show AuthStatus;
 import 'provider.dart';
+
+typedef OnAuthMode = void Function(BuildContext context);
+typedef OnAuthError = void Function(BuildContext context, String error);
+typedef OnAuthMessage = void Function(BuildContext context, String message);
+typedef OnAuthLoading = void Function(BuildContext context, bool loading);
+typedef OnAuthStatus = void Function(BuildContext context, AuthStatus status);
 
 /// Builder signature for [AuthListener].
 typedef OnAuthBuilder<T extends Auth> = Widget Function(
@@ -40,10 +46,6 @@ class AuthListener<T extends Auth> extends StatefulWidget {
   /// Subtree forwarded to [builder]. Built once.
   final Widget? child;
 
-  /// Called when [Authorizer.liveStatus] changes, with the full [AuthChanges]
-  /// snapshot. Takes precedence over [onStatus] if both are set.
-  final OnAuthChanges<T>? onChanges;
-
   /// Called when [Authorizer.liveError] changes to a non-empty value.
   final OnAuthError? onError;
 
@@ -65,7 +67,6 @@ class AuthListener<T extends Auth> extends StatefulWidget {
     this.initial,
     this.ids = const [],
     this.child,
-    this.onChanges,
     this.onError,
     this.onLoading,
     this.onMessage,
@@ -81,7 +82,7 @@ class _AuthListenerState<T extends Auth> extends State<AuthListener<T>> {
   Authorizer<T>? _authorizer;
 
   /// Whether status callbacks should be wired up at all.
-  bool get _wantsStatus => widget.onStatus != null || widget.onChanges != null;
+  bool get _wantsStatus => widget.onStatus != null;
 
   /// Whether the current authorizer id passes the [AuthListener.ids] filter.
   bool get _isIdMatched {
@@ -193,19 +194,6 @@ class _AuthListenerState<T extends Auth> extends State<AuthListener<T>> {
     if (!mounted || !_isIdMatched) return;
     final authorizer = _authorizer;
     if (authorizer == null) return;
-
-    final onChanges = widget.onChanges;
-    if (onChanges != null) {
-      onChanges(
-        context,
-        AuthChanges(
-          args: authorizer.args,
-          status: authorizer.status,
-          user: authorizer.user,
-        ),
-      );
-      return;
-    }
     widget.onStatus?.call(context, authorizer.status);
   }
 }
