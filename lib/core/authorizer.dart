@@ -29,6 +29,7 @@ part '_auth_emit_mixin.dart';
 part '_auth_lifecycle_mixin.dart';
 part '_auth_oauth_mixin.dart';
 part '_auth_phone_mixin.dart';
+part '_auth_sign_in_mixin.dart';
 part '_auth_signout_mixin.dart';
 part '_auth_state_mixin.dart';
 part '_auth_update_mixin.dart';
@@ -47,6 +48,7 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
         _AuthStateMixin<T>,
         _AuthLifecycleMixin<T>,
         _AuthUpdateMixin<T>,
+        _AuthSignInMixin<T>,
         _AuthBiometricMixin<T>,
         _AuthEmailMixin<T>,
         _AuthPhoneMixin<T>,
@@ -161,87 +163,22 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
     Object? args,
     String? id,
     bool notifiable = true,
-  }) async {
-    emit(
-      const AuthResponse.loading(AuthType.none),
+  }) {
+    return _signIn(
+      type: AuthType.none,
+      doneMsg: msg.signInWithEmail.done,
+      failureMsg: msg.signInWithEmail.failure,
+      linksAnonymous: false,
+      signIn: (_) => delegate.signInAnonymously(),
+      data: (uid, _) => {
+        keys.id: uid,
+        keys.loggedIn: true,
+        keys.loggedInTime: EntityHelper.generateTimeMills,
+        keys.provider: 'GUEST',
+      },
       args: args,
       id: id,
       notifiable: notifiable,
     );
-
-    final opToken = _beginOp();
-
-    try {
-      final response = await delegate.signInAnonymously();
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.none);
-      }
-
-      if (!response.isSuccessful) {
-        return _failure(
-          response.error,
-          type: AuthType.none,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final result = response.data;
-      final uid = result?.uid;
-      if (result == null || uid == null || uid.isEmpty) {
-        return _failure(
-          msg.authorization,
-          type: AuthType.none,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final value = await _update(
-        id: uid,
-        data: {
-          keys.id: uid,
-          keys.loggedIn: true,
-          keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: 'GUEST',
-        },
-      );
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.none);
-      }
-
-      if (value == null) {
-        return _failure(
-          msg.authorization,
-          type: AuthType.none,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      return emit(
-        AuthResponse.authenticated(
-          value,
-          msg: msg.signInWithEmail.done,
-          type: AuthType.none,
-        ),
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    } catch (error) {
-      return _failure(
-        msg.signInWithEmail.failure ?? error.toString(),
-        type: AuthType.none,
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    }
   }
 }

@@ -46,7 +46,11 @@ mixin _AuthUpdateMixin<T extends Auth>
         hasAnonymous: hasAnonymous,
       );
 
-      if (!saved) return _userNotifier.value;
+      // Not saved: the user already there only when it is this one, never someone signed in before.
+      if (!saved) {
+        final current = _userNotifier.value;
+        return current != null && current.id == id ? current : null;
+      }
 
       final updated = await _cachedAuth ??
           _backup.build({...?_userNotifier.value?.source, ...finalData});

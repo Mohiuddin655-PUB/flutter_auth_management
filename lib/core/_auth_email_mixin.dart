@@ -1,7 +1,7 @@
 part of 'authorizer.dart';
 
 mixin _AuthEmailMixin<T extends Auth>
-    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthUpdateMixin<T> {
+    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthSignInMixin<T> {
   Future<AuthResponse<T>> signInByEmail(
     EmailAuthenticator authenticator, {
     SignByBiometricCallback<T>? onBiometric,
@@ -111,96 +111,30 @@ mixin _AuthEmailMixin<T extends Auth>
     Object? args,
     String? id,
     bool notifiable = true,
-  }) async {
-    emit(
-      AuthResponse.loading(type),
+  }) {
+    final wantsBiometric = onBiometric != null;
+    return _signIn(
+      type: type,
+      doneMsg: doneMsg,
+      failureMsg: failureMsg,
+      onBiometric: onBiometric,
+      signIn: (_) => signIn(),
+      data: (uid, _) => {
+        keys.id: uid,
+        keys.loggedIn: true,
+        keys.loggedInTime: EntityHelper.generateTimeMills,
+        keys.provider: provider,
+        if (authenticator is EmailAuthenticator) ...{
+          keys.email: authenticator.email,
+          if (wantsBiometric) keys.password: authenticator.password,
+        } else if (authenticator is UsernameAuthenticator) ...{
+          keys.username: authenticator.username,
+          if (wantsBiometric) keys.password: authenticator.password,
+        },
+      },
       args: args,
       id: id,
       notifiable: notifiable,
     );
-
-    final opToken = _beginOp();
-
-    try {
-      final hasAnonymous = this.hasAnonymous;
-      final response = await signIn();
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: type);
-      }
-
-      if (!response.isSuccessful) {
-        return _failure(
-          response.error,
-          type: type,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final result = response.data;
-      final uid = result?.uid ?? '';
-      if (result == null || uid.isEmpty) {
-        return _failure(
-          msg.authorization,
-          type: type,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final wantsBiometric = onBiometric != null;
-
-      final value = await _update(
-        id: uid,
-        hasAnonymous: hasAnonymous,
-        onBiometric: onBiometric,
-        updateMode: false,
-        data: {
-          keys.id: uid,
-          keys.loggedIn: true,
-          keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: provider,
-          if (authenticator is EmailAuthenticator) ...{
-            keys.email: authenticator.email,
-            if (wantsBiometric) keys.password: authenticator.password,
-          } else if (authenticator is UsernameAuthenticator) ...{
-            keys.username: authenticator.username,
-            if (wantsBiometric) keys.password: authenticator.password,
-          },
-        },
-      );
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: type);
-      }
-
-      if (value == null) {
-        return _failure(
-          msg.authorization,
-          type: type,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      return emit(
-        AuthResponse.authenticated(value, msg: doneMsg, type: type),
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    } catch (error) {
-      return _failure(
-        failureMsg ?? error.toString(),
-        type: type,
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    }
   }
 }

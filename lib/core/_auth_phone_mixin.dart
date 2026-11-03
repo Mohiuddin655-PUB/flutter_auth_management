@@ -1,7 +1,7 @@
 part of 'authorizer.dart';
 
 mixin _AuthPhoneMixin<T extends Auth>
-    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthUpdateMixin<T> {
+    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthSignInMixin<T> {
   Future<AuthResponse<T>> signInByPhone(
     PhoneAuthenticator authenticator, {
     Object? multiFactorInfo,
@@ -23,7 +23,7 @@ mixin _AuthPhoneMixin<T extends Auth>
     );
 
     try {
-      delegate.verifyPhoneNumber(
+      await delegate.verifyPhoneNumber(
         phoneNumber: authenticator.phone,
         forceResendingToken: int.tryParse(authenticator.resendToken ?? ''),
         multiFactorInfo: multiFactorInfo,
@@ -124,96 +124,27 @@ mixin _AuthPhoneMixin<T extends Auth>
     Object? args,
     String? id,
     bool notifiable = true,
-  }) async {
-    emit(
-      const AuthResponse.loading(AuthType.phone),
+  }) {
+    return _signIn(
+      type: AuthType.phone,
+      doneMsg: msg.signInWithPhone.done,
+      failureMsg: msg.signInWithPhone.failure,
+      signIn: (_) => delegate.signInWithOtp(
+        authenticator.token,
+        authenticator.code,
+      ),
+      data: (uid, _) => {
+        keys.id: uid,
+        keys.loggedIn: true,
+        keys.loggedInTime: EntityHelper.generateTimeMills,
+        keys.provider: 'PHONE_NUMBER',
+        keys.phone: authenticator.value,
+        keys.verified: true,
+      },
       args: args,
       id: id,
       notifiable: notifiable,
     );
-
-    final opToken = _beginOp();
-
-    try {
-      final hasAnonymous = this.hasAnonymous;
-
-      final response = await delegate.signInWithOtp(
-        authenticator.token,
-        authenticator.code,
-      );
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.phone);
-      }
-
-      if (!response.isSuccessful) {
-        return _failure(
-          response.error,
-          type: AuthType.phone,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final result = response.data;
-      final uid = result?.uid ?? '';
-      if (result == null || uid.isEmpty) {
-        return _failure(
-          msg.authorization,
-          type: AuthType.phone,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final value = await _update(
-        id: uid,
-        hasAnonymous: hasAnonymous,
-        data: {
-          keys.id: uid,
-          keys.loggedIn: true,
-          keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: 'PHONE_NUMBER',
-          keys.phone: authenticator.value,
-          keys.verified: true,
-        },
-      );
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.phone);
-      }
-
-      if (value == null) {
-        return _failure(
-          msg.authorization,
-          type: AuthType.phone,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      return emit(
-        AuthResponse.authenticated(
-          value,
-          msg: msg.signInWithPhone.done,
-          type: AuthType.phone,
-        ),
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    } catch (error) {
-      return _failure(
-        msg.signInWithPhone.failure ?? error.toString(),
-        type: AuthType.phone,
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    }
   }
 
   Future<AuthResponse<T>> verifyPhoneByOtp(

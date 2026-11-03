@@ -159,7 +159,8 @@ class _AuthListenerState<T extends Auth> extends State<AuthListener<T>> {
   }
 
   void _detach(Authorizer<T>? authorizer) {
-    if (authorizer == null) return;
+    // A disposed Authorizer's notifiers can't be touched (they throw in debug).
+    if (authorizer == null || authorizer.isDisposed) return;
     authorizer.liveError.removeListener(_handleError);
     authorizer.liveLoading.removeListener(_handleLoading);
     authorizer.liveMessage.removeListener(_handleMessage);

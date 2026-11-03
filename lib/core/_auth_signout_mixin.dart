@@ -22,7 +22,7 @@ mixin _AuthSignOutMixin<T extends Auth>
         return AuthResponse.failure('Cancelled', type: AuthType.logout);
       }
       if (!response.isSuccessful) {
-        return _failure(
+        return await _failure(
           response.error,
           type: AuthType.logout,
           args: args,
@@ -31,26 +31,23 @@ mixin _AuthSignOutMixin<T extends Auth>
         );
       }
 
-      final prev = _backupEmitEnabled;
-      _backupEmitEnabled = false;
-      bool cleared;
-      try {
-        cleared = await _clearLocal();
-      } finally {
-        _backupEmitEnabled = prev;
-      }
+      final cleared = await _clearLocalQuietly();
 
       if (!_isOpAlive(opToken)) {
         return AuthResponse.failure('Cancelled', type: AuthType.logout);
       }
 
-      final response2 = AuthResponse<T>.unauthenticated(
-        msg: cleared ? msg.signOut.done : (msg.signOut.done ?? 'Signed out'),
-        type: AuthType.logout,
+      return await emit(
+        AuthResponse<T>.unauthenticated(
+          msg: msg.signOut.done ?? (cleared ? null : 'Signed out'),
+          type: AuthType.logout,
+        ),
+        args: args,
+        id: id,
+        notifiable: notifiable,
       );
-      return emit(response2, args: args, id: id, notifiable: notifiable);
     } catch (error) {
-      return _failure(
+      return await _failure(
         msg.signOut.failure ?? error.toString(),
         type: AuthType.logout,
         args: args,
@@ -93,7 +90,7 @@ mixin _AuthSignOutMixin<T extends Auth>
         return AuthResponse.failure('Cancelled', type: AuthType.delete);
       }
       if (!response.isSuccessful) {
-        return _failure(
+        return await _failure(
           response.error.isNotEmpty
               ? response.error
               : (msg.delete.failure ?? 'Delete failed'),
@@ -112,19 +109,13 @@ mixin _AuthSignOutMixin<T extends Auth>
         await delegate.signOut();
       } catch (_) {}
 
-      final prev = _backupEmitEnabled;
-      _backupEmitEnabled = false;
-      try {
-        await _clearLocal();
-      } finally {
-        _backupEmitEnabled = prev;
-      }
+      await _clearLocalQuietly();
 
       if (!_isOpAlive(opToken)) {
         return AuthResponse.failure('Cancelled', type: AuthType.delete);
       }
 
-      return emit(
+      return await emit(
         AuthResponse.unauthenticated(
           msg: msg.delete.done,
           type: AuthType.delete,
@@ -134,13 +125,24 @@ mixin _AuthSignOutMixin<T extends Auth>
         notifiable: notifiable,
       );
     } catch (error) {
-      return _failure(
+      return await _failure(
         msg.delete.failure ?? error.toString(),
         type: AuthType.delete,
         args: args,
         id: id,
         notifiable: notifiable,
       );
+    }
+  }
+
+  /// Clears the cached user without the backup's own unauthenticated emit: the caller emits its own.
+  Future<bool> _clearLocalQuietly() async {
+    final prev = _backupEmitEnabled;
+    _backupEmitEnabled = false;
+    try {
+      return await _clearLocal();
+    } finally {
+      _backupEmitEnabled = prev;
     }
   }
 }

@@ -49,7 +49,7 @@ mixin _AuthBiometricMixin<T extends Auth>
     try {
       final user = await _cachedAuth;
       if (user == null || !user.isBiometric) {
-        return emit(
+        return await emit(
           AuthResponse.unauthorized(
             msg: msg.signInWithBiometric.failure ?? _errorNotifier.value,
             type: AuthType.biometric,
@@ -65,7 +65,7 @@ mixin _AuthBiometricMixin<T extends Auth>
         return AuthResponse.failure('Cancelled', type: AuthType.biometric);
       }
       if (!response.isSuccessful) {
-        return _failure(
+        return await _failure(
           response.error,
           type: AuthType.biometric,
           args: args,
@@ -105,7 +105,7 @@ mixin _AuthBiometricMixin<T extends Auth>
       }
 
       if (!current.isSuccessful) {
-        return _failure(
+        return await _failure(
           current.error,
           type: AuthType.biometric,
           args: args,
@@ -128,7 +128,7 @@ mixin _AuthBiometricMixin<T extends Auth>
       }
 
       if (value == null) {
-        return _failure(
+        return await _failure(
           msg.authorization,
           type: AuthType.biometric,
           args: args,
@@ -137,7 +137,7 @@ mixin _AuthBiometricMixin<T extends Auth>
         );
       }
 
-      return emit(
+      return await emit(
         AuthResponse.authenticated(
           value,
           msg: msg.signInWithBiometric.done,

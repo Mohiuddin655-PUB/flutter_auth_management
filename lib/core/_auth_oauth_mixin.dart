@@ -1,7 +1,7 @@
 part of 'authorizer.dart';
 
 mixin _AuthOAuthMixin<T extends Auth>
-    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthUpdateMixin<T> {
+    on _AuthorizerBase<T>, _AuthEmitMixin<T>, _AuthSignInMixin<T> {
   Future<AuthResponse<T>> signInWithApple({
     Object? args,
     String? id,
@@ -170,107 +170,34 @@ mixin _AuthOAuthMixin<T extends Auth>
     Object? args,
     String? id,
     bool notifiable = true,
-  }) async {
-    emit(
-      AuthResponse.loading(AuthType.oauth),
+  }) {
+    return _signIn(
+      type: AuthType.oauth,
+      doneMsg: doneMsg,
+      failureMsg: failureMsg,
+      signIn: (alive) async {
+        final response = await signIn();
+        final credential = response.data?.credential;
+        if (credential == null) {
+          return Response(status: Status.failure, error: response.error);
+        }
+        if (!alive()) return response;
+        return delegate.signInWithCredential(credential);
+      },
+      data: (uid, result) => {
+        keys.id: uid,
+        keys.loggedIn: true,
+        keys.loggedInTime: EntityHelper.generateTimeMills,
+        keys.provider: provider,
+        keys.verified: true,
+        if ((result.email ?? '').isNotEmpty) keys.email: result.email,
+        if ((result.displayName ?? '').isNotEmpty)
+          keys.name: result.displayName,
+        if ((result.photoURL ?? '').isNotEmpty) keys.photo: result.photoURL,
+      },
       args: args,
       id: id,
       notifiable: notifiable,
     );
-
-    final opToken = _beginOp();
-
-    try {
-      final hasAnonymous = this.hasAnonymous;
-      final response = await signIn();
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
-      }
-
-      final raw = response.data;
-      if (raw == null || raw.credential == null) {
-        return _failure(
-          response.error,
-          type: AuthType.oauth,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final current = await delegate.signInWithCredential(raw.credential!);
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
-      }
-
-      if (!current.isSuccessful) {
-        return _failure(
-          current.error,
-          type: AuthType.oauth,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final result = current.data;
-      final uid = result?.uid ?? '';
-      if (result == null || uid.isEmpty) {
-        return _failure(
-          msg.authorization,
-          type: AuthType.oauth,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      final value = await _update(
-        id: uid,
-        hasAnonymous: hasAnonymous,
-        data: {
-          keys.id: uid,
-          keys.loggedIn: true,
-          keys.loggedInTime: EntityHelper.generateTimeMills,
-          keys.provider: provider,
-          keys.verified: true,
-          if ((result.email ?? '').isNotEmpty) keys.email: result.email,
-          if ((result.displayName ?? '').isNotEmpty)
-            keys.name: result.displayName,
-          if ((result.photoURL ?? '').isNotEmpty) keys.photo: result.photoURL,
-        },
-      );
-
-      if (!_isOpAlive(opToken)) {
-        return AuthResponse.failure('Cancelled', type: AuthType.oauth);
-      }
-
-      if (value == null) {
-        return _failure(
-          msg.authorization,
-          type: AuthType.oauth,
-          args: args,
-          id: id,
-          notifiable: notifiable,
-        );
-      }
-
-      return emit(
-        AuthResponse.authenticated(value, msg: doneMsg, type: AuthType.oauth),
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    } catch (error) {
-      return _failure(
-        failureMsg ?? error.toString(),
-        type: AuthType.oauth,
-        args: args,
-        id: id,
-        notifiable: notifiable,
-      );
-    }
   }
 }
