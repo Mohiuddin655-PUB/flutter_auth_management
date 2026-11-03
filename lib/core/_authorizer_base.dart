@@ -36,6 +36,9 @@ abstract class _AuthorizerBase<T extends Auth> {
 
   bool get isDisposed => _disposed;
 
+  /// Online or offline, as the delegate signs in.
+  AuthMode get mode => delegate.mode;
+
   Future<T?> get _cachedAuth => _backup.cache;
 
   Future<T?> get auth async {

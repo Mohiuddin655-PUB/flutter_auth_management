@@ -1,10 +1,14 @@
 import 'package:flutter_entity/entity.dart' show Response;
 
 import '../exceptions/exception.dart' show AuthException;
+import '../models/auth_mode.dart' show AuthMode;
 import '../models/credential.dart' show Credential;
 
 abstract class AuthDelegate {
   const AuthDelegate();
+
+  /// Where sign-in happens; [OfflineAuthDelegate] is [AuthMode.offline].
+  AuthMode get mode => AuthMode.online;
 
   bool get isAnonymous {
     throw UnimplementedError("Getter isAnonymous is not yet implemented.");

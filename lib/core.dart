@@ -1,8 +1,10 @@
 export 'core/authorizer.dart';
 export 'delegates/backup.dart';
 export 'delegates/delegate.dart';
+export 'delegates/offline.dart';
 export 'exceptions/exception.dart';
 export 'models/auth.dart';
+export 'models/auth_mode.dart';
 export 'models/auth_response.dart';
 export 'models/auth_status.dart';
 export 'models/auth_type.dart';

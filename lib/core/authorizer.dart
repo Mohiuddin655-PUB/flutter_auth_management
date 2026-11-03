@@ -9,6 +9,7 @@ import '../exceptions/exception.dart' show AuthException;
 import '../models/auth.dart' show Auth;
 import '../models/auth_response.dart' show AuthResponse;
 import '../models/auth_status.dart' show AuthStatus;
+import '../models/auth_mode.dart' show AuthMode;
 import '../models/auth_type.dart' show AuthType;
 import '../models/authenticator.dart'
     show
