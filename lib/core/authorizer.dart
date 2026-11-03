@@ -60,6 +60,10 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
 
   static Future<void>? _ioLock;
 
+  /// The attached Authorizer, whatever its user type: `Authorizer.instance`.
+  /// Use [instanceOf] to get it typed (`Authorizer.instanceOf<User>()`).
+  static Authorizer get instance => instanceOf<Auth>();
+
   static Authorizer<T> instanceOf<T extends Auth>() {
     final current = _i;
     if (current == null) {
