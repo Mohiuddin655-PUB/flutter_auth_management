@@ -48,7 +48,7 @@ abstract class AuthBackupDelegate<T extends Auth> {
       if (snapshot == null || snapshot.isEmpty) return false;
       final value = jsonEncode(snapshot);
       if (value.isEmpty) return false;
-      return writer(key, value);
+      return await writer(key, value);
     } catch (_) {
       return false;
     }

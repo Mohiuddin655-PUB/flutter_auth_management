@@ -7,6 +7,11 @@ class _AuthBackup<T extends Auth> {
 
   int _updateGeneration = 0;
 
+  /// Local writes run one after another: each reads the cache the previous one wrote, so two quick
+  /// updates never lose one another's fields. The remote update is outside it: a slow one never
+  /// holds the next local write.
+  Future<void> _writes = Future.value();
+
   _AuthBackup(this.delegate, this._emit);
 
   Future<T?> get cache async {
@@ -54,10 +59,37 @@ class _AuthBackup<T extends Auth> {
     final generation = ++_updateGeneration;
     bool isCurrent() => _updateGeneration == generation;
 
-    final local = await cache;
-    if (!isCurrent()) return false;
+    final write = _writes.then((_) => _writeLocal(data));
+    _writes = write.then((_) {}, onError: (_) {});
+    final written = await write;
+    if (written == null) return false;
+    final (local, updated) = written;
 
-    if (local == null || !local.isLoggedIn || local.id.isEmpty) return false;
+    if (lazyRemoteUpdate) {
+      // Not waited for, and a remote failure must not become an uncaught error.
+      onUpdateUser(local.id, data, false).then((_) {}, onError: (_) {});
+      _emit(AuthResponse.data(updated));
+      return true;
+    }
+
+    try {
+      await onUpdateUser(local.id, data, false);
+      if (isCurrent()) _emit(AuthResponse.data(updated));
+      return true;
+    } catch (_) {
+      // Rolled back only while no newer update has been written over it.
+      if (isCurrent()) {
+        await setAsLocal(local);
+        if (isCurrent()) _emit(AuthResponse.data(local));
+      }
+      return false;
+    }
+  }
+
+  /// Merges [data] into the cached user and writes it: (before, after), or null when not written.
+  Future<(T, T)?> _writeLocal(Map<String, dynamic> data) async {
+    final local = await cache;
+    if (local == null || !local.isLoggedIn || local.id.isEmpty) return null;
 
     final old = local.filtered;
     final parsed = data.map((key, value) {
@@ -68,26 +100,8 @@ class _AuthBackup<T extends Auth> {
     final merged = {...old, ...parsed}..removeWhere((_, v) => v == null);
     final updated = build(merged);
 
-    final localOk = await setAsLocal(updated);
-    if (!isCurrent()) return false;
-    if (!localOk) return false;
-
-    try {
-      if (lazyRemoteUpdate) {
-        onUpdateUser(local.id, data, false);
-      } else {
-        await onUpdateUser(local.id, data, false);
-      }
-      if (!isCurrent()) return false;
-      _emit(AuthResponse.data(updated));
-      return true;
-    } catch (_) {
-      if (isCurrent()) {
-        await setAsLocal(local);
-        if (isCurrent()) _emit(AuthResponse.data(local));
-      }
-      return false;
-    }
+    if (!await setAsLocal(updated)) return null;
+    return (local, updated);
   }
 
   Future<bool> save({
