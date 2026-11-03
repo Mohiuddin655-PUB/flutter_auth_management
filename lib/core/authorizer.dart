@@ -64,6 +64,13 @@ class Authorizer<T extends Auth> extends _AuthorizerBase<T>
   /// Use [instanceOf] to get it typed (`Authorizer.instanceOf<User>()`).
   static Authorizer get instance => instanceOf<Auth>();
 
+  /// Short for [instance].
+  static Authorizer get i => instance;
+
+  /// Short for [instance].
+  // ignore: non_constant_identifier_names
+  static Authorizer get I => instance;
+
   static Authorizer<T> instanceOf<T extends Auth>() {
     final current = _i;
     if (current == null) {
